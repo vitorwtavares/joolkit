@@ -7,3 +7,4 @@ dist/
 project-refs/
 .agents/
 skills-lock.json
+.claude/settings.local.json
