@@ -1,11 +1,19 @@
-function App() {
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router'
+import QuickCopy from './pages/QuickCopy'
+import CoverLetter from './pages/CoverLetter'
+import AnswerBank from './pages/AnswerBank'
+import ApplicationTracker from './pages/ApplicationTracker'
+
+export default function App() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <h1 className="text-4xl font-semibold tracking-tight text-foreground">
-        noloop
-      </h1>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/quick-copy" replace />} />
+        <Route path="/quick-copy" element={<QuickCopy />} />
+        <Route path="/cover-letter" element={<CoverLetter />} />
+        <Route path="/answer-bank" element={<AnswerBank />} />
+        <Route path="/tracker" element={<ApplicationTracker />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
-
-export default App
