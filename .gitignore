@@ -4,4 +4,6 @@ dist/
 .env.local
 .DS_Store
 .pnpm-store/
-project_specs.md
+project-refs/
+.agents/
+skills-lock.json
