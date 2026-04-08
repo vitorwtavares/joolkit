@@ -15,11 +15,17 @@ Rules for working in this repo. Follow these exactly.
 
 ## Committing
 
+- Never commit without being explicitly asked to — always wait for the user to review changes first.
 - When asked to commit, break changes into logical units — one commit per meaningful piece (e.g. deps separately from implementation, config separately from UI).
 - All commit messages follow the Conventional Commits standard: `type(scope): description`.
   - Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `style`, `test`.
   - Scope is optional but use it when it adds clarity (e.g. `feat(client)`, `fix(server)`).
 - Keep messages concise — one lowercase sentence, no period at the end.
+
+## Code style
+
+- Always prefer `async/await` over `.then()` chains unless `.then()` is genuinely necessary.
+- Always use shadcn components before writing custom markup. If a shadcn component exists for the use case (input, label, select, badge, separator, etc.), use it. Check installed components in `client/src/components/ui/` first; install from shadcn if not yet added.
 
 ## Project references
 
