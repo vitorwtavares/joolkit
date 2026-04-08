@@ -36,7 +36,7 @@ export default function SignIn() {
   return (
     <div className="relative min-h-screen bg-background px-4">
       <div className="absolute top-10 left-1/2 -translate-x-1/2">
-        <span className="text-[52px] font-normal tracking-[-1.8px] text-rose-500 leading-none">
+        <span className="text-[52px] font-normal tracking-[-1.8px] text-brand leading-none">
           noloop
         </span>
       </div>
