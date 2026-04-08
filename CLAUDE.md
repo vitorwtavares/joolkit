@@ -20,6 +20,11 @@ Rules for working in this repo. Follow these exactly.
 
 All project information lives in `project-refs/` at the repo root — implementation plan, specs, screenshots, and styled HTML wireframes. Consult this folder before starting any feature work.
 
+## Client folder structure
+
+- `client/src/api/` — Supabase client and the base API client (files that talk to external services)
+- `client/src/utils/` — pure utility functions, one function per file, named after the function it exports or similar (e.g. `classNames.ts` exports `cn`)
+
 ## Pushing
 
 - Never push to `origin` unless explicitly told to.
