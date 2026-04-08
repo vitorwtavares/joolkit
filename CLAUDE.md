@@ -25,7 +25,11 @@ Rules for working in this repo. Follow these exactly.
 ## Code style
 
 - Always prefer `async/await` over `.then()` chains unless `.then()` is genuinely necessary.
-- Always use shadcn components before writing custom markup. If a shadcn component exists for the use case (input, label, select, badge, separator, etc.), use it. Check installed components in `client/src/components/ui/` first; install from shadcn if not yet added.
+- Always use shadcn components before writing custom markup. The process is:
+  1. Check `client/src/components/ui/` for already-installed components.
+  2. If none fits, use the shadcn MCP tool (`mcp__shadcn__search_items_in_registries` or `mcp__shadcn__list_items_in_registries`) to check whether a suitable component exists in the registry.
+  3. If it exists, add it to the project with the shadcn CLI (`pnpm dlx shadcn@latest add <component>` from the `client/` directory) and use it.
+  4. Only write custom markup if no shadcn component covers the use case.
 
 ## Project references
 
@@ -34,7 +38,8 @@ All project information lives in `project-refs/` at the repo root — implementa
 ## Client folder structure
 
 - `client/src/api/` — Supabase client and the base API client (files that talk to external services)
-- `client/src/utils/` — pure utility functions, one function per file, named after the function it exports or similar (e.g. `classNames.ts` exports `cn`)
+- `client/src/lib/` — shadcn-related helpers (e.g. `utils.ts` exports the `cn` utility used by all UI components)
+- `client/src/utils/` — pure utility functions, one function per file, named after the function it exports (e.g. `getInitials.ts` exports `getInitials`)
 
 ## Pushing
 
