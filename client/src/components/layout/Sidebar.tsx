@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router'
 import { LayoutGrid, AlignLeft, CalendarDays, User } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/classNames'
 
 const navItems = [
   { to: '/quick-copy', label: 'Quick copy', icon: LayoutGrid },
