@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Navigate, Link } from 'react-router'
+import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { useAuth } from '@/context/auth'
 import { Button } from '@/components/ui/button'
@@ -10,7 +11,6 @@ export default function SignUp() {
   const { user, isLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -19,14 +19,13 @@ export default function SignUp() {
 
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
-    setError(null)
     setSubmitting(true)
     try {
       const { error } = await supabase.auth.signUp({ email, password })
-      if (error) setError(error.message)
+      if (error) toast.error(error.message)
       else setDone(true)
     } catch {
-      setError('Something went wrong. Please try again.')
+      toast.error('Something went wrong. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -44,18 +43,26 @@ export default function SignUp() {
         <div className="w-full max-w-sm">
           {done ? (
             <div className="flex flex-col gap-1">
-              <h1 className="text-2xl font-semibold tracking-tight">Check your email</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Check your email
+              </h1>
               <p className="text-sm text-muted-foreground">
-                We sent a confirmation link to <span className="text-foreground">{email}</span>.
+                We sent a confirmation link to{' '}
+                <span className="text-foreground">{email}</span>.
               </p>
             </div>
           ) : (
             <div className="flex flex-col gap-6">
               <div className="flex flex-col gap-1">
-                <h1 className="text-2xl font-semibold tracking-tight">Create an account</h1>
+                <h1 className="text-2xl font-semibold tracking-tight">
+                  Create an account
+                </h1>
                 <p className="text-sm text-muted-foreground">
                   Already have an account?{' '}
-                  <Link to="/sign-in" className="text-foreground underline underline-offset-4 hover:text-foreground/80 transition-colors">
+                  <Link
+                    to="/sign-in"
+                    className="text-foreground underline underline-offset-4 hover:text-foreground/80 transition-colors"
+                  >
                     Sign in
                   </Link>
                 </p>
@@ -70,7 +77,7 @@ export default function SignUp() {
                     required
                     autoComplete="email"
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
 
@@ -83,15 +90,9 @@ export default function SignUp() {
                     autoComplete="new-password"
                     minLength={6}
                     value={password}
-                    onChange={e => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
-
-                {error && (
-                  <p role="alert" className="text-sm text-destructive">
-                    {error}
-                  </p>
-                )}
 
                 <Button type="submit" className="w-full" disabled={submitting}>
                   {submitting ? 'Creating account…' : 'Create account'}

@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router'
+import { toast } from 'sonner'
 import { LayoutGrid, AlignLeft, CalendarDays, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getInitials } from '@/utils/getInitials'
@@ -95,7 +96,7 @@ export default function Sidebar() {
           <Separator />
 
           <button
-            onClick={() => void signOut()}
+            onClick={() => signOut().catch(() => toast.error('Failed to sign out. Please try again.'))}
             className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
           >
             <LogOut size={14} className="opacity-70" />

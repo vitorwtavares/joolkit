@@ -7,6 +7,8 @@ import AnswerBank from './pages/AnswerBank'
 import ApplicationTracker from './pages/ApplicationTracker'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
+import NotFound from './pages/NotFound'
+import { Toaster } from './components/ui/sonner'
 
 export default function App() {
   return (
@@ -23,7 +25,9 @@ export default function App() {
             <Route path="/tracker" element={<ApplicationTracker />} />
           </Route>
         </Route>
+        <Route path="*" element={<NotFound />} />
       </Routes>
+      <Toaster />
     </BrowserRouter>
   )
 }
