@@ -4,7 +4,7 @@ Rules for working in this repo. Follow these exactly.
 
 ## Branching
 
-- Every new task starts on a new branch checked out from `main`.
+- Every new task starts on a new branch checked out from `main`. Always pull from `origin main` first to get the latest merged changes before creating the branch.
 - Branch names follow the pattern `<type>/<short-description>` using conventional commits types (e.g. `feat/auth-flow`, `chore/cleanup-deps`, `fix/cover-letter-tokens`).
 - Never commit feature work directly to `main`.
 
