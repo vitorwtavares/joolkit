@@ -34,12 +34,12 @@ export default function SignUp() {
   return (
     <div className="relative min-h-screen bg-background px-4">
       <div className="absolute top-10 left-1/2 -translate-x-1/2">
-        <span className="text-[52px] font-normal tracking-[-1.8px] text-brand leading-none">
+        <span className="text-[52px] leading-none font-normal tracking-[-1.8px] text-brand">
           noloop
         </span>
       </div>
 
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="w-full max-w-sm">
           {done ? (
             <div className="flex flex-col gap-1">
@@ -61,7 +61,7 @@ export default function SignUp() {
                   Already have an account?{' '}
                   <Link
                     to="/sign-in"
-                    className="text-foreground underline underline-offset-4 hover:text-foreground/80 transition-colors"
+                    className="text-foreground underline underline-offset-4 transition-colors hover:text-foreground/80"
                   >
                     Sign in
                   </Link>

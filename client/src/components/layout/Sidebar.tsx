@@ -4,7 +4,11 @@ import { LayoutGrid, AlignLeft, CalendarDays, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getInitials } from '@/utils/getInitials'
 import { useAuth } from '@/context/auth'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 
@@ -21,8 +25,8 @@ export default function Sidebar() {
   const initial = email ? getInitials(email) : '?'
 
   return (
-    <aside className="w-[210px] min-w-[210px] bg-card border-r border-border flex flex-col px-3 py-5 gap-0.5">
-      <div className="px-2 pb-4 mb-2 border-b border-border">
+    <aside className="flex w-[210px] min-w-[210px] flex-col gap-0.5 border-r border-border bg-card px-3 py-5">
+      <div className="mb-2 border-b border-border px-2 pb-4">
         <span
           style={{
             fontFamily: 'system-ui, -apple-system, sans-serif',
@@ -42,10 +46,10 @@ export default function Sidebar() {
           to={to}
           className={({ isActive }) =>
             cn(
-              'flex items-center gap-2 px-2 py-[7px] rounded-lg text-sm transition-colors',
+              'flex items-center gap-2 rounded-lg px-2 py-[7px] text-sm transition-colors',
               isActive
-                ? 'bg-secondary text-foreground font-medium'
-                : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50',
+                ? 'bg-secondary font-medium text-foreground'
+                : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground',
             )
           }
         >
@@ -67,13 +71,21 @@ export default function Sidebar() {
         <PopoverTrigger asChild>
           <button
             className={cn(
-              'w-full flex items-center gap-2 px-2 py-[7px] rounded-lg text-sm transition-colors',
-              'text-muted-foreground hover:text-foreground hover:bg-secondary/50',
+              'flex w-full items-center gap-2 rounded-lg px-2 py-[7px] text-sm transition-colors',
+              'text-muted-foreground hover:bg-secondary/50 hover:text-foreground',
               'data-[state=open]:bg-secondary data-[state=open]:text-foreground',
             )}
           >
-            <Avatar className="size-[30px] after:hidden" style={{ background: 'color-mix(in srgb, var(--brand) 12%, transparent)' }}>
-              <AvatarFallback className="bg-transparent text-[14px] font-semibold" style={{ color: 'var(--brand)' }}>
+            <Avatar
+              className="size-[30px] after:hidden"
+              style={{
+                background: 'color-mix(in srgb, var(--brand) 12%, transparent)',
+              }}
+            >
+              <AvatarFallback
+                className="bg-transparent text-[14px] font-semibold"
+                style={{ color: 'var(--brand)' }}
+              >
                 {initial}
               </AvatarFallback>
             </Avatar>
@@ -85,10 +97,10 @@ export default function Sidebar() {
           side="top"
           align="start"
           sideOffset={8}
-          className="w-[186px] p-0 gap-0 rounded-xl overflow-hidden"
+          className="w-[186px] gap-0 overflow-hidden rounded-xl p-0"
         >
           <div className="px-3 py-3">
-            <span className="text-xs text-muted-foreground truncate leading-tight block">
+            <span className="block truncate text-xs leading-tight text-muted-foreground">
               {email}
             </span>
           </div>
@@ -96,8 +108,12 @@ export default function Sidebar() {
           <Separator />
 
           <button
-            onClick={() => signOut().catch(() => toast.error('Failed to sign out. Please try again.'))}
-            className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+            onClick={() =>
+              signOut().catch(() =>
+                toast.error('Failed to sign out. Please try again.'),
+              )
+            }
+            className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
           >
             <LogOut size={14} className="opacity-70" />
             Sign out

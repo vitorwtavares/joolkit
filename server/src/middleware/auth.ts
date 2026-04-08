@@ -7,7 +7,9 @@ export function initSupabase() {
   const url = process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) {
-    throw new Error('Missing required env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY')
+    throw new Error(
+      'Missing required env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY',
+    )
   }
   supabase = createClient(url, key)
 }
