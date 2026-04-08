@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Navigate, Link } from 'react-router'
+import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { useAuth } from '@/context/auth'
 import { Button } from '@/components/ui/button'
@@ -10,7 +11,6 @@ export default function SignIn() {
   const { user, isLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   if (isLoading) return null
@@ -18,16 +18,15 @@ export default function SignIn() {
 
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
-    setError(null)
     setSubmitting(true)
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      if (error) setError(error.message)
+      if (error) toast.error(error.message)
     } catch {
-      setError('Something went wrong. Please try again.')
+      toast.error('Something went wrong. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -80,12 +79,6 @@ export default function SignIn() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-
-            {error && (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
-            )}
 
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? 'Signing in…' : 'Sign in'}
