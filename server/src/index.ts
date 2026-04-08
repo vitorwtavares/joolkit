@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
-import { initSupabase } from './middleware/auth'
+import { initSupabase, authMiddleware } from './middleware/auth'
 import healthRouter from './routes/health'
 
 initSupabase()
@@ -14,6 +14,7 @@ if (Number.isNaN(PORT) || PORT < 1 || PORT > 65535) {
 
 app.use(cors())
 app.use(express.json())
+app.use(authMiddleware)
 
 app.use('/api/health', healthRouter)
 
