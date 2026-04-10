@@ -3,6 +3,21 @@ import { getSupabase, AuthRequest } from '../middleware/auth'
 
 const router = Router()
 
+// GET /api/cover-letters
+router.get('/', async (req: AuthRequest, res) => {
+  const { data, error } = await getSupabase()
+    .from('cover_letter_templates')
+    .select('*')
+    .eq('user_id', req.userId!)
+
+  if (error) {
+    res.status(500).json({ error: error.message })
+    return
+  }
+
+  res.json(data)
+})
+
 // GET /api/cover-letters/tokens
 router.get('/tokens', async (req: AuthRequest, res) => {
   const { data, error } = await getSupabase()

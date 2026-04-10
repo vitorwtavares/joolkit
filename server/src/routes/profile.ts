@@ -19,11 +19,27 @@ router.get('/', async (req: AuthRequest, res) => {
 })
 
 router.put('/', async (req: AuthRequest, res) => {
-  const { name, email, phone, address, linkedin, github, portfolio, other_link, resume_url } = req.body
+  const allowedFields = [
+    'name',
+    'email',
+    'phone',
+    'address',
+    'linkedin',
+    'github',
+    'portfolio',
+    'other_link',
+    'resume_url',
+  ] as const
+  const updates: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  }
+  for (const field of allowedFields) {
+    if (field in req.body) updates[field] = req.body[field]
+  }
 
   const { data, error } = await getSupabase()
     .from('profiles')
-    .update({ name, email, phone, address, linkedin, github, portfolio, other_link, resume_url, updated_at: new Date().toISOString() })
+    .update(updates)
     .eq('id', req.userId!)
     .select()
     .single()
