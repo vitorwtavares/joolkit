@@ -133,7 +133,7 @@ export function CopyButton({
             {label}
           </span>
           {saving ? (
-            <span className="mt-0.5 h-[14px] w-24 animate-pulse rounded bg-muted-foreground/20" />
+            <span className="h-[21px] w-24 animate-pulse rounded bg-muted-foreground/20" />
           ) : (
             <span
               className={cn(
