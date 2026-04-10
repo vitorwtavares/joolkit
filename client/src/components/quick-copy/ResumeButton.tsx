@@ -56,6 +56,7 @@ export function ResumeButton({
     if (error) {
       setUploading(false)
       toast.error('Upload failed: ' + error.message)
+      e.target.value = ''
       return
     }
 

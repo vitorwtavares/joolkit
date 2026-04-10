@@ -77,6 +77,7 @@ export function CoverLetterCard({
     if (error) {
       setUploading(null)
       toast.error('Upload failed: ' + error.message)
+      e.target.value = ''
       return
     }
 
