@@ -9,6 +9,7 @@ import coverLettersRouter from './routes/coverLetters'
 initSupabase()
 
 const app = express()
+app.set('etag', false)
 const PORT = Number.parseInt(process.env.PORT || '3001', 10)
 if (Number.isNaN(PORT) || PORT < 1 || PORT > 65535) {
   throw new Error(`Invalid PORT: ${process.env.PORT ?? '(unset)'}`)
