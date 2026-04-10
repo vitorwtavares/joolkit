@@ -14,6 +14,10 @@ export function initSupabase() {
   supabase = createClient(url, key)
 }
 
+export function getSupabase(): SupabaseClient {
+  return supabase
+}
+
 export interface AuthRequest extends Request {
   userId?: string
 }
