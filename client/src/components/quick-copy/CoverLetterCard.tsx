@@ -94,7 +94,7 @@ export function CoverLetterCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-6">
         {(['formal', 'light'] as const).map((v) => {
           const t = v === 'formal' ? formal : light
           const ref = v === 'formal' ? formalInputRef : lightInputRef
