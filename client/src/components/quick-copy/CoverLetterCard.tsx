@@ -36,7 +36,11 @@ export function CoverLetterCard({
   useLayoutEffect(() => {
     const wasUploading = prevUploadingRef.current
     prevUploadingRef.current = uploading
-    if (!uploading && wasUploading) setIconPop(wasUploading)
+    if (!uploading && wasUploading) {
+      const uploaded =
+        wasUploading === 'formal' ? formal?.file_url : light?.file_url
+      if (uploaded) setIconPop(wasUploading)
+    }
   }, [uploading])
 
   useLayoutEffect(() => {
@@ -129,6 +133,7 @@ export function CoverLetterCard({
               <input
                 ref={ref}
                 type="file"
+                accept=".pdf"
                 className="hidden"
                 onChange={(e) => handleUpload(v, e)}
               />
@@ -196,7 +201,7 @@ export function CoverLetterCard({
               </button>
               {t && (
                 <button
-                  disabled={removing === v}
+                  disabled={removing === v || fallingSlot === v}
                   onClick={async (e) => {
                     e.stopPropagation()
                     setRemoving(v)
