@@ -17,6 +17,7 @@ Rules for working in this repo. Follow these exactly.
   - Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `style`, `test`.
   - Scope is optional but use it when it adds clarity (e.g. `feat(client)`, `fix(server)`).
 - Keep messages concise — one lowercase sentence, no period at the end.
+- Before committing, always run prettier on all changed files: `pnpm prettier --write <files>` from the repo root.
 
 ## Code style
 
@@ -33,7 +34,7 @@ All project information lives in `project-refs/` at the repo root — implementa
 
 ## Client folder structure
 
-- `client/src/api/` — Supabase client and the base API client (files that talk to external services)
+- `client/src/api/` — Supabase client, base API client, and TanStack Query hooks (`api/hooks/`)
 - `client/src/lib/` — shadcn-related helpers (e.g. `utils.ts` exports the `cn` utility used by all UI components)
 - `client/src/utils/` — pure utility functions, one function per file, named after the function it exports (e.g. `getInitials.ts` exports `getInitials`)
 
