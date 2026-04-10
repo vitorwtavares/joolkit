@@ -1,7 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { Request, Response, NextFunction } from 'express'
 
-let supabase: SupabaseClient
+let supabase: SupabaseClient | undefined
 
 export function initSupabase() {
   const url = process.env.SUPABASE_URL
@@ -12,6 +12,14 @@ export function initSupabase() {
     )
   }
   supabase = createClient(url, key)
+}
+
+export function getSupabase(): SupabaseClient {
+  if (!supabase)
+    throw new Error(
+      'Supabase client not initialized. Call initSupabase() first.',
+    )
+  return supabase
 }
 
 export interface AuthRequest extends Request {
@@ -33,7 +41,7 @@ export async function authMiddleware(
   const {
     data: { user },
     error,
-  } = await supabase.auth.getUser(token)
+  } = await getSupabase().auth.getUser(token)
   if (error || !user) {
     res.status(401).json({ error: 'Unauthorized' })
     return

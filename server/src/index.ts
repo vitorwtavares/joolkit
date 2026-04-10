@@ -3,6 +3,8 @@ import express from 'express'
 import cors from 'cors'
 import { initSupabase, authMiddleware } from './middleware/auth'
 import healthRouter from './routes/health'
+import profileRouter from './routes/profile'
+import coverLettersRouter from './routes/coverLetters'
 
 initSupabase()
 
@@ -17,6 +19,8 @@ app.use(express.json())
 app.use(authMiddleware)
 
 app.use('/api/health', healthRouter)
+app.use('/api/profile', profileRouter)
+app.use('/api/cover-letters', coverLettersRouter)
 
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
