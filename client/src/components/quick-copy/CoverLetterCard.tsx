@@ -24,11 +24,24 @@ export function CoverLetterCard({
   const lightInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState<'formal' | 'light' | null>(null)
   const [removing, setRemoving] = useState<'formal' | 'light' | null>(null)
+  const [iconPop, setIconPop] = useState<'formal' | 'light' | null>(null)
+  const [fallingSlot, setFallingSlot] = useState<'formal' | 'light' | null>(
+    null,
+  )
+  const prevUploadingRef = useRef<'formal' | 'light' | null>(null)
 
   const formal = templates.find((t) => t.variation === 'formal')
   const light = templates.find((t) => t.variation === 'light')
 
   useLayoutEffect(() => {
+    const wasUploading = prevUploadingRef.current
+    prevUploadingRef.current = uploading
+    if (!uploading && wasUploading) setIconPop(wasUploading)
+  }, [uploading])
+
+  useLayoutEffect(() => {
+    if (removing === 'formal' && !formal?.file_url) setFallingSlot('formal')
+    if (removing === 'light' && !light?.file_url) setFallingSlot('light')
     setUploading(null)
     setRemoving(null)
   }, [formal?.file_url, light?.file_url])
@@ -107,6 +120,8 @@ export function CoverLetterCard({
           const cap = v.charAt(0).toUpperCase() + v.slice(1)
           const label = filename ? `${cap} — ${filename}` : cap
 
+          const showAsFilled = !!t || fallingSlot === v
+
           return (
             <div key={v} className="group/slot relative">
               <input
@@ -116,13 +131,15 @@ export function CoverLetterCard({
                 onChange={(e) => handleUpload(v, e)}
               />
               <button
-                disabled={uploading === v || removing === v}
+                disabled={
+                  uploading === v || removing === v || fallingSlot === v
+                }
                 onClick={
                   t ? () => handleDownload(v) : () => ref.current?.click()
                 }
                 className={cn(
-                  'relative flex w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
-                  t
+                  'flex w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
+                  showAsFilled
                     ? 'border-border bg-card hover:bg-secondary/30'
                     : 'border-dashed border-border/50 bg-secondary hover:bg-secondary/70',
                 )}
@@ -138,16 +155,31 @@ export function CoverLetterCard({
                 <div
                   className={cn(
                     'flex size-7 items-center justify-center rounded-md',
-                    t ? 'bg-green-950' : 'bg-background',
+                    fallingSlot === v
+                      ? undefined
+                      : showAsFilled
+                        ? 'bg-green-950'
+                        : 'bg-background',
+                    iconPop === v && 'animate-icon-pop',
+                    fallingSlot === v && 'animate-icon-fall',
                   )}
+                  onAnimationEnd={() => {
+                    if (iconPop === v) setIconPop(null)
+                    if (fallingSlot === v) setFallingSlot(null)
+                  }}
                 >
                   {uploading === v ? (
                     <Loader2
                       size={13}
                       className="animate-spin text-muted-foreground/40"
                     />
-                  ) : t ? (
-                    <FileText size={13} className="text-green-400" />
+                  ) : showAsFilled ? (
+                    <FileText
+                      size={13}
+                      className={
+                        fallingSlot === v ? undefined : 'text-green-400'
+                      }
+                    />
                   ) : (
                     <Upload size={13} className="text-muted-foreground/40" />
                   )}

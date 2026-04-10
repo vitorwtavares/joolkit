@@ -83,6 +83,41 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+@keyframes icon-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.4);
+  }
+  70% {
+    transform: scale(0.88);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes icon-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+    color: #4ade80;
+    background-color: #052e16;
+  }
+  20% {
+    transform: translateY(1px) rotate(-4deg);
+    color: #f87171;
+    background-color: #2d0a0a;
+  }
+  100% {
+    transform: translateY(16px) rotate(12deg);
+    opacity: 0;
+    color: #ef4444;
+    background-color: #450a0a;
+  }
+}
+
 @keyframes bubble-in {
   0% {
     transform: scale(0.4) translateX(-50%);
@@ -117,6 +152,8 @@
   --animate-bubble-in: bubble-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)
     forwards;
   --animate-bubble-out: bubble-out 0.26s ease-in forwards;
+  --animate-icon-pop: icon-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-icon-fall: icon-fall 0.7s cubic-bezier(0.55, 0, 1, 0.45) forwards;
 }
 
 @layer base {

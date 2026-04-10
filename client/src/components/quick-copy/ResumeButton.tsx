@@ -21,8 +21,18 @@ export function ResumeButton({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [removing, setRemoving] = useState(false)
+  const [iconPop, setIconPop] = useState(false)
+  const [falling, setFalling] = useState(false)
+  const prevUploadingRef = useRef(false)
 
   useLayoutEffect(() => {
+    const wasUploading = prevUploadingRef.current
+    prevUploadingRef.current = uploading
+    if (!uploading && wasUploading && resumeUrl) setIconPop(true)
+  }, [uploading])
+
+  useLayoutEffect(() => {
+    if (removing && !resumeUrl) setFalling(true)
     setUploading(false)
     setRemoving(false)
   }, [resumeUrl])
@@ -66,6 +76,7 @@ export function ResumeButton({
   }
 
   const filename = resumeUrl?.split('/').pop() ?? null
+  const showAsFilled = !!resumeUrl || falling
 
   return (
     <div className="flex flex-col gap-3 self-start rounded-lg border border-dashed border-border/50 bg-card px-4 py-3.5">
@@ -90,13 +101,13 @@ export function ResumeButton({
           onChange={handleUpload}
         />
         <button
-          disabled={uploading || removing}
+          disabled={uploading || removing || falling}
           onClick={
             resumeUrl ? handleDownload : () => fileInputRef.current?.click()
           }
           className={cn(
             'relative flex w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
-            resumeUrl
+            showAsFilled
               ? 'border-border bg-card hover:bg-secondary/30'
               : 'border-dashed border-border/50 bg-secondary hover:bg-secondary/70',
           )}
@@ -112,16 +123,29 @@ export function ResumeButton({
           <div
             className={cn(
               'flex size-7 items-center justify-center rounded-md',
-              resumeUrl ? 'bg-green-950' : 'bg-background',
+              falling
+                ? undefined
+                : showAsFilled
+                  ? 'bg-green-950'
+                  : 'bg-background',
+              iconPop && 'animate-icon-pop',
+              falling && 'animate-icon-fall',
             )}
+            onAnimationEnd={() => {
+              if (iconPop) setIconPop(false)
+              if (falling) setFalling(false)
+            }}
           >
             {uploading ? (
               <Loader2
                 size={13}
                 className="animate-spin text-muted-foreground/40"
               />
-            ) : resumeUrl ? (
-              <FileText size={13} className="text-green-400" />
+            ) : showAsFilled ? (
+              <FileText
+                size={13}
+                className={falling ? undefined : 'text-green-400'}
+              />
             ) : (
               <Upload size={13} className="text-muted-foreground/40" />
             )}
@@ -130,17 +154,17 @@ export function ResumeButton({
             {filename ?? 'Resume'}
           </span>
           <span className="text-[12px] text-muted-foreground/40">
-            {resumeUrl ? 'Click to download' : 'Click to upload'}
+            {showAsFilled ? 'Click to download' : 'Click to upload'}
           </span>
         </button>
-        {resumeUrl && (
+        {showAsFilled && (
           <button
-            disabled={removing}
+            disabled={removing || falling}
             onClick={async (e) => {
               e.stopPropagation()
               setRemoving(true)
               try {
-                await supabase.storage.from('resumes').remove([resumeUrl])
+                await supabase.storage.from('resumes').remove([resumeUrl!])
                 onRemoved()
               } catch {
                 setRemoving(false)
