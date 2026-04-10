@@ -127,7 +127,7 @@ export default function QuickCopy() {
   if (!profile) return null
 
   return (
-    <div className="p-8 pb-12">
+    <div>
       <h1 className="mb-1 text-[36px] font-medium tracking-tight">
         Quick copy
       </h1>
