@@ -11,7 +11,7 @@ interface CoverLetterCardProps {
   templates: CoverLetterTemplate[]
   userId: string
   onFileUploaded: (variation: 'formal' | 'light', path: string) => void
-  onFileRemoved: (variation: 'formal' | 'light') => void
+  onFileRemoved: (variation: 'formal' | 'light') => Promise<void>
 }
 
 export function CoverLetterCard({
@@ -23,12 +23,14 @@ export function CoverLetterCard({
   const formalInputRef = useRef<HTMLInputElement>(null)
   const lightInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState<'formal' | 'light' | null>(null)
+  const [removing, setRemoving] = useState<'formal' | 'light' | null>(null)
 
   const formal = templates.find((t) => t.variation === 'formal')
   const light = templates.find((t) => t.variation === 'light')
 
   useLayoutEffect(() => {
     setUploading(null)
+    setRemoving(null)
   }, [formal?.file_url, light?.file_url])
 
   async function handleUpload(
@@ -114,16 +116,25 @@ export function CoverLetterCard({
                 onChange={(e) => handleUpload(v, e)}
               />
               <button
+                disabled={uploading === v || removing === v}
                 onClick={
                   t ? () => handleDownload(v) : () => ref.current?.click()
                 }
                 className={cn(
-                  'flex w-full flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors',
+                  'relative flex w-full flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
                   t
                     ? 'border-border bg-card hover:bg-secondary/30'
                     : 'border-dashed border-border/50 bg-secondary hover:bg-secondary/70',
                 )}
               >
+                {removing === v && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-md bg-card/80">
+                    <Loader2
+                      size={16}
+                      className="animate-spin text-muted-foreground"
+                    />
+                  </div>
+                )}
                 <div
                   className={cn(
                     'flex size-7 items-center justify-center rounded-md',
@@ -151,13 +162,26 @@ export function CoverLetterCard({
               </button>
               {t && (
                 <button
-                  onClick={(e) => {
+                  disabled={removing === v}
+                  onClick={async (e) => {
                     e.stopPropagation()
-                    onFileRemoved(v)
+                    setRemoving(v)
+                    try {
+                      await onFileRemoved(v)
+                    } catch {
+                      setRemoving(null)
+                    }
                   }}
-                  className="absolute -top-[11px] -right-[11px] z-10 flex size-[24px] cursor-pointer items-center justify-center rounded-full border border-border bg-card shadow-sm hover:bg-secondary"
+                  className="absolute -top-[11px] -right-[11px] z-10 flex size-[24px] cursor-pointer items-center justify-center rounded-full border border-border bg-card shadow-sm hover:bg-secondary disabled:pointer-events-none"
                 >
-                  <Trash2 size={13} className="text-muted-foreground" />
+                  {removing === v ? (
+                    <Loader2
+                      size={13}
+                      className="animate-spin text-muted-foreground"
+                    />
+                  ) : (
+                    <Trash2 size={13} className="text-muted-foreground" />
+                  )}
                 </button>
               )}
             </div>

@@ -87,7 +87,8 @@ export default function QuickCopy() {
   const { mutate: updateProfile } = useUpdateProfile()
   const { data: templates = [] } = useCoverLetters()
   const { mutate: updateCoverLetterFile } = useUpdateCoverLetterFile()
-  const { mutate: deleteCoverLetterTemplate } = useDeleteCoverLetterTemplate()
+  const { mutateAsync: deleteCoverLetterTemplate } =
+    useDeleteCoverLetterTemplate()
 
   function handleProfileSave(
     field: keyof UpdateProfilePayload,
@@ -196,15 +197,16 @@ export default function QuickCopy() {
               templates={templates}
               userId={user.id}
               onFileUploaded={handleFileUploaded}
-              onFileRemoved={(variation) =>
-                deleteCoverLetterTemplate(variation, {
-                  onSuccess: () =>
-                    toast.success(
-                      `${variation.charAt(0).toUpperCase() + variation.slice(1)} template removed`,
-                    ),
-                  onError: () => toast.error('Failed to remove template'),
-                })
-              }
+              onFileRemoved={async (variation) => {
+                try {
+                  await deleteCoverLetterTemplate(variation)
+                  toast.success(
+                    `${variation.charAt(0).toUpperCase() + variation.slice(1)} template removed`,
+                  )
+                } catch {
+                  toast.error('Failed to remove template')
+                }
+              }}
             />
           </div>
         </div>

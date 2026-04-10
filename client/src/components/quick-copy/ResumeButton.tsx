@@ -20,9 +20,11 @@ export function ResumeButton({
 }: ResumeButtonProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [removing, setRemoving] = useState(false)
 
   useLayoutEffect(() => {
     setUploading(false)
+    setRemoving(false)
   }, [resumeUrl])
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -88,16 +90,25 @@ export function ResumeButton({
           onChange={handleUpload}
         />
         <button
+          disabled={uploading || removing}
           onClick={
             resumeUrl ? handleDownload : () => fileInputRef.current?.click()
           }
           className={cn(
-            'flex w-full flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors',
+            'relative flex w-full flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
             resumeUrl
               ? 'border-border bg-card hover:bg-secondary/30'
               : 'border-dashed border-border/50 bg-secondary hover:bg-secondary/70',
           )}
         >
+          {removing && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-md bg-card/80">
+              <Loader2
+                size={16}
+                className="animate-spin text-muted-foreground"
+              />
+            </div>
+          )}
           <div
             className={cn(
               'flex size-7 items-center justify-center rounded-md',
@@ -124,14 +135,27 @@ export function ResumeButton({
         </button>
         {resumeUrl && (
           <button
+            disabled={removing}
             onClick={async (e) => {
               e.stopPropagation()
-              await supabase.storage.from('resumes').remove([resumeUrl])
-              onRemoved()
+              setRemoving(true)
+              try {
+                await supabase.storage.from('resumes').remove([resumeUrl])
+                onRemoved()
+              } catch {
+                setRemoving(false)
+              }
             }}
-            className="absolute -top-[11px] -right-[11px] z-10 flex size-[24px] cursor-pointer items-center justify-center rounded-full border border-border bg-card shadow-sm hover:bg-secondary"
+            className="absolute -top-[11px] -right-[11px] z-10 flex size-[24px] cursor-pointer items-center justify-center rounded-full border border-border bg-card shadow-sm hover:bg-secondary disabled:pointer-events-none"
           >
-            <Trash2 size={13} className="text-muted-foreground" />
+            {removing ? (
+              <Loader2
+                size={13}
+                className="animate-spin text-muted-foreground"
+              />
+            ) : (
+              <Trash2 size={13} className="text-muted-foreground" />
+            )}
           </button>
         )}
       </div>
