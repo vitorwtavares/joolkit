@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pencil } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useCopiedBubble } from '@/hooks/useCopiedBubble'
@@ -59,8 +60,12 @@ export function CopyButton({
 
   async function copy() {
     if (!value) return
-    await navigator.clipboard.writeText(value)
-    triggerCopied()
+    try {
+      await navigator.clipboard.writeText(value)
+      triggerCopied()
+    } catch {
+      toast.error('Failed to copy to clipboard')
+    }
   }
 
   if (editing) {

@@ -40,10 +40,12 @@ export function CoverLetterCard({
   }, [uploading])
 
   useLayoutEffect(() => {
-    if (removing === 'formal' && !formal?.file_url) setFallingSlot('formal')
-    if (removing === 'light' && !light?.file_url) setFallingSlot('light')
-    setUploading(null)
-    setRemoving(null)
+    if (removing) {
+      if (removing === 'formal' && !formal?.file_url) setFallingSlot('formal')
+      if (removing === 'light' && !light?.file_url) setFallingSlot('light')
+      setRemoving(null)
+    }
+    if (uploading) setUploading(null)
   }, [formal?.file_url, light?.file_url])
 
   async function handleUpload(

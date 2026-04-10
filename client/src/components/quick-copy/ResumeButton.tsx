@@ -32,9 +32,11 @@ export function ResumeButton({
   }, [uploading])
 
   useLayoutEffect(() => {
-    if (removing && !resumeUrl) setFalling(true)
-    setUploading(false)
-    setRemoving(false)
+    if (removing) {
+      if (!resumeUrl) setFalling(true)
+      setRemoving(false)
+    }
+    if (uploading) setUploading(false)
   }, [resumeUrl])
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
