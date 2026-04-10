@@ -3,6 +3,7 @@ import { FileText, Loader2, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { cn } from '@/lib/utils'
+import { downloadFile } from '@/utils/downloadFile'
 import type { CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
 import { TruncatedLabel } from '@/components/ui/truncated-label'
 
@@ -78,7 +79,8 @@ export function CoverLetterCard({
       return
     }
 
-    window.open(data.signedUrl, '_blank')
+    const filename = template.file_url!.split('/').pop()!
+    await downloadFile(data.signedUrl, filename)
   }
 
   return (

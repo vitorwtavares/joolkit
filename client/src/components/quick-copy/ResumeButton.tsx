@@ -3,6 +3,7 @@ import { FileText, Loader2, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { cn } from '@/lib/utils'
+import { downloadFile } from '@/utils/downloadFile'
 
 interface ResumeButtonProps {
   resumeUrl: string | null
@@ -29,7 +30,12 @@ export function ResumeButton({
     if (!file) return
 
     setUploading(true)
-    const path = `${userId}/resume.pdf`
+    const path = `${userId}/${file.name}`
+
+    if (resumeUrl && resumeUrl !== path) {
+      await supabase.storage.from('resumes').remove([resumeUrl])
+    }
+
     const { error } = await supabase.storage
       .from('resumes')
       .upload(path, file, { upsert: true })
@@ -53,7 +59,8 @@ export function ResumeButton({
       toast.error('Failed to get download link')
       return
     }
-    window.open(data.signedUrl, '_blank')
+    const filename = resumeUrl.split('/').pop()!
+    await downloadFile(data.signedUrl, filename)
   }
 
   const filename = resumeUrl?.split('/').pop() ?? null
