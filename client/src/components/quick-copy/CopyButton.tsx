@@ -116,7 +116,7 @@ export function CopyButton({
       <button
         onClick={filled ? copy : startEdit}
         className={cn(
-          'flex w-full items-center gap-2.5 rounded-lg border bg-card px-3 py-3 text-left transition-colors hover:bg-secondary/30',
+          'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border bg-card px-3 py-3 text-left transition-colors hover:bg-secondary/30',
           filled ? 'border-border' : 'border-dashed border-border/50',
         )}
       >

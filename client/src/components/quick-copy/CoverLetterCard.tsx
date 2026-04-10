@@ -121,7 +121,7 @@ export function CoverLetterCard({
                   t ? () => handleDownload(v) : () => ref.current?.click()
                 }
                 className={cn(
-                  'relative flex w-full flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
+                  'relative flex w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
                   t
                     ? 'border-border bg-card hover:bg-secondary/30'
                     : 'border-dashed border-border/50 bg-secondary hover:bg-secondary/70',
