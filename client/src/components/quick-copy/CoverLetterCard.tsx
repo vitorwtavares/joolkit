@@ -3,6 +3,7 @@ import { FileText, Loader2, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { cn } from '@/lib/utils'
+import { downloadFile } from '@/utils/downloadFile'
 import type { CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
 import { TruncatedLabel } from '@/components/ui/truncated-label'
 
@@ -10,7 +11,7 @@ interface CoverLetterCardProps {
   templates: CoverLetterTemplate[]
   userId: string
   onFileUploaded: (variation: 'formal' | 'light', path: string) => void
-  onFileRemoved: (variation: 'formal' | 'light') => void
+  onFileRemoved: (variation: 'formal' | 'light') => Promise<void>
 }
 
 export function CoverLetterCard({
@@ -22,12 +23,33 @@ export function CoverLetterCard({
   const formalInputRef = useRef<HTMLInputElement>(null)
   const lightInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState<'formal' | 'light' | null>(null)
+  const [removing, setRemoving] = useState<'formal' | 'light' | null>(null)
+  const [iconPop, setIconPop] = useState<'formal' | 'light' | null>(null)
+  const [fallingSlot, setFallingSlot] = useState<'formal' | 'light' | null>(
+    null,
+  )
+  const prevUploadingRef = useRef<'formal' | 'light' | null>(null)
 
   const formal = templates.find((t) => t.variation === 'formal')
   const light = templates.find((t) => t.variation === 'light')
 
   useLayoutEffect(() => {
-    setUploading(null)
+    const wasUploading = prevUploadingRef.current
+    prevUploadingRef.current = uploading
+    if (!uploading && wasUploading) {
+      const uploaded =
+        wasUploading === 'formal' ? formal?.file_url : light?.file_url
+      if (uploaded) setIconPop(wasUploading)
+    }
+  }, [uploading])
+
+  useLayoutEffect(() => {
+    if (removing) {
+      if (removing === 'formal' && !formal?.file_url) setFallingSlot('formal')
+      if (removing === 'light' && !light?.file_url) setFallingSlot('light')
+      setRemoving(null)
+    }
+    if (uploading) setUploading(null)
   }, [formal?.file_url, light?.file_url])
 
   async function handleUpload(
@@ -55,6 +77,7 @@ export function CoverLetterCard({
     if (error) {
       setUploading(null)
       toast.error('Upload failed: ' + error.message)
+      e.target.value = ''
       return
     }
 
@@ -78,7 +101,8 @@ export function CoverLetterCard({
       return
     }
 
-    window.open(data.signedUrl, '_blank')
+    const filename = template.file_url!.split('/').pop()!
+    await downloadFile(data.signedUrl, filename)
   }
 
   return (
@@ -103,38 +127,67 @@ export function CoverLetterCard({
           const cap = v.charAt(0).toUpperCase() + v.slice(1)
           const label = filename ? `${cap} — ${filename}` : cap
 
+          const showAsFilled = !!t || fallingSlot === v
+
           return (
             <div key={v} className="group/slot relative">
               <input
                 ref={ref}
                 type="file"
+                accept=".pdf"
                 className="hidden"
                 onChange={(e) => handleUpload(v, e)}
               />
               <button
+                disabled={
+                  uploading === v || removing === v || fallingSlot === v
+                }
                 onClick={
                   t ? () => handleDownload(v) : () => ref.current?.click()
                 }
                 className={cn(
-                  'flex w-full flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors',
-                  t
+                  'flex w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
+                  showAsFilled
                     ? 'border-border bg-card hover:bg-secondary/30'
                     : 'border-dashed border-border/50 bg-secondary hover:bg-secondary/70',
                 )}
               >
+                {removing === v && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-md bg-card/80">
+                    <Loader2
+                      size={16}
+                      className="animate-spin text-muted-foreground"
+                    />
+                  </div>
+                )}
                 <div
                   className={cn(
                     'flex size-7 items-center justify-center rounded-md',
-                    t ? 'bg-green-950' : 'bg-background',
+                    fallingSlot === v
+                      ? undefined
+                      : showAsFilled
+                        ? 'bg-green-950'
+                        : 'bg-background',
+                    iconPop === v && 'animate-icon-pop',
+                    fallingSlot === v && 'animate-icon-fall',
                   )}
+                  onAnimationEnd={() => {
+                    if (iconPop === v) setIconPop(null)
+                    if (fallingSlot === v) setFallingSlot(null)
+                  }}
                 >
                   {uploading === v ? (
                     <Loader2
                       size={13}
                       className="animate-spin text-muted-foreground/40"
                     />
-                  ) : t ? (
-                    <FileText size={13} className="text-green-400" />
+                  ) : showAsFilled ? (
+                    <FileText
+                      size={13}
+                      className={
+                        fallingSlot === v ? undefined : 'text-green-400'
+                      }
+                    />
                   ) : (
                     <Upload size={13} className="text-muted-foreground/40" />
                   )}
@@ -149,13 +202,26 @@ export function CoverLetterCard({
               </button>
               {t && (
                 <button
-                  onClick={(e) => {
+                  disabled={removing === v || fallingSlot === v}
+                  onClick={async (e) => {
                     e.stopPropagation()
-                    onFileRemoved(v)
+                    setRemoving(v)
+                    try {
+                      await onFileRemoved(v)
+                    } catch {
+                      setRemoving(null)
+                    }
                   }}
-                  className="absolute -top-[11px] -right-[11px] z-10 flex size-[24px] cursor-pointer items-center justify-center rounded-full border border-border bg-card shadow-sm hover:bg-secondary"
+                  className="absolute -top-[11px] -right-[11px] z-10 flex size-[24px] cursor-pointer items-center justify-center rounded-full border border-border bg-card shadow-sm hover:bg-secondary disabled:pointer-events-none"
                 >
-                  <Trash2 size={13} className="text-muted-foreground" />
+                  {removing === v ? (
+                    <Loader2
+                      size={13}
+                      className="animate-spin text-muted-foreground"
+                    />
+                  ) : (
+                    <Trash2 size={13} className="text-muted-foreground" />
+                  )}
                 </button>
               )}
             </div>

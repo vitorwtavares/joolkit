@@ -3,6 +3,7 @@ import { Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useCopiedBubble } from '@/hooks/useCopiedBubble'
 
 interface CopyButtonProps {
   label: string
@@ -25,6 +26,7 @@ export function CopyButton({
   const [saving, setSaving] = useState(false)
   const [draft, setDraft] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const { trigger: triggerCopied, bubble: copiedBubble } = useCopiedBubble()
   const filled = !!value?.trim()
 
   const isDirty = draft !== (value ?? '')
@@ -58,8 +60,12 @@ export function CopyButton({
 
   async function copy() {
     if (!value) return
-    await navigator.clipboard.writeText(value)
-    toast.success(`${label} copied`)
+    try {
+      await navigator.clipboard.writeText(value)
+      triggerCopied()
+    } catch {
+      toast.error('Failed to copy to clipboard')
+    }
   }
 
   if (editing) {
@@ -113,10 +119,11 @@ export function CopyButton({
 
   return (
     <div className="group/btn relative">
+      {copiedBubble}
       <button
         onClick={filled ? copy : startEdit}
         className={cn(
-          'flex w-full items-center gap-2.5 rounded-lg border bg-card px-3 py-3 text-left transition-colors hover:bg-secondary/30',
+          'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border bg-card px-3 py-3 text-left transition-colors hover:bg-secondary/30',
           filled ? 'border-border' : 'border-dashed border-border/50',
         )}
       >
@@ -133,7 +140,7 @@ export function CopyButton({
             {label}
           </span>
           {saving ? (
-            <span className="mt-0.5 h-[14px] w-24 animate-pulse rounded bg-muted-foreground/20" />
+            <span className="h-[21px] w-24 animate-pulse rounded bg-muted-foreground/20" />
           ) : (
             <span
               className={cn(
