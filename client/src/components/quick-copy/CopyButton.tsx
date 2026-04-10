@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pencil } from 'lucide-react'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useCopiedBubble } from '@/hooks/useCopiedBubble'
 
 interface CopyButtonProps {
   label: string
@@ -25,6 +25,7 @@ export function CopyButton({
   const [saving, setSaving] = useState(false)
   const [draft, setDraft] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const { trigger: triggerCopied, bubble: copiedBubble } = useCopiedBubble()
   const filled = !!value?.trim()
 
   const isDirty = draft !== (value ?? '')
@@ -59,7 +60,7 @@ export function CopyButton({
   async function copy() {
     if (!value) return
     await navigator.clipboard.writeText(value)
-    toast.success(`${label} copied`)
+    triggerCopied()
   }
 
   if (editing) {
@@ -113,6 +114,7 @@ export function CopyButton({
 
   return (
     <div className="group/btn relative">
+      {copiedBubble}
       <button
         onClick={filled ? copy : startEdit}
         className={cn(
