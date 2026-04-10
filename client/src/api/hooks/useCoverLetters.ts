@@ -18,6 +18,20 @@ export function useCoverLetters() {
   })
 }
 
+export function useDeleteCoverLetterTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (variation: 'formal' | 'light') =>
+      api.delete<void>(`/api/cover-letters/${variation}`),
+    onSuccess: (_, variation) => {
+      queryClient.setQueryData<CoverLetterTemplate[]>(
+        ['cover-letters'],
+        (prev) => prev?.filter((t) => t.variation !== variation) ?? [],
+      )
+    },
+  })
+}
+
 export function useUpdateCoverLetterFile() {
   const queryClient = useQueryClient()
   return useMutation({
