@@ -83,7 +83,7 @@ const linkFields: {
 
 export default function QuickCopy() {
   const { user } = useAuth()
-  const { data: profile } = useProfile()
+  const { data: profile, isLoading } = useProfile()
   const { mutate: updateProfile } = useUpdateProfile()
   const { data: templates = [] } = useCoverLetters()
   const { mutate: updateCoverLetterFile } = useUpdateCoverLetterFile()
@@ -116,7 +116,15 @@ export default function QuickCopy() {
     )
   }
 
-  if (!profile || !user) return null
+  if (isLoading || !user) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+      </div>
+    )
+  }
+
+  if (!profile) return null
 
   return (
     <div className="p-8 pb-12">
