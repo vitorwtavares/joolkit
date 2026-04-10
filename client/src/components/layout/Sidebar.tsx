@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router'
+import { NavLink, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { LayoutGrid, AlignLeft, CalendarDays, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -9,61 +9,91 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 
 const navItems = [
-  { to: '/quick-copy', label: 'Quick copy', icon: LayoutGrid },
-  { to: '/answer-bank', label: 'Answers', icon: AlignLeft },
-  { to: '/tracker', label: 'Applications', icon: CalendarDays },
+  { to: '/quick-copy', label: 'Quick copy', icon: LayoutGrid, disabled: false },
+  { to: '/answer-bank', label: 'Answers', icon: AlignLeft, disabled: true },
+  { to: '/tracker', label: 'Applications', icon: CalendarDays, disabled: true },
 ]
 
 export default function Sidebar() {
   const { user, signOut } = useAuth()
+  const navigate = useNavigate()
 
   const email = user?.email ?? ''
   const initial = email ? getInitials(email) : '?'
 
   return (
     <aside className="flex w-[210px] min-w-[210px] flex-col gap-0.5 border-r border-border bg-card px-3 py-5">
-      <div className="mb-2 border-b border-border px-2 pb-4">
+      <div className="mb-2 border-b border-border px-2 pb-4 text-center">
         <span
+          onClick={() => navigate('/')}
           style={{
             fontFamily: 'system-ui, -apple-system, sans-serif',
             fontSize: 42,
             fontWeight: 400,
             letterSpacing: '-1.5px',
             color: 'var(--brand)',
+            cursor: 'pointer',
+            userSelect: 'none',
           }}
         >
           noloop
         </span>
       </div>
 
-      {navItems.map(({ to, label, icon: Icon }) => (
-        <NavLink
-          key={to}
-          to={to}
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-2 rounded-lg px-2 py-[7px] text-sm transition-colors',
-              isActive
-                ? 'bg-secondary font-medium text-foreground'
-                : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground',
-            )
-          }
-        >
-          {({ isActive }) => (
-            <>
-              <Icon
-                size={16}
-                className={cn(isActive ? 'opacity-100' : 'opacity-55')}
-              />
-              {label}
-            </>
-          )}
-        </NavLink>
-      ))}
+      {navItems.map(({ to, label, icon: Icon, disabled }) => {
+        if (disabled) {
+          return (
+            <Tooltip key={to}>
+              <TooltipTrigger asChild>
+                <span
+                  className={cn(
+                    'flex cursor-default items-center gap-2 rounded-lg px-2 py-[7px] text-sm',
+                    'text-muted-foreground/40',
+                  )}
+                >
+                  <Icon size={16} className="opacity-40" />
+                  {label}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right">Coming soon</TooltipContent>
+            </Tooltip>
+          )
+        }
+
+        return (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-2 rounded-lg px-2 py-[7px] text-sm transition-colors',
+                isActive
+                  ? 'bg-secondary font-medium text-foreground'
+                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground',
+              )
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <Icon
+                  size={16}
+                  className={cn(isActive ? 'opacity-100' : 'opacity-55')}
+                />
+                {label}
+              </>
+            )}
+          </NavLink>
+        )
+      })}
 
       <div className="flex-1" />
 

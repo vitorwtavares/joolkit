@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { cn } from '@/lib/utils'
 import type { CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
+import { TruncatedLabel } from '@/components/ui/truncated-label'
 
 interface CoverLetterCardProps {
   templates: CoverLetterTemplate[]
@@ -94,7 +95,7 @@ export function CoverLetterCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-6">
         {(['formal', 'light'] as const).map((v) => {
           const t = v === 'formal' ? formal : light
           const ref = v === 'formal' ? formalInputRef : lightInputRef
@@ -138,9 +139,10 @@ export function CoverLetterCard({
                     <Upload size={13} className="text-muted-foreground/40" />
                   )}
                 </div>
-                <span className="text-[12px] font-medium text-muted-foreground">
-                  {label}
-                </span>
+                <TruncatedLabel
+                  text={label}
+                  className="text-[12px] font-medium text-muted-foreground"
+                />
                 <span className="text-[12px] text-muted-foreground/40">
                   {t ? 'Click to download' : 'Click to upload'}
                 </span>
