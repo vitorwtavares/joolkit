@@ -40,7 +40,15 @@ router.put('/tokens', async (req: AuthRequest, res) => {
 
   const { data, error } = await getSupabase()
     .from('cover_letter_tokens')
-    .upsert({ user_id: req.userId!, role, company, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+    .upsert(
+      {
+        user_id: req.userId!,
+        role,
+        company,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' },
+    )
     .select()
     .single()
 
@@ -68,7 +76,15 @@ router.put('/:variation/file', async (req: AuthRequest, res) => {
 
   const { data, error } = await getSupabase()
     .from('cover_letter_templates')
-    .upsert({ user_id: req.userId!, variation, file_url, updated_at: new Date().toISOString() }, { onConflict: 'user_id,variation' })
+    .upsert(
+      {
+        user_id: req.userId!,
+        variation,
+        file_url,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,variation' },
+    )
     .select()
     .single()
 
@@ -78,6 +94,28 @@ router.put('/:variation/file', async (req: AuthRequest, res) => {
   }
 
   res.json(data)
+})
+
+// DELETE /api/cover-letters/:variation
+router.delete('/:variation', async (req: AuthRequest, res) => {
+  const { variation } = req.params
+  if (variation !== 'formal' && variation !== 'light') {
+    res.status(400).json({ error: 'variation must be formal or light' })
+    return
+  }
+
+  const { error } = await getSupabase()
+    .from('cover_letter_templates')
+    .delete()
+    .eq('user_id', req.userId!)
+    .eq('variation', variation)
+
+  if (error) {
+    res.status(500).json({ error: error.message })
+    return
+  }
+
+  res.status(204).send()
 })
 
 export default router
