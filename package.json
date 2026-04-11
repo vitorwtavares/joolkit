@@ -2,10 +2,16 @@
   "name": "noloop",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "npm": "use-pnpm",
+    "yarn": "use-pnpm"
+  },
   "scripts": {
     "dev": "concurrently \"pnpm --filter client dev\" \"pnpm --filter server dev\"",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "pnpm -r test"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
