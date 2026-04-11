@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { downloadFile } from '@/utils/downloadFile'
 import type { CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
 import { TruncatedLabel } from '@/components/ui/truncated-label'
+import { useDownloadBubble } from '@/hooks/useDownloadBubble'
 
 interface CoverLetterCardProps {
   templates: CoverLetterTemplate[]
@@ -29,6 +30,16 @@ export function CoverLetterCard({
     null,
   )
   const prevUploadingRef = useRef<'formal' | 'light' | null>(null)
+  const {
+    trigger: triggerFormalDownload,
+    bubble: formalDownloadBubble,
+    isOnCooldown: formalOnCooldown,
+  } = useDownloadBubble()
+  const {
+    trigger: triggerLightDownload,
+    bubble: lightDownloadBubble,
+    isOnCooldown: lightOnCooldown,
+  } = useDownloadBubble()
 
   const formal = templates.find((t) => t.variation === 'formal')
   const light = templates.find((t) => t.variation === 'light')
@@ -92,6 +103,10 @@ export function CoverLetterCard({
     const template = variation === 'formal' ? formal : light
     if (!template?.file_url) return
 
+    const triggerDownload =
+      variation === 'formal' ? triggerFormalDownload : triggerLightDownload
+    triggerDownload()
+
     const { data, error } = await supabase.storage
       .from('cover-letters')
       .createSignedUrl(template.file_url, 60)
@@ -129,6 +144,10 @@ export function CoverLetterCard({
 
           const showAsFilled = !!t || fallingSlot === v
 
+          const downloadBubble =
+            v === 'formal' ? formalDownloadBubble : lightDownloadBubble
+          const onCooldown = v === 'formal' ? formalOnCooldown : lightOnCooldown
+
           return (
             <div key={v} className="group/slot relative">
               <input
@@ -138,9 +157,13 @@ export function CoverLetterCard({
                 className="hidden"
                 onChange={(e) => handleUpload(v, e)}
               />
+              {downloadBubble}
               <button
                 disabled={
-                  uploading === v || removing === v || fallingSlot === v
+                  uploading === v ||
+                  removing === v ||
+                  fallingSlot === v ||
+                  onCooldown
                 }
                 onClick={
                   t ? () => handleDownload(v) : () => ref.current?.click()
