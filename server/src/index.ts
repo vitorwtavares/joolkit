@@ -1,27 +1,13 @@
 import 'dotenv/config'
-import express from 'express'
-import cors from 'cors'
-import { initSupabase, authMiddleware } from './middleware/auth'
-import healthRouter from './routes/health'
-import profileRouter from './routes/profile'
-import coverLettersRouter from './routes/coverLetters'
+import { initSupabase } from './middleware/auth'
+import app from './app'
 
 initSupabase()
 
-const app = express()
-app.set('etag', false)
 const PORT = Number.parseInt(process.env.PORT || '3001', 10)
 if (Number.isNaN(PORT) || PORT < 1 || PORT > 65535) {
   throw new Error(`Invalid PORT: ${process.env.PORT ?? '(unset)'}`)
 }
-
-app.use(cors())
-app.use(express.json())
-app.use(authMiddleware)
-
-app.use('/api/health', healthRouter)
-app.use('/api/profile', profileRouter)
-app.use('/api/cover-letters', coverLettersRouter)
 
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
