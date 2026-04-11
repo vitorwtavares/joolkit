@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "concurrently \"pnpm --filter client dev\" \"pnpm --filter server dev\"",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "pnpm -r test"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
