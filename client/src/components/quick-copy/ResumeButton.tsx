@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { cn } from '@/lib/utils'
 import { downloadFile } from '@/utils/downloadFile'
+import { useDownloadBubble } from '@/hooks/useDownloadBubble'
 
 interface ResumeButtonProps {
   resumeUrl: string | null
@@ -24,6 +25,11 @@ export function ResumeButton({
   const [iconPop, setIconPop] = useState(false)
   const [falling, setFalling] = useState(false)
   const prevUploadingRef = useRef(false)
+  const {
+    trigger: triggerDownload,
+    bubble: downloadBubble,
+    isOnCooldown,
+  } = useDownloadBubble()
 
   useLayoutEffect(() => {
     const wasUploading = prevUploadingRef.current
@@ -67,6 +73,7 @@ export function ResumeButton({
 
   async function handleDownload() {
     if (!resumeUrl) return
+    triggerDownload()
     const { data, error } = await supabase.storage
       .from('resumes')
       .createSignedUrl(resumeUrl, 60)
@@ -103,8 +110,9 @@ export function ResumeButton({
           className="hidden"
           onChange={handleUpload}
         />
+        {downloadBubble}
         <button
-          disabled={uploading || removing || falling}
+          disabled={uploading || removing || falling || isOnCooldown}
           onClick={
             resumeUrl ? handleDownload : () => fileInputRef.current?.click()
           }
