@@ -8,14 +8,15 @@
     "yarn": "use-pnpm"
   },
   "scripts": {
-    "dev": "concurrently \"pnpm --filter client dev\" \"pnpm --filter server dev\"",
+    "dev": "turbo dev",
+    "build": "turbo build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "pnpm -r test"
+    "test": "turbo test"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1",
     "prettier": "^3.8.1",
-    "prettier-plugin-tailwindcss": "^0.7.2"
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "turbo": "^2.9.6"
   }
 }
