@@ -32,6 +32,65 @@ export function useDeleteCoverLetterTemplate() {
   })
 }
 
+export function useUpdateCoverLetterContent() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      variation,
+      content,
+    }: {
+      variation: 'formal' | 'light'
+      content: unknown
+    }) =>
+      api.put<CoverLetterTemplate>(`/api/cover-letters/${variation}`, {
+        content,
+      }),
+    onSuccess: (data) => {
+      queryClient.setQueryData<CoverLetterTemplate[]>(
+        ['cover-letters'],
+        (prev) =>
+          prev?.map((t) => (t.variation === data.variation ? data : t)) ?? [
+            data,
+          ],
+      )
+    },
+  })
+}
+
+export function useRestoreCoverLetter() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (variation: 'formal' | 'light') =>
+      api.post<CoverLetterTemplate>(
+        `/api/cover-letters/${variation}/restore`,
+        {},
+      ),
+    onSuccess: (data) => {
+      queryClient.setQueryData<CoverLetterTemplate[]>(
+        ['cover-letters'],
+        (prev) =>
+          prev?.map((t) => (t.variation === data.variation ? data : t)) ?? [
+            data,
+          ],
+      )
+    },
+  })
+}
+
+export function useExportCoverLetterPDF() {
+  return useMutation({
+    mutationFn: async (variation: 'formal' | 'light') => {
+      const blob = await api.postBlob(`/api/export/cover-letter/${variation}`)
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objectUrl
+      a.download = `cover-letter-${variation}.pdf`
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000)
+    },
+  })
+}
+
 export function useUpdateCoverLetterFile() {
   const queryClient = useQueryClient()
   return useMutation({
