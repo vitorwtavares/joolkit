@@ -154,6 +154,7 @@ export function CoverLetterCard({
                 ref={ref}
                 type="file"
                 accept=".pdf"
+                autoComplete="off"
                 className="hidden"
                 onChange={(e) => handleUpload(v, e)}
               />
