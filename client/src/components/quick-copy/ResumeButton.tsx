@@ -107,7 +107,6 @@ export function ResumeButton({
           ref={fileInputRef}
           type="file"
           accept=".pdf"
-          autoComplete="off"
           className="hidden"
           onChange={handleUpload}
         />

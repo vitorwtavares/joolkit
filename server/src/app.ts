@@ -10,10 +10,9 @@ app.set('etag', false)
 
 app.use(cors())
 app.use(express.json())
+app.use(authMiddleware)
 
 app.use('/api/health', healthRouter)
-
-app.use(authMiddleware)
 app.use('/api/profile', profileRouter)
 app.use('/api/cover-letters', coverLettersRouter)
 
