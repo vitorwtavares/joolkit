@@ -6,6 +6,7 @@ Rules for working in this repo. Follow these exactly.
 
 - `dev` is the active development branch. `main` is reserved for Vercel deploys only.
 - Every new task starts on a new branch checked out from `dev`. Always pull from `origin dev` first to get the latest changes before creating the branch.
+- **Hotfixes that must go to `main` directly must be branched from `main`, not from `dev`.** Branching a hotfix from `dev` will carry all unmerged dev commits into the PR and accidentally deploy dev to production. Use `git cherry-pick` to apply the same commits to both targets when needed.
 - Branch names follow the pattern `<type>/<short-description>` using conventional commits types (e.g. `feat/auth-flow`, `chore/cleanup-deps`, `fix/cover-letter-tokens`).
 - Never commit feature work directly to `dev` or `main`.
 
