@@ -86,6 +86,7 @@ export function CopyButton({
           <input
             ref={inputRef}
             value={draft}
+            autoComplete="off"
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && isDirty) save()
