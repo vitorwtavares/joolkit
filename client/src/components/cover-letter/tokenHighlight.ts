@@ -1,5 +1,5 @@
 import { Extension } from '@tiptap/core'
-import { TOKEN_ROLE, TOKEN_COMPANY } from '@/constants'
+import { TOKEN_ROLE } from '@/constants'
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import type { EditorView } from '@tiptap/pm/view'
