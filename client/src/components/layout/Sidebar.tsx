@@ -1,6 +1,12 @@
 import { NavLink, useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { LayoutGrid, AlignLeft, CalendarDays, LogOut } from 'lucide-react'
+import {
+  LayoutGrid,
+  AlignLeft,
+  CalendarDays,
+  LogOut,
+  FileText,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getInitials } from '@/utils/getInitials'
 import { useAuth } from '@/context/auth'
@@ -19,6 +25,12 @@ import { Separator } from '@/components/ui/separator'
 
 const navItems = [
   { to: '/quick-copy', label: 'Quick copy', icon: LayoutGrid, disabled: false },
+  {
+    to: '/cover-letter',
+    label: 'Cover letter',
+    icon: FileText,
+    disabled: false,
+  },
   { to: '/answer-bank', label: 'Answers', icon: AlignLeft, disabled: true },
   { to: '/tracker', label: 'Applications', icon: CalendarDays, disabled: true },
 ]
@@ -41,6 +53,9 @@ export default function Sidebar() {
             fontWeight: 400,
             letterSpacing: '-1.5px',
             color: 'var(--brand)',
+            background:
+              'linear-gradient(130deg, transparent 0%, transparent 20%, rgba(150, 72, 72, 0.2) 60%, rgba(195,2,34,0.2) 60%, transparent 60%)',
+
             cursor: 'pointer',
             userSelect: 'none',
           }}
