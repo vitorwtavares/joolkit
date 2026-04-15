@@ -36,7 +36,7 @@
   --sidebar-accent-foreground: #e8e8e4;
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: #8a8a85;
-  --brand: #f43f5e;
+  --brand: #c30222;
 }
 
 @theme inline {
@@ -166,4 +166,72 @@
   html {
     @apply font-sans;
   }
+}
+
+/* ── Cover Letter Editor ── */
+.editor-canvas::-webkit-scrollbar {
+  width: 8px;
+}
+.editor-canvas::-webkit-scrollbar-track {
+  background: transparent;
+}
+.editor-canvas::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+.editor-canvas::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.ProseMirror {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12pt;
+  line-height: 1.15;
+  color: #c8c8c4;
+  outline: none;
+  min-height: 100%;
+}
+.ProseMirror p {
+  margin-bottom: 6px;
+}
+.ProseMirror a {
+  color: #4a9eff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.token-resolved {
+  background: rgba(97, 194, 127, 0.18);
+  color: #7dd4a0;
+  border-radius: 3px;
+  padding: 0 2px;
+  margin: 0 5px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  outline: 1.5px solid rgba(97, 194, 127, 0.5);
+  outline-offset: 1px;
+}
+
+.token-hidden {
+  font-size: 0;
+  color: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+.token-caret-anchor {
+  display: inline;
+  font-size: inherit;
+  color: transparent;
+  user-select: none;
+}
+
+.token-unresolved {
+  background: rgba(220, 80, 80, 0.18);
+  color: #f09595;
+  border-radius: 3px;
+  padding: 0 2px;
+  margin: 0 5px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  outline: 1.5px solid rgba(220, 80, 80, 0.5);
+  outline-offset: 1px;
 }

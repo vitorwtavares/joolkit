@@ -53,7 +53,10 @@ export function ResumeButton({
     const path = `${userId}/${file.name}`
 
     if (resumeUrl && resumeUrl !== path) {
-      await supabase.storage.from('resumes').remove([resumeUrl])
+      await supabase.storage
+        .from('resumes')
+        .remove([resumeUrl])
+        .catch(() => {})
     }
 
     const { error } = await supabase.storage
@@ -89,7 +92,7 @@ export function ResumeButton({
   const showAsFilled = !!resumeUrl || falling
 
   return (
-    <div className="flex flex-col gap-3 self-start rounded-lg border border-dashed border-border/50 bg-card px-4 py-3.5">
+    <div className="flex h-full min-h-0 flex-col gap-3 rounded-lg border border-dashed border-border/50 bg-card px-4 py-3.5">
       <div className="flex items-center gap-2.5">
         <div className="flex size-[30px] flex-shrink-0 items-center justify-center rounded-md bg-secondary">
           <FileText size={14} className="text-muted-foreground/40" />
@@ -102,7 +105,7 @@ export function ResumeButton({
         </div>
       </div>
 
-      <div className="group/slot relative">
+      <div className="group/slot relative min-h-0 flex-1">
         <input
           ref={fileInputRef}
           type="file"
@@ -118,7 +121,7 @@ export function ResumeButton({
             resumeUrl ? handleDownload : () => fileInputRef.current?.click()
           }
           className={cn(
-            'relative flex w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
+            'relative flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
             showAsFilled
               ? 'border-border bg-card hover:bg-secondary/30'
               : 'border-dashed border-border/50 bg-secondary hover:bg-secondary/70',
