@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { useCopiedBubble } from '@/hooks/useCopiedBubble'
 
@@ -141,7 +142,7 @@ export function CopyButton({
             {label}
           </span>
           {saving ? (
-            <span className="h-[21px] w-24 animate-pulse rounded bg-muted-foreground/20" />
+            <Skeleton className="h-[21px] w-3/5" />
           ) : (
             <span
               className={cn(

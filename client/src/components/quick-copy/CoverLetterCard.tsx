@@ -1,12 +1,17 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { FileText, Loader2, Trash2, Upload } from 'lucide-react'
+import { useNavigate } from 'react-router'
+import { FileText, Loader2, Trash2, Upload, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { cn } from '@/lib/utils'
-import { downloadFile } from '@/utils/downloadFile'
 import type { CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
-import { TruncatedLabel } from '@/components/ui/truncated-label'
+import { useExportCoverLetterPDF } from '@/api/hooks/useCoverLetters'
+import { useCoverLetterTokens } from '@/api/hooks/useCoverLetterTokens'
+import { useTokenState } from '@/hooks/useTokenState'
 import { useDownloadBubble } from '@/hooks/useDownloadBubble'
+import { TOKEN_ROLE, TOKEN_COMPANY } from '@/constants'
+import { TruncatedLabel } from '@/components/ui/truncated-label'
+import { TokenTutorialDialog } from './TokenTutorialDialog'
 
 interface CoverLetterCardProps {
   templates: CoverLetterTemplate[]
@@ -21,6 +26,7 @@ export function CoverLetterCard({
   onFileUploaded,
   onFileRemoved,
 }: CoverLetterCardProps) {
+  const navigate = useNavigate()
   const formalInputRef = useRef<HTMLInputElement>(null)
   const lightInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState<'formal' | 'light' | null>(null)
@@ -29,7 +35,14 @@ export function CoverLetterCard({
   const [fallingSlot, setFallingSlot] = useState<'formal' | 'light' | null>(
     null,
   )
+  const [tutorialOpen, setTutorialOpen] = useState(false)
+  const [exportingVariation, setExportingVariation] = useState<
+    'formal' | 'light' | null
+  >(null)
   const prevUploadingRef = useRef<'formal' | 'light' | null>(null)
+
+  const { data: tokenData } = useCoverLetterTokens()
+  const exportPDF = useExportCoverLetterPDF()
   const {
     trigger: triggerFormalDownload,
     bubble: formalDownloadBubble,
@@ -40,6 +53,20 @@ export function CoverLetterCard({
     bubble: lightDownloadBubble,
     isOnCooldown: lightOnCooldown,
   } = useDownloadBubble()
+  const {
+    role,
+    setRole,
+    company,
+    setCompany,
+    scheduleTokenSave,
+    flushTokenSave,
+    flushTokenSaveAsync,
+  } = useTokenState(tokenData)
+
+  async function handleOpenInEditor() {
+    await flushTokenSaveAsync(role, company)
+    navigate('/cover-letter')
+  }
 
   const formal = templates.find((t) => t.variation === 'formal')
   const light = templates.find((t) => t.variation === 'light')
@@ -79,6 +106,7 @@ export function CoverLetterCard({
       await supabase.storage
         .from('cover-letters')
         .remove([oldTemplate.file_url])
+        .catch(() => {})
     }
 
     const { error } = await supabase.storage
@@ -99,159 +127,224 @@ export function CoverLetterCard({
     e.target.value = ''
   }
 
-  async function handleDownload(variation: 'formal' | 'light') {
-    const template = variation === 'formal' ? formal : light
-    if (!template?.file_url) return
-
+  function handleDownload(variation: 'formal' | 'light') {
+    if (!role || !company) {
+      toast.error(
+        `Fill in ${TOKEN_ROLE} and ${TOKEN_COMPANY} before downloading`,
+      )
+      return
+    }
     const triggerDownload =
       variation === 'formal' ? triggerFormalDownload : triggerLightDownload
     triggerDownload()
-
-    const { data, error } = await supabase.storage
-      .from('cover-letters')
-      .createSignedUrl(template.file_url, 60)
-
-    if (error || !data) {
-      toast.error('Failed to get download link')
-      return
-    }
-
-    const filename = template.file_url!.split('/').pop()!
-    await downloadFile(data.signedUrl, filename)
+    setExportingVariation(variation)
+    exportPDF.mutate(variation, {
+      onSettled: () => setExportingVariation(null),
+      onError: () => toast.error('Failed to export PDF'),
+    })
   }
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-dashed border-border/50 bg-card px-4 py-3.5">
-      <div className="flex items-center gap-2.5">
-        <div className="flex size-[30px] flex-shrink-0 items-center justify-center rounded-md bg-secondary">
-          <FileText size={14} className="text-muted-foreground/40" />
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-[30px] flex-shrink-0 items-center justify-center rounded-md bg-secondary">
+            <FileText size={14} className="text-muted-foreground/40" />
+          </div>
+          <div>
+            <div className="text-[12px] text-muted-foreground">
+              Cover letter
+            </div>
+            <div className="text-[14px] text-muted-foreground">
+              Upload up to 2 templates
+            </div>
+          </div>
         </div>
-        <div>
-          <div className="text-[12px] text-muted-foreground">Cover letter</div>
-          <div className="text-[14px] text-muted-foreground">
-            Upload up to 2 templates
+
+        <div className="flex items-center gap-6">
+          <button
+            onClick={() => setTutorialOpen(true)}
+            className="cursor-pointer text-[13px] text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+          >
+            How to use tokens
+          </button>
+
+          <button
+            onClick={handleOpenInEditor}
+            className="flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[13px] font-medium transition-colors hover:opacity-90"
+            style={{
+              background: 'color-mix(in srgb, var(--brand) 20%, transparent)',
+              color: '#fff',
+              border:
+                '0.5px solid color-mix(in srgb, var(--brand) 35%, transparent)',
+            }}
+          >
+            <ExternalLink size={13} />
+            Open in editor
+          </button>
+        </div>
+      </div>
+
+      {/* Body: slots (original grid) + tokens panel */}
+      <div className="flex gap-8">
+        {/* Slots: original 2-column grid, grows to fill space */}
+        <div className="grid flex-[65] grid-cols-2 items-stretch gap-8">
+          {(['formal', 'light'] as const).map((v) => {
+            const t = v === 'formal' ? formal : light
+            const ref = v === 'formal' ? formalInputRef : lightInputRef
+            const filename = t?.file_url?.split('/').pop()
+            const cap = v.charAt(0).toUpperCase() + v.slice(1)
+            const label = filename ? `${cap} — ${filename}` : cap
+            const showAsFilled = !!t || fallingSlot === v
+            const isExporting = exportingVariation === v
+            const downloadBubble =
+              v === 'formal' ? formalDownloadBubble : lightDownloadBubble
+            const onCooldown =
+              v === 'formal' ? formalOnCooldown : lightOnCooldown
+
+            return (
+              <div key={v} className="group/slot relative h-full">
+                <input
+                  ref={ref}
+                  type="file"
+                  accept=".pdf"
+                  autoComplete="off"
+                  className="hidden"
+                  onChange={(e) => handleUpload(v, e)}
+                />
+                {downloadBubble}
+                <button
+                  disabled={
+                    uploading === v ||
+                    removing === v ||
+                    fallingSlot === v ||
+                    isExporting ||
+                    onCooldown
+                  }
+                  onClick={
+                    t ? () => handleDownload(v) : () => ref.current?.click()
+                  }
+                  className={cn(
+                    'flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
+                    showAsFilled
+                      ? 'border-border bg-card hover:bg-secondary/30'
+                      : 'border-dashed border-border/50 bg-secondary hover:bg-secondary/70',
+                  )}
+                >
+                  {removing === v && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-md bg-card/80">
+                      <Loader2
+                        size={16}
+                        className="animate-spin text-muted-foreground"
+                      />
+                    </div>
+                  )}
+                  <div
+                    className={cn(
+                      'flex size-7 items-center justify-center rounded-md',
+                      fallingSlot === v
+                        ? undefined
+                        : showAsFilled
+                          ? 'bg-green-950'
+                          : 'bg-background',
+                      iconPop === v && 'animate-icon-pop',
+                      fallingSlot === v && 'animate-icon-fall',
+                    )}
+                    onAnimationEnd={() => {
+                      if (iconPop === v) setIconPop(null)
+                      if (fallingSlot === v) setFallingSlot(null)
+                    }}
+                  >
+                    {uploading === v || isExporting ? (
+                      <Loader2
+                        size={13}
+                        className="animate-spin text-muted-foreground/40"
+                      />
+                    ) : showAsFilled ? (
+                      <FileText
+                        size={13}
+                        className={
+                          fallingSlot === v ? undefined : 'text-green-400'
+                        }
+                      />
+                    ) : (
+                      <Upload size={13} className="text-muted-foreground/40" />
+                    )}
+                  </div>
+                  <TruncatedLabel
+                    text={label}
+                    className="text-[12px] font-medium text-muted-foreground"
+                  />
+                  <span className="text-[12px] text-muted-foreground/40">
+                    {t ? 'Click to download' : 'Click to upload'}
+                  </span>
+                </button>
+                {t && (
+                  <button
+                    disabled={removing === v || fallingSlot === v}
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      setRemoving(v)
+                      try {
+                        await onFileRemoved(v)
+                      } catch {
+                        setRemoving(null)
+                      }
+                    }}
+                    className="absolute -top-[11px] -right-[11px] z-10 flex size-[24px] cursor-pointer items-center justify-center rounded-full border border-border bg-card shadow-sm hover:bg-secondary disabled:pointer-events-none"
+                  >
+                    {removing === v ? (
+                      <Loader2
+                        size={13}
+                        className="animate-spin text-muted-foreground"
+                      />
+                    ) : (
+                      <Trash2 size={13} className="text-muted-foreground" />
+                    )}
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Tokens panel */}
+        <div className="flex flex-[35] flex-col gap-2 rounded-md border border-border/40 bg-secondary/30 p-3">
+          <div className="flex flex-col gap-1.5">
+            <div className="font-mono text-[13px] text-muted-foreground">
+              {TOKEN_ROLE}
+            </div>
+            <input
+              value={role}
+              onChange={(e) => {
+                setRole(e.target.value)
+                scheduleTokenSave(e.target.value, company)
+              }}
+              onBlur={() => flushTokenSave(role, company)}
+              placeholder="e.g. Software Engineer"
+              className="w-full rounded-md border border-[rgba(255,255,255,0.08)] bg-card px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <div className="font-mono text-[13px] text-muted-foreground">
+              {TOKEN_COMPANY}
+            </div>
+            <input
+              value={company}
+              onChange={(e) => {
+                setCompany(e.target.value)
+                scheduleTokenSave(role, e.target.value)
+              }}
+              onBlur={() => flushTokenSave(role, company)}
+              placeholder="e.g. Xiaomi"
+              className="w-full rounded-md border border-[rgba(255,255,255,0.08)] bg-card px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40"
+            />
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        {(['formal', 'light'] as const).map((v) => {
-          const t = v === 'formal' ? formal : light
-          const ref = v === 'formal' ? formalInputRef : lightInputRef
-          const filename = t?.file_url?.split('/').pop()
-          const cap = v.charAt(0).toUpperCase() + v.slice(1)
-          const label = filename ? `${cap} — ${filename}` : cap
-
-          const showAsFilled = !!t || fallingSlot === v
-
-          const downloadBubble =
-            v === 'formal' ? formalDownloadBubble : lightDownloadBubble
-          const onCooldown = v === 'formal' ? formalOnCooldown : lightOnCooldown
-
-          return (
-            <div key={v} className="group/slot relative">
-              <input
-                ref={ref}
-                type="file"
-                accept=".pdf"
-                autoComplete="off"
-                className="hidden"
-                onChange={(e) => handleUpload(v, e)}
-              />
-              {downloadBubble}
-              <button
-                disabled={
-                  uploading === v ||
-                  removing === v ||
-                  fallingSlot === v ||
-                  onCooldown
-                }
-                onClick={
-                  t ? () => handleDownload(v) : () => ref.current?.click()
-                }
-                className={cn(
-                  'flex w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
-                  showAsFilled
-                    ? 'border-border bg-card hover:bg-secondary/30'
-                    : 'border-dashed border-border/50 bg-secondary hover:bg-secondary/70',
-                )}
-              >
-                {removing === v && (
-                  <div className="absolute inset-0 flex items-center justify-center rounded-md bg-card/80">
-                    <Loader2
-                      size={16}
-                      className="animate-spin text-muted-foreground"
-                    />
-                  </div>
-                )}
-                <div
-                  className={cn(
-                    'flex size-7 items-center justify-center rounded-md',
-                    fallingSlot === v
-                      ? undefined
-                      : showAsFilled
-                        ? 'bg-green-950'
-                        : 'bg-background',
-                    iconPop === v && 'animate-icon-pop',
-                    fallingSlot === v && 'animate-icon-fall',
-                  )}
-                  onAnimationEnd={() => {
-                    if (iconPop === v) setIconPop(null)
-                    if (fallingSlot === v) setFallingSlot(null)
-                  }}
-                >
-                  {uploading === v ? (
-                    <Loader2
-                      size={13}
-                      className="animate-spin text-muted-foreground/40"
-                    />
-                  ) : showAsFilled ? (
-                    <FileText
-                      size={13}
-                      className={
-                        fallingSlot === v ? undefined : 'text-green-400'
-                      }
-                    />
-                  ) : (
-                    <Upload size={13} className="text-muted-foreground/40" />
-                  )}
-                </div>
-                <TruncatedLabel
-                  text={label}
-                  className="text-[12px] font-medium text-muted-foreground"
-                />
-                <span className="text-[12px] text-muted-foreground/40">
-                  {t ? 'Click to download' : 'Click to upload'}
-                </span>
-              </button>
-              {t && (
-                <button
-                  disabled={removing === v || fallingSlot === v}
-                  onClick={async (e) => {
-                    e.stopPropagation()
-                    setRemoving(v)
-                    try {
-                      await onFileRemoved(v)
-                    } catch {
-                      setRemoving(null)
-                    }
-                  }}
-                  className="absolute -top-[11px] -right-[11px] z-10 flex size-[24px] cursor-pointer items-center justify-center rounded-full border border-border bg-card shadow-sm hover:bg-secondary disabled:pointer-events-none"
-                >
-                  {removing === v ? (
-                    <Loader2
-                      size={13}
-                      className="animate-spin text-muted-foreground"
-                    />
-                  ) : (
-                    <Trash2 size={13} className="text-muted-foreground" />
-                  )}
-                </button>
-              )}
-            </div>
-          )
-        })}
-      </div>
+      <TokenTutorialDialog open={tutorialOpen} onOpenChange={setTutorialOpen} />
     </div>
   )
 }
