@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import puppeteer from 'puppeteer'
+import { getBrowser } from '../utils/browser'
 import { getSupabase, AuthRequest } from '../middleware/auth'
 import { tiptapToHtml, TiptapDoc, Tokens } from '../utils/tiptapToHtml'
 
@@ -58,19 +58,23 @@ router.post('/cover-letter/:variation', async (req: AuthRequest, res) => {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400;1,700&family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Raleway:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Roboto:ital,wght@0,400;0,500;0,700;1,400;1,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: Georgia, serif;
+      font-family: Helvetica, Arial, sans-serif;
       font-size: 12pt;
-      line-height: 1.6;
+      line-height: 1.15;
       color: #000;
       padding: 2.5cm 2.5cm;
     }
-    p { margin-bottom: 0.8em; }
-    h1, h2, h3, h4, h5, h6 { margin-bottom: 0.5em; }
-    ul, ol { margin-bottom: 0.8em; padding-left: 1.5em; }
-    li { margin-bottom: 0.2em; }
+    p { margin: 0; }
+    h1, h2, h3, h4, h5, h6 { margin: 0; }
+    ul, ol { margin: 0; padding-left: 1.5em; }
+    li { margin: 0; }
+    a { color: #0563C1; text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -78,10 +82,10 @@ ${bodyHtml}
 </body>
 </html>`
 
-  let browser
+  let page
   try {
-    browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] })
-    const page = await browser.newPage()
+    const browser = await getBrowser()
+    page = await browser.newPage()
     await page.setContent(html, { waitUntil: 'networkidle0' })
     const pdf = await page.pdf({
       format: 'A4',
@@ -94,8 +98,10 @@ ${bodyHtml}
       `attachment; filename="cover-letter-${variation}.pdf"`,
     )
     res.send(Buffer.from(pdf))
+  } catch (err) {
+    res.status(500).json({ error: 'PDF generation failed' })
   } finally {
-    await browser?.close()
+    await page?.close()
   }
 })
 

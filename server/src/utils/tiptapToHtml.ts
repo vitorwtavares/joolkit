@@ -36,6 +36,7 @@ function escapeHtml(text: string): string {
 function marksToHtml(text: string, marks: TiptapMark[]): string {
   let result = text
   const styleProps: string[] = []
+  let linkHref: string | null = null
 
   for (const mark of marks) {
     if (mark.type === 'bold') {
@@ -47,14 +48,21 @@ function marksToHtml(text: string, marks: TiptapMark[]): string {
     } else if (mark.type === 'textStyle') {
       if (mark.attrs?.fontFamily)
         styleProps.push(`font-family: ${mark.attrs.fontFamily}`)
-      if (mark.attrs?.fontSize)
+      if (mark.attrs?.fontSize) {
         styleProps.push(`font-size: ${mark.attrs.fontSize}`)
+      }
       if (mark.attrs?.color) styleProps.push(`color: ${mark.attrs.color}`)
+    } else if (mark.type === 'link') {
+      linkHref = String(mark.attrs?.href ?? '#')
     }
   }
 
   if (styleProps.length > 0) {
     result = `<span style="${styleProps.join('; ')}">${result}</span>`
+  }
+
+  if (linkHref !== null) {
+    result = `<a href="${escapeHtml(linkHref)}" style="color: #0563C1; text-decoration: underline;">${result}</a>`
   }
 
   return result
@@ -72,7 +80,7 @@ function nodeToHtml(node: TiptapNode, tokens: Tokens): string {
       const inner = (node.content ?? [])
         .map((n) => nodeToHtml(n, tokens))
         .join('')
-      return `<p${style}>${inner}</p>\n`
+      return `<p${style}>${inner || '<br>'}</p>\n`
     }
 
     case 'heading': {

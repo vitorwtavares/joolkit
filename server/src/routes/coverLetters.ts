@@ -1,24 +1,6 @@
 import { Router } from 'express'
-import pdfParse from 'pdf-parse'
 import { getSupabase, AuthRequest } from '../middleware/auth'
-
-function textToTiptapDoc(text: string): object {
-  const paragraphs = text
-    .split(/\n/)
-    .map((line) => line.trimEnd())
-    .map((line) => ({
-      type: 'paragraph',
-      ...(line.length > 0 ? { content: [{ type: 'text', text: line }] } : {}),
-    }))
-
-  // Trim leading/trailing empty paragraphs
-  let start = 0
-  let end = paragraphs.length - 1
-  while (start <= end && !('content' in paragraphs[start])) start++
-  while (end >= start && !('content' in paragraphs[end])) end--
-
-  return { type: 'doc', content: paragraphs.slice(start, end + 1) }
-}
+import { pdfToTiptap } from '../utils/pdfToTiptap'
 
 const router = Router()
 
@@ -55,7 +37,8 @@ router.get('/tokens', async (req: AuthRequest, res) => {
 
 // PUT /api/cover-letters/tokens
 router.put('/tokens', async (req: AuthRequest, res) => {
-  const { role, company } = req.body
+  const role = typeof req.body.role === 'string' ? req.body.role : null
+  const company = typeof req.body.company === 'string' ? req.body.company : null
 
   const { data, error } = await getSupabase()
     .from('cover_letter_tokens')
@@ -93,13 +76,31 @@ router.put('/:variation/file', async (req: AuthRequest, res) => {
     return
   }
 
-  const { data, error } = await getSupabase()
+  const supabase = getSupabase()
+
+  // Parse the uploaded file to extract formatted content
+  let content: object | null = null
+  try {
+    const { data: blob, error: downloadError } = await supabase.storage
+      .from('cover-letters')
+      .download(file_url)
+
+    if (!downloadError && blob) {
+      const buffer = Buffer.from(await blob.arrayBuffer())
+      content = await pdfToTiptap(buffer)
+    }
+  } catch {
+    // Parsing failure is non-fatal — the file is still saved, content stays null
+  }
+
+  const { data, error } = await supabase
     .from('cover_letter_templates')
     .upsert(
       {
         user_id: req.userId!,
         variation,
         file_url,
+        ...(content ? { content } : {}),
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'user_id,variation' },
@@ -131,9 +132,15 @@ router.put('/:variation', async (req: AuthRequest, res) => {
 
   const { data, error } = await getSupabase()
     .from('cover_letter_templates')
-    .update({ content, updated_at: new Date().toISOString() })
-    .eq('user_id', req.userId!)
-    .eq('variation', variation)
+    .upsert(
+      {
+        user_id: req.userId!,
+        variation,
+        content,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,variation' },
+    )
     .select()
     .single()
 
@@ -182,8 +189,7 @@ router.post('/:variation/restore', async (req: AuthRequest, res) => {
   }
 
   const buffer = Buffer.from(await blob.arrayBuffer())
-  const parsed = await pdfParse(buffer)
-  const content = textToTiptapDoc(parsed.text)
+  const content = await pdfToTiptap(buffer)
 
   const { data, error: saveError } = await supabase
     .from('cover_letter_templates')
