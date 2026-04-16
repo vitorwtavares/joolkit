@@ -128,7 +128,7 @@ export default function QuickCopy() {
   if (!profile) return null
 
   return (
-    <div className="flex-1 overflow-y-auto p-16 pb-20">
+    <div className="flex-1 overflow-y-auto p-16 pb-6">
       <h1 className="mb-1 text-[36px] font-medium tracking-tight">
         Quick copy
       </h1>
