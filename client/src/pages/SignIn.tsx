@@ -35,7 +35,18 @@ export default function SignIn() {
   return (
     <div className="relative min-h-screen bg-background px-4">
       <div className="absolute top-10 left-1/2 -translate-x-1/2">
-        <span className="text-[52px] leading-none font-normal tracking-[-1.8px] text-brand">
+        <span
+          style={{
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontSize: 42,
+            fontWeight: 400,
+            letterSpacing: '-1.5px',
+            color: 'var(--brand)',
+            background:
+              'linear-gradient(130deg, transparent 0%, transparent 20%, rgba(150, 72, 72, 0.2) 60%, rgba(195,2,34,0.2) 60%, transparent 60%)',
+            userSelect: 'none',
+          }}
+        >
           noloop
         </span>
       </div>
