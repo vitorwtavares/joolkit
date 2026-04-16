@@ -166,23 +166,24 @@
   html {
     @apply font-sans;
   }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
 }
 
 /* ── Cover Letter Editor ── */
-.editor-canvas::-webkit-scrollbar {
-  width: 8px;
-}
-.editor-canvas::-webkit-scrollbar-track {
-  background: transparent;
-}
-.editor-canvas::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
-}
-.editor-canvas::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
-}
-
 .ProseMirror {
   font-family: Helvetica, Arial, sans-serif;
   font-size: 12pt;
