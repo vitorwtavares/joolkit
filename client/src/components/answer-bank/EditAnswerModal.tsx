@@ -1,0 +1,236 @@
+import { useState, useEffect, useRef } from 'react'
+import { X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
+  useCreateAnswer,
+  useUpdateAnswer,
+  useDeleteAnswer,
+} from '@/api/hooks/useAnswers'
+import type { Answer } from '@/api/hooks/useAnswers'
+
+interface EditAnswerModalProps {
+  open: boolean
+  answer: Answer | null
+  position: number
+  onClose: () => void
+}
+
+function countStats(text: string) {
+  const chars = text.length
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0
+  return { chars, words }
+}
+
+export function EditAnswerModal({
+  open,
+  answer,
+  position,
+  onClose,
+}: EditAnswerModalProps) {
+  const [question, setQuestion] = useState('')
+  const [shortAnswer, setShortAnswer] = useState('')
+  const [longAnswer, setLongAnswer] = useState('')
+  const [confirmClose, setConfirmClose] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const questionRef = useRef<HTMLInputElement>(null)
+
+  const createAnswer = useCreateAnswer()
+  const updateAnswer = useUpdateAnswer()
+  const deleteAnswer = useDeleteAnswer()
+
+  useEffect(() => {
+    if (open) {
+      setQuestion(answer?.question ?? '')
+      setShortAnswer(answer?.short_answer ?? '')
+      setLongAnswer(answer?.long_answer ?? '')
+      setConfirmClose(false)
+    }
+  }, [open, answer])
+
+  const isDirty =
+    question !== (answer?.question ?? '') ||
+    shortAnswer !== (answer?.short_answer ?? '') ||
+    longAnswer !== (answer?.long_answer ?? '')
+
+  function requestClose() {
+    if (isDirty) {
+      setConfirmClose(true)
+    } else {
+      onClose()
+    }
+  }
+
+  function handleOpenChange(next: boolean) {
+    if (!next) requestClose()
+  }
+
+  async function handleSave() {
+    const trimmedQuestion = question.trim()
+    const trimmedShort = shortAnswer.trim()
+    const trimmedLong = longAnswer.trim()
+    if (!trimmedShort) return
+    setSaving(true)
+    try {
+      if (answer) {
+        await updateAnswer.mutateAsync({
+          id: answer.id,
+          question: trimmedQuestion,
+          short_answer: trimmedShort,
+          long_answer: trimmedLong || null,
+          preferred_variant: answer.preferred_variant,
+        })
+      } else {
+        await createAnswer.mutateAsync({
+          question: trimmedQuestion,
+          short_answer: trimmedShort,
+          long_answer: trimmedLong || null,
+          preferred_variant: 'short',
+          position,
+        })
+      }
+      onClose()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!answer) return
+    setSaving(true)
+    try {
+      await deleteAnswer.mutateAsync(answer.id)
+      onClose()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const shortStats = countStats(shortAnswer)
+  const longStats = countStats(longAnswer)
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent
+          showCloseButton={false}
+          onOpenAutoFocus={(e) => {
+            e.preventDefault()
+            questionRef.current?.focus()
+          }}
+          className="flex w-[1040px] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden border border-border/60 bg-card p-0 ring-0 sm:max-w-[1040px]"
+        >
+          <DialogTitle className="sr-only">
+            {answer ? 'Edit answer' : 'New answer'}
+          </DialogTitle>
+
+          <div className="flex items-center gap-3 px-6 pt-5">
+            <input
+              ref={questionRef}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Type your question here..."
+              className="min-w-0 flex-1 bg-transparent text-[22px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/25"
+            />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={requestClose}
+              className="flex-shrink-0 text-muted-foreground"
+            >
+              <X />
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 overflow-y-auto p-6 pt-4">
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-medium tracking-widest text-muted-foreground/60 uppercase">
+                Default
+              </span>
+              <textarea
+                value={shortAnswer}
+                onChange={(e) => setShortAnswer(e.target.value)}
+                placeholder="Write your default answer..."
+                className="h-[220px] resize-none rounded-lg border border-border bg-background px-3.5 py-3 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/30 focus:border-border/80"
+              />
+              <span className="text-right text-[12px] text-muted-foreground/50">
+                {shortStats.chars} chars · {shortStats.words} words
+              </span>
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-medium tracking-widest text-muted-foreground/60 uppercase">
+                Detailed
+              </span>
+              <textarea
+                value={longAnswer}
+                onChange={(e) => setLongAnswer(e.target.value)}
+                placeholder="Write a more detailed version of your answer..."
+                className="h-[220px] resize-none rounded-lg border border-border bg-background px-3.5 py-3 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/30 focus:border-border/80"
+              />
+              <span className="text-right text-[12px] text-muted-foreground/50">
+                {longStats.chars} chars · {longStats.words} words
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-border/40 px-6 py-3.5">
+            <div className="flex items-center gap-3">
+              {answer && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={saving}
+                >
+                  Delete
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={requestClose}
+                disabled={saving}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={saving || !shortAnswer.trim()}
+              >
+                {saving ? 'Saving…' : 'Save'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. They will be lost if you close now.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={onClose}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}
