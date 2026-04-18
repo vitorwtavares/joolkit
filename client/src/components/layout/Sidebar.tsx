@@ -31,7 +31,7 @@ const navItems = [
     icon: FileText,
     disabled: false,
   },
-  { to: '/answer-bank', label: 'Answers', icon: AlignLeft, disabled: true },
+  { to: '/answer-bank', label: 'Answers', icon: AlignLeft, disabled: false },
   { to: '/tracker', label: 'Applications', icon: CalendarDays, disabled: true },
 ]
 
