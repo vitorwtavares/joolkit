@@ -40,6 +40,7 @@ export function EditAnswerModal({
   const [shortAnswer, setShortAnswer] = useState('')
   const [longAnswer, setLongAnswer] = useState('')
   const [confirmClose, setConfirmClose] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [saving, setSaving] = useState(false)
   const questionRef = useRef<HTMLInputElement>(null)
 
@@ -53,6 +54,7 @@ export function EditAnswerModal({
       setShortAnswer(answer?.short_answer ?? '')
       setLongAnswer(answer?.long_answer ?? '')
       setConfirmClose(false)
+      setConfirmDelete(false)
     }
   }, [open, answer])
 
@@ -186,7 +188,7 @@ export function EditAnswerModal({
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={handleDelete}
+                  onClick={() => setConfirmDelete(true)}
                   disabled={saving}
                 >
                   Delete
@@ -225,6 +227,24 @@ export function EditAnswerModal({
           <AlertDialogFooter>
             <AlertDialogCancel>Keep editing</AlertDialogCancel>
             <AlertDialogAction onClick={onClose}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this answer?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the question and both answer variants.
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleDelete}>
+              Delete answer
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
