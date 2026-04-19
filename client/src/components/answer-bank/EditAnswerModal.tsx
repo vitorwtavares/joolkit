@@ -22,7 +22,6 @@ import type { Answer } from '@/api/hooks/useAnswers'
 interface EditAnswerModalProps {
   open: boolean
   answer: Answer | null
-  position: number
   onClose: () => void
 }
 
@@ -35,7 +34,6 @@ function countStats(text: string) {
 export function EditAnswerModal({
   open,
   answer,
-  position,
   onClose,
 }: EditAnswerModalProps) {
   const [question, setQuestion] = useState('')
@@ -96,7 +94,6 @@ export function EditAnswerModal({
           short_answer: trimmedShort,
           long_answer: trimmedLong || null,
           preferred_variant: 'short',
-          position,
         })
       }
       onClose()
