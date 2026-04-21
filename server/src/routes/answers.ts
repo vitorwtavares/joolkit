@@ -5,15 +5,6 @@ const router = Router()
 
 const MAX_ANSWERS = 8
 
-function isValidPosition(value: unknown): value is number {
-  return (
-    typeof value === 'number' &&
-    Number.isInteger(value) &&
-    value >= 1 &&
-    value <= MAX_ANSWERS
-  )
-}
-
 router.get('/', async (req: AuthRequest, res) => {
   const { data, error } = await getSupabase()
     .from('answers')
@@ -37,16 +28,7 @@ router.post('/', async (req: AuthRequest, res) => {
       .status(400)
       .json({ error: `Maximum of ${MAX_ANSWERS} answers reached` })
 
-  const { question, short_answer, long_answer, preferred_variant, position } =
-    req.body
-
-  if (!isValidPosition(position)) {
-    return res
-      .status(400)
-      .json({
-        error: `position must be an integer between 1 and ${MAX_ANSWERS}`,
-      })
-  }
+  const { question, short_answer, long_answer, preferred_variant } = req.body
 
   const { data, error } = await getSupabase()
     .from('answers')
@@ -56,13 +38,63 @@ router.post('/', async (req: AuthRequest, res) => {
       short_answer: short_answer ?? '',
       long_answer: long_answer ?? null,
       preferred_variant: preferred_variant ?? 'short',
-      position,
+      position: (count ?? 0) + 1,
     })
     .select()
     .single()
 
   if (error) return res.status(500).json({ error: error.message })
   return res.status(201).json(data)
+})
+
+router.put('/reorder', async (req: AuthRequest, res) => {
+  const { orderedIds } = req.body
+
+  if (
+    !Array.isArray(orderedIds) ||
+    orderedIds.length === 0 ||
+    orderedIds.length > MAX_ANSWERS ||
+    !orderedIds.every((id) => typeof id === 'string' && id.length > 0)
+  ) {
+    return res.status(400).json({
+      error: `orderedIds must be a non-empty array of at most ${MAX_ANSWERS} strings`,
+    })
+  }
+
+  const { data: existing, error: fetchError } = await getSupabase()
+    .from('answers')
+    .select('id')
+    .eq('user_id', req.userId!)
+
+  if (fetchError) return res.status(500).json({ error: fetchError.message })
+  const ownedIds = new Set(existing?.map((row) => row.id) ?? [])
+  if (
+    orderedIds.length !== ownedIds.size ||
+    !orderedIds.every((id) => ownedIds.has(id))
+  ) {
+    return res.status(400).json({
+      error: 'orderedIds must contain every answer for this user exactly once',
+    })
+  }
+
+  const now = new Date().toISOString()
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await getSupabase()
+      .from('answers')
+      .update({ position: i + 1, updated_at: now })
+      .eq('id', orderedIds[i])
+      .eq('user_id', req.userId!)
+    if (error) return res.status(500).json({ error: error.message })
+  }
+
+  const { data, error } = await getSupabase()
+    .from('answers')
+    .select('*')
+    .eq('user_id', req.userId!)
+    .order('position', { ascending: true })
+
+  if (error) return res.status(500).json({ error: error.message })
+  return res.json(data)
 })
 
 router.put('/:id', async (req: AuthRequest, res) => {
@@ -89,39 +121,42 @@ router.put('/:id', async (req: AuthRequest, res) => {
   return res.json(data)
 })
 
-router.put('/:id/position', async (req: AuthRequest, res) => {
-  const { position } = req.body
-
-  if (!isValidPosition(position)) {
-    return res
-      .status(400)
-      .json({
-        error: `position must be an integer between 1 and ${MAX_ANSWERS}`,
-      })
-  }
-
-  const { data, error } = await getSupabase()
+router.delete('/:id', async (req: AuthRequest, res) => {
+  const { data: deleted, error: deleteError } = await getSupabase()
     .from('answers')
-    .update({ position, updated_at: new Date().toISOString() })
+    .delete()
     .eq('id', req.params.id)
     .eq('user_id', req.userId!)
     .select()
     .maybeSingle()
 
-  if (error) return res.status(500).json({ error: error.message })
-  if (!data) return res.status(404).json({ error: 'Not found' })
-  return res.json(data)
-})
+  if (deleteError) return res.status(500).json({ error: deleteError.message })
+  if (!deleted) return res.status(404).json({ error: 'Not found' })
 
-router.delete('/:id', async (req: AuthRequest, res) => {
-  const { error } = await getSupabase()
+  const { data: remaining, error: fetchError } = await getSupabase()
     .from('answers')
-    .delete()
-    .eq('id', req.params.id)
+    .select('*')
     .eq('user_id', req.userId!)
+    .order('position', { ascending: true })
 
-  if (error) return res.status(500).json({ error: error.message })
-  return res.status(204).send()
+  if (fetchError) return res.status(500).json({ error: fetchError.message })
+
+  const now = new Date().toISOString()
+  const compacted = remaining ?? []
+  for (let i = 0; i < compacted.length; i++) {
+    const row = compacted[i]
+    if (row.position === i + 1) continue
+    const { error } = await getSupabase()
+      .from('answers')
+      .update({ position: i + 1, updated_at: now })
+      .eq('id', row.id)
+      .eq('user_id', req.userId!)
+    if (error) return res.status(500).json({ error: error.message })
+    row.position = i + 1
+    row.updated_at = now
+  }
+
+  return res.json(compacted)
 })
 
 export default router

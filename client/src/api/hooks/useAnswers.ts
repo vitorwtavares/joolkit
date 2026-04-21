@@ -24,7 +24,10 @@ export function useCreateAnswer() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (
-      payload: Omit<Answer, 'id' | 'user_id' | 'created_at' | 'updated_at'>,
+      payload: Omit<
+        Answer,
+        'id' | 'user_id' | 'position' | 'created_at' | 'updated_at'
+      >,
     ) => api.post<Answer>('/api/answers', payload),
     onSuccess: (data) => {
       queryClient.setQueryData<Answer[]>(['answers'], (prev) =>
@@ -58,19 +61,33 @@ export function useUpdateAnswer() {
   })
 }
 
-export function useUpdateAnswerPosition() {
+export function useReorderAnswers() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, position }: { id: string; position: number }) =>
-      api.put<Answer>(`/api/answers/${id}/position`, { position }),
-    onSuccess: (data) => {
+    mutationFn: (orderedIds: string[]) =>
+      api.put<Answer[]>('/api/answers/reorder', { orderedIds }),
+    onMutate: async (orderedIds) => {
+      await queryClient.cancelQueries({ queryKey: ['answers'] })
+      const previous = queryClient.getQueryData<Answer[]>(['answers'])
       queryClient.setQueryData<Answer[]>(['answers'], (prev) => {
-        if (!prev) {
-          queryClient.invalidateQueries({ queryKey: ['answers'] })
-          return prev
-        }
-        return prev.map((a) => (a.id === data.id ? data : a))
+        if (!prev) return prev
+        const byId = new Map(prev.map((a) => [a.id, a]))
+        return orderedIds
+          .map((id, i) => {
+            const a = byId.get(id)
+            return a ? { ...a, position: i + 1 } : null
+          })
+          .filter((a): a is Answer => a !== null)
       })
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['answers'], context.previous)
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData<Answer[]>(['answers'], data)
     },
   })
 }
@@ -78,12 +95,9 @@ export function useUpdateAnswerPosition() {
 export function useDeleteAnswer() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => api.delete<void>(`/api/answers/${id}`),
-    onSuccess: (_, id) => {
-      queryClient.setQueryData<Answer[]>(
-        ['answers'],
-        (prev) => prev?.filter((a) => a.id !== id) ?? [],
-      )
+    mutationFn: (id: string) => api.delete<Answer[]>(`/api/answers/${id}`),
+    onSuccess: (data) => {
+      queryClient.setQueryData<Answer[]>(['answers'], data)
     },
   })
 }

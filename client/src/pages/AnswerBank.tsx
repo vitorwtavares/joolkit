@@ -1,6 +1,24 @@
 import { useState } from 'react'
-import { useAnswers } from '@/api/hooks/useAnswers'
-import { AnswerEntry } from '@/components/answer-bank/AnswerEntry'
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { useAnswers, useReorderAnswers } from '@/api/hooks/useAnswers'
+import {
+  AnswerEntry,
+  EmptyAnswerEntry,
+} from '@/components/answer-bank/AnswerEntry'
 import { EditAnswerModal } from '@/components/answer-bank/EditAnswerModal'
 import type { Answer } from '@/api/hooks/useAnswers'
 
@@ -8,19 +26,24 @@ const MAX_ANSWERS = 8
 
 export default function AnswerBank() {
   const { data: answers = [], isLoading } = useAnswers()
+  const reorderAnswers = useReorderAnswers()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingAnswer, setEditingAnswer] = useState<Answer | null>(null)
-  const [editingPosition, setEditingPosition] = useState<number>(1)
 
-  function openNew(position: number) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  )
+
+  function openNew() {
     setEditingAnswer(null)
-    setEditingPosition(position)
     setModalOpen(true)
   }
 
   function openEdit(answer: Answer) {
     setEditingAnswer(answer)
-    setEditingPosition(answer.position)
     setModalOpen(true)
   }
 
@@ -29,10 +52,17 @@ export default function AnswerBank() {
     setEditingAnswer(null)
   }
 
-  const slots = Array.from({ length: MAX_ANSWERS }, (_, i) => {
-    const pos = i + 1
-    return answers.find((a) => a.position === pos) ?? null
-  })
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = answers.findIndex((a) => a.id === active.id)
+    const newIndex = answers.findIndex((a) => a.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+    const nextOrder = arrayMove(answers, oldIndex, newIndex)
+    reorderAnswers.mutate(nextOrder.map((a) => a.id))
+  }
+
+  const emptyCount = MAX_ANSWERS - answers.length
 
   return (
     <div className="flex-1 overflow-y-auto p-16 pb-6">
@@ -46,7 +76,7 @@ export default function AnswerBank() {
       </div>
       <p className="mb-8 text-[14px] text-muted-foreground">
         Click any entry to copy its selected version. Use the pencil icon to
-        edit.
+        edit. Drag the handle to reorder.
       </p>
 
       {isLoading ? (
@@ -60,22 +90,41 @@ export default function AnswerBank() {
         </div>
       ) : (
         <div className="flex max-w-[740px] flex-col gap-2">
-          {slots.map((answer, i) => (
-            <AnswerEntry
-              key={answer?.id ?? `empty-${i}`}
-              position={i + 1}
-              answer={answer}
-              onAdd={() => openNew(i + 1)}
-              onEdit={openEdit}
-            />
-          ))}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={answers.map((a) => a.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {answers.map((answer, i) => (
+                <AnswerEntry
+                  key={answer.id}
+                  position={i + 1}
+                  answer={answer}
+                  onEdit={openEdit}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+          {Array.from({ length: emptyCount }, (_, i) => {
+            const pos = answers.length + i + 1
+            return (
+              <EmptyAnswerEntry
+                key={`empty-${pos}`}
+                position={pos}
+                onAdd={openNew}
+              />
+            )
+          })}
         </div>
       )}
 
       <EditAnswerModal
         open={modalOpen}
         answer={editingAnswer}
-        position={editingPosition}
         onClose={handleClose}
       />
     </div>
