@@ -34,11 +34,13 @@ export function ResumeButton({
   useLayoutEffect(() => {
     const wasUploading = prevUploadingRef.current
     prevUploadingRef.current = uploading
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!uploading && wasUploading && resumeUrl) setIconPop(true)
   }, [uploading])
 
   useLayoutEffect(() => {
     if (removing) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (!resumeUrl) setFalling(true)
       setRemoving(false)
     }

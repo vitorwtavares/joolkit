@@ -37,6 +37,7 @@ export function AnswerEntry({ position, answer, onEdit }: AnswerEntryProps) {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalVariant(null)
   }, [answer.id])
 
