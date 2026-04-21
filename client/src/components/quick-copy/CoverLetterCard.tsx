@@ -83,6 +83,7 @@ export function CoverLetterCard({
 
   useLayoutEffect(() => {
     if (removing) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (removing === 'formal' && !formal?.file_url) setFallingSlot('formal')
       if (removing === 'light' && !light?.file_url) setFallingSlot('light')
       setRemoving(null)
