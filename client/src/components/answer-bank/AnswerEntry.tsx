@@ -140,6 +140,7 @@ export function AnswerEntry({ position, answer, onEdit }: AnswerEntryProps) {
         </div>
       </div>
       <button
+        aria-label="Edit answer"
         onClick={(e) => {
           e.stopPropagation()
           onEdit(answer)
