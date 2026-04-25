@@ -53,14 +53,12 @@ describe('PUT /api/profile — field whitelist', () => {
       error: null,
     })
 
-    await request(buildApp())
-      .put('/api/profile')
-      .send({
-        id: 'injected',
-        user_id: 'injected',
-        name: 'Alice',
-        unknown_field: 'x',
-      })
+    await request(buildApp()).put('/api/profile').send({
+      id: 'injected',
+      user_id: 'injected',
+      name: 'Alice',
+      unknown_field: 'x',
+    })
 
     expect(mockUpdate).toHaveBeenCalledOnce()
     const updatePayload = mockUpdate.mock.calls[0][0]

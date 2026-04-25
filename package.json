@@ -12,9 +12,16 @@
     "build": "turbo build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "turbo test"
+    "test": "turbo test",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx,json,css,md}": "prettier --write",
+    "client/src/**/*.{ts,tsx}": "pnpm --filter client exec eslint --fix"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "turbo": "^2.9.6"
