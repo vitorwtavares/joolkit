@@ -45,23 +45,12 @@ export default function Sidebar() {
   return (
     <aside className="flex w-[210px] min-w-[210px] flex-col gap-0.5 border-r border-border bg-card px-3 py-5">
       <div className="mb-2 border-b border-border px-2 pb-4 text-center">
-        <span
+        <img
+          src="/noloop_logo_text_horizontal_crop_white.png"
+          alt="noloop"
           onClick={() => navigate('/')}
-          style={{
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-            fontSize: 42,
-            fontWeight: 400,
-            letterSpacing: '-1.5px',
-            color: 'var(--brand)',
-            background:
-              'linear-gradient(130deg, transparent 0%, transparent 20%, rgba(150, 72, 72, 0.2) 60%, rgba(195,2,34,0.2) 60%, transparent 60%)',
-
-            cursor: 'pointer',
-            userSelect: 'none',
-          }}
-        >
-          noloop
-        </span>
+          className="mx-auto h-26 cursor-pointer"
+        />
       </div>
 
       {navItems.map(({ to, label, icon: Icon, disabled }) => {

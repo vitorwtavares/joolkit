@@ -34,21 +34,12 @@ export default function SignIn() {
 
   return (
     <div className="relative min-h-screen bg-background px-4">
-      <div className="absolute top-10 left-1/2 -translate-x-1/2">
-        <span
-          style={{
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-            fontSize: 42,
-            fontWeight: 400,
-            letterSpacing: '-1.5px',
-            color: 'var(--brand)',
-            background:
-              'linear-gradient(130deg, transparent 0%, transparent 20%, rgba(150, 72, 72, 0.2) 60%, rgba(195,2,34,0.2) 60%, transparent 60%)',
-            userSelect: 'none',
-          }}
-        >
-          noloop
-        </span>
+      <div className="absolute top-6 left-1/2 -translate-x-1/2">
+        <img
+          src="/noloop_logo_text_horizontal_crop_white.png"
+          alt="noloop"
+          className="h-26"
+        />
       </div>
 
       <div className="flex min-h-screen items-center justify-center">
