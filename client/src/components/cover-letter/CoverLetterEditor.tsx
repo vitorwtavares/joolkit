@@ -297,7 +297,7 @@ export function CoverLetterEditor() {
           {templatesLoading ? (
             <Skeleton className="h-[14px] w-36" />
           ) : (
-            <span className="text-[14px] leading-tight text-[#8a8a85]">
+            <span className="text-[14px] leading-tight text-muted-foreground">
               {template?.file_url?.split('/').pop() ?? 'No file uploaded'}
             </span>
           )}
