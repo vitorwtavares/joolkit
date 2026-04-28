@@ -14,7 +14,7 @@ export function EditorStatusBar({ hasUnresolved }: EditorStatusBarProps) {
       }}
     >
       <div
-        className={`flex items-center gap-1.5 text-xs ${hasUnresolved ? 'text-[#f09595]' : 'text-[#8a8a85]'}`}
+        className={`flex items-center gap-1.5 text-xs ${hasUnresolved ? 'text-[#f09595]' : 'text-muted-foreground'}`}
       >
         {hasUnresolved ? (
           <>
