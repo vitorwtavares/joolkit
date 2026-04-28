@@ -113,12 +113,12 @@ export default function Sidebar() {
             <Avatar
               className="size-[30px] after:hidden"
               style={{
-                background: 'color-mix(in srgb, var(--brand) 12%, transparent)',
+                background: 'color-mix(in srgb, var(--brand) 48%, transparent)',
               }}
             >
               <AvatarFallback
                 className="bg-transparent text-[14px] font-semibold"
-                style={{ color: 'var(--brand)' }}
+                style={{ color: '#fff' }}
               >
                 {initial}
               </AvatarFallback>
