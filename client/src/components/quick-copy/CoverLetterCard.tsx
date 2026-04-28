@@ -173,12 +173,10 @@ export function CoverLetterCard({
 
           <button
             onClick={handleOpenInEditor}
-            className="flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[13px] font-medium transition-colors hover:opacity-90"
+            className="flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[13px] font-medium transition-opacity hover:opacity-90"
             style={{
-              background: 'color-mix(in srgb, var(--brand) 20%, transparent)',
+              background: 'color-mix(in srgb, var(--brand) 72%, black)',
               color: '#fff',
-              border:
-                '0.5px solid color-mix(in srgb, var(--brand) 35%, transparent)',
             }}
           >
             <ExternalLink size={13} />
