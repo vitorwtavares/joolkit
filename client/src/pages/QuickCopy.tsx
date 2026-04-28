@@ -19,12 +19,14 @@ const personalFields: {
   label: string
   icon: React.ReactNode
   emptyText: string
+  splitName?: boolean
 }[] = [
   {
     key: 'name',
     label: 'Name',
     icon: <User size={14} className="text-muted-foreground" />,
     emptyText: 'Add name...',
+    splitName: true,
   },
   {
     key: 'email',
@@ -141,13 +143,14 @@ export default function QuickCopy() {
           Personal info
         </h2>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-6">
-          {personalFields.map(({ key, label, icon, emptyText }) => (
+          {personalFields.map(({ key, label, icon, emptyText, splitName }) => (
             <CopyButton
               key={key}
               label={label}
               value={profile[key] ?? null}
               icon={icon}
               emptyText={emptyText}
+              splitName={splitName}
               onSave={(value) => handleProfileSave(key, value)}
             />
           ))}

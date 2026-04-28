@@ -146,7 +146,7 @@ export function EditorSidePanel({
     <div className="flex w-80 min-w-60 flex-col overflow-y-auto bg-[#1a1a18]">
       {/* Tokens */}
       <div className="border-b border-[rgba(255,255,255,0.07)] p-4 pb-[18px]">
-        <div className="mb-3 text-[11px] font-medium tracking-[0.07em] text-[#8a8a85] uppercase">
+        <div className="mb-3 text-[11px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
           Tokens
         </div>
 
@@ -168,7 +168,7 @@ export function EditorSidePanel({
           <>
             <div className="mb-2.5">
               <div
-                className={`mb-1 font-mono text-xs ${roleEmpty ? 'text-[#f09595]' : 'text-[#5a5a56]'}`}
+                className={`mb-1 font-mono text-xs ${roleEmpty ? 'text-[#f09595]' : 'text-muted-foreground'}`}
               >
                 {TOKEN_ROLE}
               </div>
@@ -187,7 +187,7 @@ export function EditorSidePanel({
 
             <div>
               <div
-                className={`mb-1 font-mono text-xs ${companyEmpty ? 'text-[#f09595]' : 'text-[#5a5a56]'}`}
+                className={`mb-1 font-mono text-xs ${companyEmpty ? 'text-[#f09595]' : 'text-muted-foreground'}`}
               >
                 {TOKEN_COMPANY}
               </div>
@@ -209,7 +209,9 @@ export function EditorSidePanel({
                 className={`size-1.5 shrink-0 rounded-full ${hasUnresolved ? 'bg-[#f09595]' : 'bg-[#7dd4a0]'}`}
               />
               <span
-                className={hasUnresolved ? 'text-[#f09595]' : 'text-[#5a5a56]'}
+                className={
+                  hasUnresolved ? 'text-[#f09595]' : 'text-muted-foreground'
+                }
               >
                 {hasUnresolved
                   ? `${unresolvedCount} unresolved token${unresolvedCount > 1 ? 's' : ''}`
@@ -227,7 +229,7 @@ export function EditorSidePanel({
 
       {/* Version */}
       <div className="border-b border-[rgba(255,255,255,0.07)] p-4 pb-[18px]">
-        <div className="mb-3 text-[11px] font-medium tracking-[0.07em] text-[#8a8a85] uppercase">
+        <div className="mb-3 text-[11px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
           Version
         </div>
 
@@ -251,17 +253,17 @@ export function EditorSidePanel({
           <>
             <div className="mb-2 flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Editing</span>
-              <span className="text-sm text-[#5a5a56]">{label}</span>
+              <span className="text-sm text-muted-foreground">{label}</span>
             </div>
             <div className="mb-2 flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Uploaded</span>
-              <span className="ml-2 truncate text-sm text-[#5a5a56]">
+              <span className="ml-2 truncate text-sm text-muted-foreground">
                 {extractFilename(template?.file_url ?? null)}
               </span>
             </div>
             <div className="mb-2 flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Last saved</span>
-              <span className="text-sm text-[#5a5a56]">
+              <span className="text-sm text-muted-foreground">
                 {formatLastSaved(template?.updated_at)}
               </span>
             </div>
@@ -325,7 +327,7 @@ export function EditorSidePanel({
 
       {/* Download */}
       <div className="p-4 pb-[18px]">
-        <div className="mb-3 text-[11px] font-medium tracking-[0.07em] text-[#8a8a85] uppercase">
+        <div className="mb-3 text-[11px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
           Download
         </div>
 
@@ -333,7 +335,7 @@ export function EditorSidePanel({
           <Skeleton className="mb-2.5 h-[18px] w-48" />
         ) : (
           <p
-            className={`mb-2.5 text-xs leading-normal ${hasUnresolved || isEditorEmpty ? 'text-[#f09595]' : 'text-[#5a5a56]'}`}
+            className={`mb-2.5 text-xs leading-normal ${hasUnresolved || isEditorEmpty ? 'text-[#f09595]' : 'text-muted-foreground'}`}
           >
             {isEditorEmpty
               ? 'Editor is empty. Add content to enable download.'

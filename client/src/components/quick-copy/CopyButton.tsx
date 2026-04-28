@@ -12,6 +12,7 @@ interface CopyButtonProps {
   icon: React.ReactNode
   iconBg?: string
   emptyText: string
+  splitName?: boolean
   onSave: (value: string) => Promise<void>
 }
 
@@ -21,6 +22,7 @@ export function CopyButton({
   icon,
   iconBg,
   emptyText,
+  splitName,
   onSave,
 }: CopyButtonProps) {
   const [editing, setEditing] = useState(false)
@@ -63,6 +65,16 @@ export function CopyButton({
     if (!value) return
     try {
       await navigator.clipboard.writeText(value)
+      triggerCopied()
+    } catch {
+      toast.error('Failed to copy to clipboard')
+    }
+  }
+
+  async function copyPart(text: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    try {
+      await navigator.clipboard.writeText(text)
       triggerCopied()
     } catch {
       toast.error('Failed to copy to clipboard')
@@ -143,6 +155,23 @@ export function CopyButton({
           </span>
           {saving ? (
             <Skeleton className="h-[21px] w-3/5" />
+          ) : splitName && filled && value && value.includes(' ') ? (
+            <span className="flex gap-1 text-[14px] text-foreground">
+              <span
+                onClick={(e) => copyPart(value.slice(0, value.indexOf(' ')), e)}
+                className="-mx-0.5 rounded px-0.5 transition-colors hover:bg-secondary"
+              >
+                {value.slice(0, value.indexOf(' '))}
+              </span>
+              <span
+                onClick={(e) =>
+                  copyPart(value.slice(value.indexOf(' ') + 1), e)
+                }
+                className="-mx-0.5 rounded px-0.5 transition-colors hover:bg-secondary"
+              >
+                {value.slice(value.indexOf(' ') + 1)}
+              </span>
+            </span>
           ) : (
             <span
               className={cn(

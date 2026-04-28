@@ -139,7 +139,7 @@ export function EditAnswerModal({
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Type your question here..."
-              className="min-w-0 flex-1 bg-transparent text-[22px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/25"
+              className="min-w-0 flex-1 bg-transparent text-[22px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50"
             />
             <Button
               variant="ghost"
@@ -153,28 +153,28 @@ export function EditAnswerModal({
 
           <div className="grid grid-cols-2 gap-4 overflow-y-auto p-6 pt-4">
             <div className="flex flex-col gap-2">
-              <span className="text-[11px] font-medium tracking-widest text-muted-foreground/60 uppercase">
+              <span className="text-[11px] font-medium tracking-widest text-muted-foreground uppercase">
                 Default
               </span>
               <textarea
                 value={shortAnswer}
                 onChange={(e) => setShortAnswer(e.target.value)}
                 placeholder="Write your default answer..."
-                className="h-[220px] resize-none rounded-lg border border-border bg-background px-3.5 py-3 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/30 focus:border-border/80"
+                className="h-[220px] resize-none rounded-lg border border-border bg-background px-3.5 py-3 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-border/80"
               />
               <span className="text-right text-[12px] text-muted-foreground/50">
                 {shortStats.chars} chars · {shortStats.words} words
               </span>
             </div>
             <div className="flex flex-col gap-2">
-              <span className="text-[11px] font-medium tracking-widest text-muted-foreground/60 uppercase">
+              <span className="text-[11px] font-medium tracking-widest text-muted-foreground uppercase">
                 Detailed
               </span>
               <textarea
                 value={longAnswer}
                 onChange={(e) => setLongAnswer(e.target.value)}
                 placeholder="Write a more detailed version of your answer..."
-                className="h-[220px] resize-none rounded-lg border border-border bg-background px-3.5 py-3 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/30 focus:border-border/80"
+                className="h-[220px] resize-none rounded-lg border border-border bg-background px-3.5 py-3 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-border/80"
               />
               <span className="text-right text-[12px] text-muted-foreground/50">
                 {longStats.chars} chars · {longStats.words} words
