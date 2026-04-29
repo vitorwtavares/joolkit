@@ -1,0 +1,264 @@
+import { Router } from 'express'
+import { getSupabase, AuthRequest } from '../middleware/auth'
+
+const router = Router()
+
+const JOINED_SELECT =
+  '*, location:locations(id, name), skills:application_skills(skill:skills(id, name))'
+
+const VIEW_FILTERS: Record<
+  string,
+  { values?: string[]; isFavorite?: boolean }
+> = {
+  prospects: { values: ['prospect'] },
+  ready: { values: ['ready_to_apply'] },
+  applied: { values: ['applied'] },
+  'in-progress': {
+    values: [
+      'pending_schedule',
+      'interview_scheduled',
+      'awaiting_response',
+      'technical_test',
+    ],
+  },
+  'no-openings': { values: ['no_openings'] },
+  favorites: { isFavorite: true },
+}
+
+const ALLOWED_VIEWS = new Set(['all', ...Object.keys(VIEW_FILTERS)])
+
+async function fetchApplicationWithJoins(id: string, userId: string) {
+  return await getSupabase()
+    .from('applications')
+    .select(JOINED_SELECT)
+    .eq('id', id)
+    .eq('user_id', userId)
+    .single()
+}
+
+async function validateLocationOwnership(
+  locationId: string,
+  userId: string,
+): Promise<string | null> {
+  const { data, error } = await getSupabase()
+    .from('locations')
+    .select('id')
+    .eq('id', locationId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error) return error.message
+  if (!data) return 'Invalid location_id'
+  return null
+}
+
+async function setApplicationSkills(
+  applicationId: string,
+  skillIds: string[],
+  userId: string,
+): Promise<{ status: number; message: string } | null> {
+  const { error } = await getSupabase().rpc('set_application_skills', {
+    p_application_id: applicationId,
+    p_user_id: userId,
+    p_skill_ids: skillIds,
+  })
+
+  if (!error) return null
+
+  if (error.code === 'P0001') return { status: 404, message: error.message }
+  if (error.code === 'P0002') return { status: 400, message: error.message }
+  return { status: 500, message: error.message }
+}
+
+router.get('/', async (req: AuthRequest, res) => {
+  const view = typeof req.query.view === 'string' ? req.query.view : 'all'
+  if (!ALLOWED_VIEWS.has(view))
+    return res.status(400).json({ error: `Invalid view: ${view}` })
+
+  const filter = VIEW_FILTERS[view]
+
+  let query = getSupabase()
+    .from('applications')
+    .select(JOINED_SELECT)
+    .eq('user_id', req.userId!)
+    .order('created_at', { ascending: false })
+
+  if (filter) {
+    if (filter.isFavorite) {
+      query = query.eq('is_favorite', true)
+    } else if (filter.values) {
+      query = query.in('status', filter.values)
+    }
+  }
+
+  const { data, error } = await query
+  if (error) return res.status(500).json({ error: error.message })
+  return res.json(data)
+})
+
+router.get('/:id', async (req: AuthRequest, res) => {
+  const { data, error } = await getSupabase()
+    .from('applications')
+    .select(JOINED_SELECT)
+    .eq('id', req.params.id)
+    .eq('user_id', req.userId!)
+    .maybeSingle()
+
+  if (error) return res.status(500).json({ error: error.message })
+  if (!data) return res.status(404).json({ error: 'Not found' })
+  return res.json(data)
+})
+
+router.post('/', async (req: AuthRequest, res) => {
+  const {
+    company_name,
+    careers_url,
+    job_url,
+    status,
+    location_id,
+    salary,
+    work_style,
+    visa_support,
+    is_favorite,
+    date_applied,
+    next_deadline,
+    notes,
+    skill_ids,
+  } = req.body
+
+  if (location_id) {
+    const locationError = await validateLocationOwnership(
+      location_id,
+      req.userId!,
+    )
+    if (locationError) return res.status(400).json({ error: locationError })
+  }
+
+  const { data: created, error } = await getSupabase()
+    .from('applications')
+    .insert({
+      user_id: req.userId!,
+      company_name: company_name ?? '',
+      careers_url: careers_url ?? null,
+      job_url: job_url ?? null,
+      status: status ?? 'prospect',
+      location_id: location_id ?? null,
+      salary: salary ?? null,
+      work_style: work_style ?? null,
+      visa_support: visa_support ?? null,
+      is_favorite: is_favorite ?? false,
+      date_applied: date_applied ?? null,
+      next_deadline: next_deadline ?? null,
+      notes: notes ?? null,
+    })
+    .select('id')
+    .single()
+
+  if (error) return res.status(500).json({ error: error.message })
+
+  if (Array.isArray(skill_ids) && skill_ids.length > 0) {
+    const skillError = await setApplicationSkills(
+      created.id,
+      skill_ids,
+      req.userId!,
+    )
+    if (skillError) {
+      // Roll back the orphan application row so the caller can retry cleanly.
+      await getSupabase().from('applications').delete().eq('id', created.id)
+      return res.status(skillError.status).json({ error: skillError.message })
+    }
+  }
+
+  const { data, error: fetchErr } = await fetchApplicationWithJoins(
+    created.id,
+    req.userId!,
+  )
+  if (fetchErr) return res.status(500).json({ error: fetchErr.message })
+  return res.status(201).json(data)
+})
+
+router.put('/:id', async (req: AuthRequest, res) => {
+  const {
+    company_name,
+    careers_url,
+    job_url,
+    status,
+    location_id,
+    salary,
+    work_style,
+    visa_support,
+    is_favorite,
+    date_applied,
+    next_deadline,
+    notes,
+    skill_ids,
+  } = req.body
+
+  if (location_id) {
+    const locationError = await validateLocationOwnership(
+      location_id,
+      req.userId!,
+    )
+    if (locationError) return res.status(400).json({ error: locationError })
+  }
+
+  const update: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  }
+  if (company_name !== undefined) update.company_name = company_name
+  if (careers_url !== undefined) update.careers_url = careers_url
+  if (job_url !== undefined) update.job_url = job_url
+  if (status !== undefined) update.status = status
+  if (location_id !== undefined) update.location_id = location_id
+  if (salary !== undefined) update.salary = salary
+  if (work_style !== undefined) update.work_style = work_style
+  if (visa_support !== undefined) update.visa_support = visa_support
+  if (is_favorite !== undefined) update.is_favorite = is_favorite
+  if (date_applied !== undefined) update.date_applied = date_applied
+  if (next_deadline !== undefined) update.next_deadline = next_deadline
+  if (notes !== undefined) update.notes = notes
+
+  const { data: updated, error } = await getSupabase()
+    .from('applications')
+    .update(update)
+    .eq('id', req.params.id)
+    .eq('user_id', req.userId!)
+    .select('id')
+    .maybeSingle()
+
+  if (error) return res.status(500).json({ error: error.message })
+  if (!updated) return res.status(404).json({ error: 'Not found' })
+
+  if (Array.isArray(skill_ids)) {
+    const skillError = await setApplicationSkills(
+      updated.id,
+      skill_ids,
+      req.userId!,
+    )
+    if (skillError)
+      return res.status(skillError.status).json({ error: skillError.message })
+  }
+
+  const { data, error: fetchErr } = await fetchApplicationWithJoins(
+    updated.id,
+    req.userId!,
+  )
+  if (fetchErr) return res.status(500).json({ error: fetchErr.message })
+  return res.json(data)
+})
+
+router.delete('/:id', async (req: AuthRequest, res) => {
+  const { data: deleted, error } = await getSupabase()
+    .from('applications')
+    .delete()
+    .eq('id', req.params.id)
+    .eq('user_id', req.userId!)
+    .select()
+    .maybeSingle()
+
+  if (error) return res.status(500).json({ error: error.message })
+  if (!deleted) return res.status(404).json({ error: 'Not found' })
+  return res.json({ id: deleted.id })
+})
+
+export default router
