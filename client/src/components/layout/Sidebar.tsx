@@ -32,7 +32,12 @@ const navItems = [
     disabled: false,
   },
   { to: '/answer-bank', label: 'Answers', icon: AlignLeft, disabled: false },
-  { to: '/tracker', label: 'Applications', icon: CalendarDays, disabled: true },
+  {
+    to: '/tracker',
+    label: 'Applications',
+    icon: CalendarDays,
+    disabled: false,
+  },
 ]
 
 export default function Sidebar() {

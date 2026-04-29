@@ -1,4 +1,5 @@
 import { Globe, Link2, Mail, MapPin, Phone, User } from 'lucide-react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/auth'
 import { useProfile, useUpdateProfile } from '@/api/hooks/useProfile'
@@ -131,12 +132,10 @@ export default function QuickCopy() {
 
   return (
     <div className="flex-1 overflow-y-auto p-16 pb-6">
-      <h1 className="mb-1 text-[36px] font-medium tracking-tight">
-        Quick copy
-      </h1>
-      <p className="mb-8 text-[14px] text-muted-foreground">
-        Click any filled field to copy. Click the pencil to edit.
-      </p>
+      <PageHeader
+        title="Quick copy"
+        subtitle="Click any filled field to copy. Click the pencil to edit."
+      />
 
       <section className="mb-10">
         <h2 className="mb-2.5 text-[12px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
