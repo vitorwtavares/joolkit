@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import {
   DndContext,
   PointerSensor,
@@ -66,18 +67,17 @@ export default function AnswerBank() {
 
   return (
     <div className="flex-1 overflow-y-auto p-16 pb-6">
-      <div className="mb-1 flex items-start justify-between">
-        <h1 className="text-[36px] font-medium tracking-tight">Answers</h1>
-        <span className="mt-2 rounded-full border border-border/60 bg-card px-2.5 py-1 text-[12px] text-muted-foreground">
-          {isLoading
-            ? `— / ${MAX_ANSWERS} used`
-            : `${answers.length} / ${MAX_ANSWERS} used`}
-        </span>
-      </div>
-      <p className="mb-8 text-[14px] text-muted-foreground">
-        Click any entry to copy its selected version. Use the pencil icon to
-        edit. Drag the handle to reorder.
-      </p>
+      <PageHeader
+        title="Answers"
+        subtitle="Click any entry to copy its selected version. Use the pencil icon to edit. Drag the handle to reorder."
+        right={
+          <span className="mt-2 rounded-full border border-border/60 bg-card px-2.5 py-1 text-[12px] text-muted-foreground">
+            {isLoading
+              ? `— / ${MAX_ANSWERS} used`
+              : `${answers.length} / ${MAX_ANSWERS} used`}
+          </span>
+        }
+      />
 
       {isLoading ? (
         <div className="flex max-w-[740px] flex-col gap-2">
