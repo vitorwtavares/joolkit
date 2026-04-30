@@ -37,6 +37,18 @@
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: #8a8a85;
   --brand: #ff5757;
+
+  /* Palette — matches the 10-color Notion-style picker */
+  --palette-default: #3d3b38;
+  --palette-gray: #6b6b69;
+  --palette-brown: #7a5040;
+  --palette-orange: #975935;
+  --palette-yellow: #8e7330;
+  --palette-green: #4c7850;
+  --palette-blue: #3c5a96;
+  --palette-purple: #5e4998;
+  --palette-pink: #8a4562;
+  --palette-red: #8f3f3f;
 }
 
 @theme inline {
@@ -74,6 +86,16 @@
   --color-foreground: var(--foreground);
   --color-background: var(--background);
   --color-brand: var(--brand);
+  --color-palette-default: var(--palette-default);
+  --color-palette-gray: var(--palette-gray);
+  --color-palette-brown: var(--palette-brown);
+  --color-palette-orange: var(--palette-orange);
+  --color-palette-yellow: var(--palette-yellow);
+  --color-palette-green: var(--palette-green);
+  --color-palette-blue: var(--palette-blue);
+  --color-palette-purple: var(--palette-purple);
+  --color-palette-pink: var(--palette-pink);
+  --color-palette-red: var(--palette-red);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
