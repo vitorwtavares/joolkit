@@ -5,11 +5,11 @@ export function TableSkeleton() {
   return (
     <>
       {Array.from({ length: 6 }).map((_, i) => (
-        <tr key={i} data-skeleton="true">
-          <td className={`${TD} ${FIRST_COL_PL}`}>
-            <Skeleton className="h-[14px] w-[14px] rounded-sm" />
+        <tr key={i}>
+          <td className={`${TD} py-[14.5px] ${FIRST_COL_PL}`}>
+            <Skeleton className="ml-0.5 h-[14px] w-[14px] rounded-sm" />
           </td>
-          <td className={`${TD} pl-2`}>
+          <td className={`${TD} py-[14.5px] pl-2`}>
             <Skeleton className="h-[14px] w-[120px] rounded-sm" />
           </td>
           <td className={TD}>
@@ -33,7 +33,7 @@ export function TableSkeleton() {
           <td className={TD}>
             <Skeleton className="h-[14px] w-[60px] rounded-sm" />
           </td>
-          <td className={`${TD} ${LAST_COL_PR}`}>
+          <td className={`${TD} py-[14.5px] ${LAST_COL_PR}`}>
             <Skeleton className="h-[14px] w-[90px] rounded-sm" />
           </td>
         </tr>
