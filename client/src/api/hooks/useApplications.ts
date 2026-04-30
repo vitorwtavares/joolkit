@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type QueryKey,
+} from '@tanstack/react-query'
 import { api } from '../api'
 import type { Skill } from './useSkills'
 import type { Location } from './useLocations'
@@ -51,6 +56,7 @@ export type ApplicationView =
   | 'applied'
   | 'in-progress'
   | 'no-openings'
+  | 'rejected'
   | 'favorites'
 
 export type CreateApplicationPayload = {
@@ -86,13 +92,142 @@ export function useApplication(id: string) {
   })
 }
 
+function appMatchesView(app: Application, view: string): boolean {
+  switch (view) {
+    case 'all':
+      return true
+    case 'prospects':
+      return app.status === 'prospect'
+    case 'ready':
+      return app.status === 'ready_to_apply'
+    case 'applied':
+      return app.status === 'applied'
+    case 'in-progress':
+      return [
+        'pending_schedule',
+        'interview_scheduled',
+        'awaiting_response',
+        'technical_test',
+        'offer_received',
+      ].includes(app.status)
+    case 'no-openings':
+      return app.status === 'no_openings'
+    case 'rejected':
+      return app.status === 'rejected' || app.status === 'rejected_ghosted'
+    case 'favorites':
+      return app.is_favorite
+    default:
+      return false
+  }
+}
+
+function insertByCreatedAt(
+  list: Application[],
+  app: Application,
+): Application[] {
+  const result = [...list]
+  const newAt = new Date(app.created_at).getTime()
+  const idx = result.findIndex((a) => new Date(a.created_at).getTime() <= newAt)
+  if (idx === -1) result.push(app)
+  else result.splice(idx, 0, app)
+  return result
+}
+
+function syncRowAcrossViews(
+  queryClient: ReturnType<typeof useQueryClient>,
+  app: Application,
+  prevId?: string,
+) {
+  const lookupId = prevId ?? app.id
+  for (const [key, data] of queryClient.getQueriesData<Application[]>({
+    queryKey: ['applications'],
+  })) {
+    if (!Array.isArray(data)) continue
+    const view = String(key[1] ?? 'all')
+    const idx = data.findIndex((a) => a.id === lookupId)
+    const matches = appMatchesView(app, view)
+    if (idx === -1) {
+      if (matches) {
+        queryClient.setQueryData<Application[]>(
+          key,
+          insertByCreatedAt(data, app),
+        )
+      }
+    } else if (matches) {
+      const next = [...data]
+      next[idx] = app
+      queryClient.setQueryData<Application[]>(key, next)
+    } else {
+      queryClient.setQueryData<Application[]>(
+        key,
+        data.filter((a) => a.id !== lookupId),
+      )
+    }
+  }
+}
+
 export function useCreateApplication() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreateApplicationPayload) =>
       api.post<Application>('/api/applications', payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] })
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey: ['applications'] })
+      const snapshot = queryClient.getQueriesData<Application[] | Application>({
+        queryKey: ['applications'],
+      })
+
+      const tempId = `temp-${crypto.randomUUID()}`
+      const now = new Date().toISOString()
+      const locations = queryClient.getQueryData<Location[]>(['locations'])
+      const skills = queryClient.getQueryData<Skill[]>(['skills'])
+
+      const optimisticApp: Application = {
+        id: tempId,
+        user_id: '',
+        company_name: payload.company_name ?? '',
+        careers_url: payload.careers_url ?? null,
+        job_url: payload.job_url ?? null,
+        status: payload.status ?? 'prospect',
+        location_id: payload.location_id ?? null,
+        location: payload.location_id
+          ? (locations?.find((l) => l.id === payload.location_id) ?? null)
+          : null,
+        salary: payload.salary ?? null,
+        work_style: payload.work_style ?? null,
+        visa_support: payload.visa_support ?? null,
+        is_favorite: payload.is_favorite ?? false,
+        date_applied: payload.date_applied ?? null,
+        next_deadline: payload.next_deadline ?? null,
+        notes: payload.notes ?? null,
+        last_moved_at: now,
+        created_at: now,
+        updated_at: now,
+        skills: (payload.skill_ids ?? []).map((sid) => ({
+          skill: skills?.find((s) => s.id === sid) ?? { id: sid, name: '…' },
+        })),
+      }
+
+      for (const [key, data] of queryClient.getQueriesData<Application[]>({
+        queryKey: ['applications'],
+      })) {
+        if (!Array.isArray(data)) continue
+        const view = String(key[1] ?? 'all')
+        if (appMatchesView(optimisticApp, view)) {
+          queryClient.setQueryData<Application[]>(key, [optimisticApp, ...data])
+        }
+      }
+
+      return { snapshot, tempId }
+    },
+    onError: (_err, _vars, ctx) => {
+      ctx?.snapshot.forEach(([key, data]: [QueryKey, unknown]) =>
+        queryClient.setQueryData(key, data),
+      )
+    },
+    onSuccess: (newApp, _vars, ctx) => {
+      syncRowAcrossViews(queryClient, newApp, ctx?.tempId)
+      queryClient.setQueryData(['applications', 'detail', newApp.id], newApp)
     },
   })
 }
@@ -102,9 +237,66 @@ export function useUpdateApplication() {
   return useMutation({
     mutationFn: ({ id, ...payload }: UpdateApplicationPayload) =>
       api.put<Application>(`/api/applications/${id}`, payload),
+    onMutate: async ({ id, skill_ids, location_id, ...simpleFields }) => {
+      await queryClient.cancelQueries({ queryKey: ['applications'] })
+      const snapshot = queryClient.getQueriesData<Application[] | Application>({
+        queryKey: ['applications'],
+      })
+
+      const patch: Partial<Application> = { ...simpleFields }
+
+      if (location_id !== undefined) {
+        patch.location_id = location_id
+        if (location_id === null) {
+          patch.location = null
+        } else {
+          const locations = queryClient.getQueryData<Location[]>(['locations'])
+          patch.location = locations?.find((l) => l.id === location_id) ?? null
+        }
+      }
+
+      if (skill_ids !== undefined) {
+        const skills = queryClient.getQueryData<Skill[]>(['skills'])
+        patch.skills = skill_ids.map((sid) => ({
+          skill: skills?.find((s) => s.id === sid) ?? { id: sid, name: '…' },
+        }))
+      }
+
+      for (const [key, data] of queryClient.getQueriesData<Application[]>({
+        queryKey: ['applications'],
+      })) {
+        if (!Array.isArray(data)) continue
+        const view = String(key[1] ?? 'all')
+        const idx = data.findIndex((a) => a.id === id)
+        if (idx === -1) continue
+        const patched: Application = { ...data[idx], ...patch }
+        if (appMatchesView(patched, view)) {
+          const next = [...data]
+          next[idx] = patched
+          queryClient.setQueryData<Application[]>(key, next)
+        } else {
+          queryClient.setQueryData<Application[]>(
+            key,
+            data.filter((a) => a.id !== id),
+          )
+        }
+      }
+
+      queryClient.setQueryData<Application>(
+        ['applications', 'detail', id],
+        (old) => (old ? { ...old, ...patch } : old),
+      )
+
+      return { snapshot }
+    },
+    onError: (_err, _vars, ctx) => {
+      ctx?.snapshot.forEach(([key, data]: [QueryKey, unknown]) =>
+        queryClient.setQueryData(key, data),
+      )
+    },
     onSuccess: (data) => {
+      syncRowAcrossViews(queryClient, data)
       queryClient.setQueryData(['applications', 'detail', data.id], data)
-      queryClient.invalidateQueries({ queryKey: ['applications'] })
     },
   })
 }
@@ -114,8 +306,25 @@ export function useDeleteApplication() {
   return useMutation({
     mutationFn: (id: string) =>
       api.delete<{ id: string }>(`/api/applications/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] })
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['applications'] })
+      const snapshots = queryClient.getQueriesData<Application[]>({
+        queryKey: ['applications'],
+      })
+      for (const [key, data] of snapshots) {
+        if (!Array.isArray(data)) continue
+        queryClient.setQueryData<Application[]>(
+          key,
+          data.filter((a) => a.id !== id),
+        )
+      }
+      queryClient.removeQueries({ queryKey: ['applications', 'detail', id] })
+      return { snapshots }
+    },
+    onError: (_err, _id, ctx) => {
+      for (const [key, data] of ctx?.snapshots ?? []) {
+        queryClient.setQueryData(key, data)
+      }
     },
   })
 }
