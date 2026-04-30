@@ -19,9 +19,11 @@ const VIEW_FILTERS: Record<
       'interview_scheduled',
       'awaiting_response',
       'technical_test',
+      'offer_received',
     ],
   },
   'no-openings': { values: ['no_openings'] },
+  rejected: { values: ['rejected', 'rejected_ghosted'] },
   favorites: { isFavorite: true },
 }
 

@@ -1,7 +1,11 @@
 import { useSearchParams } from 'react-router'
 import { Filter, Columns3, Plus } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { useApplications } from '@/api/hooks/useApplications'
+import {
+  useApplications,
+  useCreateApplication,
+} from '@/api/hooks/useApplications'
 import type { ApplicationView } from '@/api/hooks/useApplications'
 import { ApplicationTable } from '@/components/tracker/ApplicationTable'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -13,6 +17,7 @@ const VIEWS: { label: string; value: ApplicationView }[] = [
   { label: 'Applied', value: 'applied' },
   { label: 'In progress', value: 'in-progress' },
   { label: 'No openings', value: 'no-openings' },
+  { label: 'Rejected', value: 'rejected' },
   { label: 'Favorites', value: 'favorites' },
 ]
 
@@ -24,9 +29,17 @@ export default function ApplicationTracker() {
   ) as ApplicationView
 
   const { data: applications = [], isLoading } = useApplications(view)
+  const createApplication = useCreateApplication()
 
   function setView(v: ApplicationView) {
     setSearchParams({ view: v }, { replace: true })
+  }
+
+  function handleNewEntry() {
+    createApplication.mutate(
+      { status: 'prospect' },
+      { onError: () => toast.error('Failed to create entry') },
+    )
   }
 
   return (
@@ -70,21 +83,22 @@ export default function ApplicationTracker() {
             disabled
             className="flex cursor-not-allowed items-center gap-[5px] rounded-md border border-[rgba(255,255,255,0.08)] px-2.5 py-1 text-[14px] text-muted-foreground opacity-50"
           >
-            <Filter size={12} />
+            <Filter size={16} />
             Filter
           </button>
           <button
             disabled
             className="flex cursor-not-allowed items-center gap-[5px] rounded-md border border-[rgba(255,255,255,0.08)] px-2.5 py-1 text-[14px] text-muted-foreground opacity-50"
           >
-            <Columns3 size={12} />
+            <Columns3 size={16} />
             Columns
           </button>
           <button
-            disabled
-            className="flex cursor-not-allowed items-center gap-[5px] rounded-md border border-[rgba(255,255,255,0.08)] px-2.5 py-1 text-[14px] text-foreground opacity-50"
+            onClick={handleNewEntry}
+            disabled={createApplication.isPending}
+            className="flex cursor-pointer items-center gap-[5px] rounded-md border border-[rgba(255,255,255,0.15)] px-2.5 py-1 text-[14px] text-foreground transition-colors hover:bg-[rgba(255,255,255,0.05)] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Plus size={12} />
+            <Plus size={16} />
             New entry
           </button>
         </div>
