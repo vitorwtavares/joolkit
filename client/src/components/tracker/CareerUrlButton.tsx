@@ -11,15 +11,24 @@ import { sanitizeUrl } from '@/utils/sanitizeUrl'
 interface CareerUrlButtonProps {
   url: string | null
   onSave: (url: string | null) => void
+  label?: string | null
+  onSaveLabel?: (label: string | null) => void
 }
 
-export function CareerUrlButton({ url, onSave }: CareerUrlButtonProps) {
+export function CareerUrlButton({
+  url,
+  onSave,
+  label,
+  onSaveLabel,
+}: CareerUrlButtonProps) {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState('')
+  const [labelDraft, setLabelDraft] = useState('')
   const safeUrl = url ? sanitizeUrl(url) : null
 
   function handleOpen() {
     setDraft(url ?? '')
+    setLabelDraft(label ?? '')
     setOpen(true)
   }
 
@@ -28,6 +37,9 @@ export function CareerUrlButton({ url, onSave }: CareerUrlButtonProps) {
       onSave(null)
     } else {
       onSave(sanitizeUrl(draft))
+    }
+    if (onSaveLabel) {
+      onSaveLabel(labelDraft.trim() || null)
     }
     setOpen(false)
   }
@@ -56,29 +68,45 @@ export function CareerUrlButton({ url, onSave }: CareerUrlButtonProps) {
         className="w-72 p-2"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <div className="flex gap-1.5">
+        <div className="mb-1.5">
+          <p className="mb-1 text-[12px] text-muted-foreground">Company name</p>
           <input
             autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            value={labelDraft}
+            onChange={(e) => setLabelDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSave()
               if (e.key === 'Escape') setOpen(false)
             }}
-            placeholder="https://..."
-            className="flex-1 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
+            placeholder="Company name"
+            className="w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
           />
-          {safeUrl && (
-            <a
-              href={safeUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded border border-[rgba(255,255,255,0.1)] text-muted-foreground transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-foreground"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ExternalLink size={14} />
-            </a>
-          )}
+        </div>
+        <div>
+          <p className="mb-1 text-[12px] text-muted-foreground">Job URL</p>
+          <div className="flex gap-1.5">
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSave()
+                if (e.key === 'Escape') setOpen(false)
+              }}
+              placeholder="https://..."
+              className="flex-1 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
+            />
+            {safeUrl && (
+              <a
+                href={safeUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded border border-[rgba(255,255,255,0.1)] text-muted-foreground transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-foreground"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink size={14} />
+              </a>
+            )}
+          </div>
         </div>
         <div className="mt-1.5 flex gap-2">
           {url && (

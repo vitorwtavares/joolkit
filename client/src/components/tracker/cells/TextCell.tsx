@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { EmptyCell } from './EmptyCell'
+import { sanitizeUrl } from '@/utils/sanitizeUrl'
 
 interface TextCellProps {
   value: string | null
   onSave: (value: string | null) => void
+  url?: string | null
   bold?: boolean
   className?: string
 }
@@ -13,9 +15,11 @@ const DEBOUNCE_MS = 600
 export function TextCell({
   value,
   onSave,
+  url,
   bold,
   className = '',
 }: TextCellProps) {
+  const safeUrl = url ? sanitizeUrl(url) : null
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const onSaveRef = useRef(onSave)
@@ -92,7 +96,19 @@ export function TextCell({
       className={`absolute inset-0 flex cursor-text items-center overflow-hidden px-3 text-[14px] transition-colors hover:bg-[rgba(255,255,255,0.04)] ${className}`}
       style={{ fontWeight: bold ? 500 : undefined }}
     >
-      <span className="truncate">{value ?? <EmptyCell />}</span>
+      {safeUrl && value ? (
+        <a
+          href={safeUrl}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="truncate transition-colors hover:text-foreground/80"
+        >
+          {value}
+        </a>
+      ) : (
+        <span className="truncate">{value ?? <EmptyCell />}</span>
+      )}
     </span>
   )
 }

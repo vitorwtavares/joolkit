@@ -110,6 +110,7 @@ export function ApplicationRow({ app }: ApplicationRowProps) {
         <td className={`${TD} relative`} style={{ padding: 0 }}>
           <TextCell
             value={app.company_name || null}
+            url={app.careers_url}
             bold
             className="pr-8"
             onSave={(v) => save({ company_name: v ?? '' })}
@@ -117,6 +118,8 @@ export function ApplicationRow({ app }: ApplicationRowProps) {
           <CareerUrlButton
             url={app.careers_url}
             onSave={(url) => save({ careers_url: url })}
+            label={app.company_name || null}
+            onSaveLabel={(v) => save({ company_name: v ?? '' })}
           />
         </td>
 
