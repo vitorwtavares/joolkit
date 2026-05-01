@@ -1,9 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+import { useRef } from 'react'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { useKeyboardNav } from '@/hooks/useKeyboardNav'
+import { CellTrigger } from './CellTrigger'
 import { EmptyCell } from './EmptyCell'
 
 interface EnumOption<T extends string> {
@@ -25,43 +27,25 @@ export function EnumCell<T extends string>({
   renderDisplay,
   onSave,
 }: EnumCellProps<T>) {
-  const [open, setOpen] = useState(false)
-  const [highlighted, setHighlighted] = useState(-1)
-  const listRef = useRef<HTMLDivElement>(null)
-
   // items: index 0 = Clear, 1..n = options
-  const totalItems = 1 + options.length
+  const listRef = useRef<HTMLDivElement>(null)
+  const {
+    open,
+    setOpen,
+    handleOpenChange,
+    handleKeyDown,
+    focusListOnOpen,
+    itemClass,
+  } = useKeyboardNav({
+    totalItems: 1 + options.length,
+    listRef,
+    onEnter: (i) => select(i === 0 ? null : options[i - 1].value),
+  })
 
   function select(v: T | null) {
     onSave(v)
     setOpen(false)
   }
-
-  function handleOpenChange(v: boolean) {
-    setOpen(v)
-    if (!v) setHighlighted(-1)
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setHighlighted((i) => Math.min(i + 1, totalItems - 1))
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setHighlighted((i) => Math.max(i - 1, 0))
-    } else if (e.key === 'Enter' && highlighted >= 0) {
-      if (highlighted === 0) select(null)
-      else select(options[highlighted - 1].value)
-    } else if (e.key === 'Escape') {
-      setOpen(false)
-    }
-  }
-
-  useEffect(() => {
-    if (highlighted < 0) return
-    const el = listRef.current?.children[highlighted] as HTMLElement | undefined
-    el?.scrollIntoView({ block: 'nearest' })
-  }, [highlighted])
 
   const displayLabel =
     value != null
@@ -71,10 +55,7 @@ export function EnumCell<T extends string>({
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="absolute inset-0 flex cursor-pointer items-center px-3 text-left text-[14px] transition-colors hover:bg-[rgba(255,255,255,0.04)]"
-        >
+        <CellTrigger>
           {renderDisplay ? (
             renderDisplay(value)
           ) : displayLabel != null ? (
@@ -82,15 +63,12 @@ export function EnumCell<T extends string>({
           ) : (
             <EmptyCell />
           )}
-        </button>
+        </CellTrigger>
       </PopoverTrigger>
       <PopoverContent
         align="start"
         className="w-40 p-1"
-        onOpenAutoFocus={(e) => {
-          e.preventDefault()
-          listRef.current?.focus()
-        }}
+        onOpenAutoFocus={focusListOnOpen}
       >
         <div
           ref={listRef}
@@ -101,11 +79,7 @@ export function EnumCell<T extends string>({
           <button
             type="button"
             onClick={() => select(null)}
-            className={`flex h-[34px] w-full cursor-pointer items-center gap-2 rounded px-2 text-left text-[14px] text-white/50 transition-colors ${
-              highlighted === 0
-                ? 'bg-[rgba(255,255,255,0.06)]'
-                : 'hover:bg-[rgba(255,255,255,0.06)]'
-            }`}
+            className={`flex h-[34px] w-full cursor-pointer items-center gap-2 rounded px-2 text-left text-[14px] text-white/50 transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(0)}`}
           >
             — Clear
           </button>
@@ -114,11 +88,7 @@ export function EnumCell<T extends string>({
               key={opt.value}
               type="button"
               onClick={() => select(opt.value)}
-              className={`flex h-[34px] w-full cursor-pointer items-center gap-2 rounded px-2 text-left text-[14px] transition-colors ${
-                highlighted === i + 1
-                  ? 'bg-[rgba(255,255,255,0.06)]'
-                  : 'hover:bg-[rgba(255,255,255,0.06)]'
-              }`}
+              className={`flex h-[34px] w-full cursor-pointer items-center gap-2 rounded px-2 text-left text-[14px] transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(i + 1)}`}
               style={{ color: opt.color ?? 'var(--foreground)' }}
             >
               {opt.label}

@@ -1,12 +1,14 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { EmptyCell } from './EmptyCell'
+import { CellTrigger } from './CellTrigger'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { useKeyboardNav } from '@/hooks/useKeyboardNav'
 import {
   useLocations,
   useCreateLocation,
@@ -28,10 +30,8 @@ function isRemote(loc: LocationRef) {
 }
 
 export function LocationCell({ value, onSave }: LocationCellProps) {
-  const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const [highlighted, setHighlighted] = useState(-1)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
   const createRef = useRef<HTMLButtonElement>(null)
   const { data: locations = [] } = useLocations()
   const createLocation = useCreateLocation()
@@ -63,6 +63,30 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
   const totalItems =
     othersStart + filteredOthers.length + (createIdx >= 0 ? 1 : 0)
 
+  const {
+    open,
+    setOpen,
+    setHighlighted,
+    handleOpenChange,
+    handleKeyDown,
+    itemClass,
+  } = useKeyboardNav({
+    totalItems,
+    listRef,
+    onEnter: (i) => {
+      if (i === clearIdx) select(null)
+      else if (i === remoteIdx) select(remoteLocation!.id)
+      else if (i >= othersStart && i < othersStart + filteredOthers.length)
+        select(filteredOthers[i - othersStart].id)
+      else if (i === createIdx) handleCreate()
+    },
+    onSearchEnter: () => {
+      if (!exactMatch && search.trim()) handleCreate()
+    },
+    resolveExtraScrollTarget: (i) =>
+      i === createIdx ? createRef.current : null,
+  })
+
   function select(locationId: string | null) {
     onSave(locationId)
     setOpen(false)
@@ -83,66 +107,16 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
     })
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setHighlighted((i) => Math.min(i + 1, totalItems - 1))
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setHighlighted((i) => Math.max(i - 1, 0))
-    } else if (e.key === 'Enter') {
-      if (highlighted >= 0) {
-        e.preventDefault()
-        if (highlighted === clearIdx) select(null)
-        else if (highlighted === remoteIdx) select(remoteLocation!.id)
-        else if (
-          highlighted >= othersStart &&
-          highlighted < othersStart + filteredOthers.length
-        )
-          select(filteredOthers[highlighted - othersStart].id)
-        else if (highlighted === createIdx) handleCreate()
-      } else if (!exactMatch && search.trim()) {
-        handleCreate()
-      }
-    } else if (e.key === 'Escape') {
-      setOpen(false)
-    }
-  }
-
-  useEffect(() => {
-    if (highlighted < 0) return
-    if (highlighted === createIdx) {
-      createRef.current?.scrollIntoView({ block: 'nearest' })
-    } else {
-      const el = scrollRef.current?.children[highlighted] as
-        | HTMLElement
-        | undefined
-      el?.scrollIntoView({ block: 'nearest' })
-    }
-  }, [highlighted, createIdx])
-
-  function itemClass(idx: number) {
-    return highlighted === idx ? 'bg-[rgba(255,255,255,0.06)]' : ''
-  }
-
   return (
     <Popover
       open={open}
       onOpenChange={(v) => {
-        setOpen(v)
-        if (!v) {
-          setSearch('')
-          setHighlighted(-1)
-        }
+        handleOpenChange(v)
+        if (!v) setSearch('')
       }}
     >
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="absolute inset-0 flex cursor-pointer items-center px-3 text-left text-[14px] transition-colors hover:bg-[rgba(255,255,255,0.04)]"
-        >
-          {value?.name ?? <EmptyCell />}
-        </button>
+        <CellTrigger>{value?.name ?? <EmptyCell />}</CellTrigger>
       </PopoverTrigger>
       <PopoverContent
         align="start"
@@ -161,7 +135,7 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
           className="mb-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
         />
 
-        <div ref={scrollRef} className="max-h-56 overflow-y-auto pr-1">
+        <div ref={listRef} className="max-h-56 overflow-y-auto pr-1">
           {value !== null && (
             <button
               type="button"
