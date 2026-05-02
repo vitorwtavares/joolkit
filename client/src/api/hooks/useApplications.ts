@@ -245,6 +245,10 @@ export function useUpdateApplication() {
 
       const patch: Partial<Application> = { ...simpleFields }
 
+      if (simpleFields.status !== undefined) {
+        patch.last_moved_at = new Date().toISOString()
+      }
+
       if (location_id !== undefined) {
         patch.location_id = location_id
         if (location_id === null) {
