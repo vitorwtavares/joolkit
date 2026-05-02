@@ -113,6 +113,7 @@ export function ApplicationRow({ app }: ApplicationRowProps) {
             url={app.careers_url}
             bold
             className="pr-8"
+            maxLength={50}
             onSave={(v) => save({ company_name: v ?? '' })}
           />
           <CareerUrlButton

@@ -8,7 +8,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { TruncatedText } from '@/components/ui/truncated-text'
 import { useKeyboardNav } from '@/hooks/useKeyboardNav'
+import { useOverflowTooltip } from '@/hooks/useOverflowTooltip'
 import {
   useLocations,
   useCreateLocation,
@@ -33,9 +40,22 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
   const [search, setSearch] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
   const createRef = useRef<HTMLButtonElement>(null)
+  const createTextRef = useRef<HTMLSpanElement>(null)
+  const triggerTextRef = useRef<HTMLSpanElement>(null)
   const { data: locations = [] } = useLocations()
   const createLocation = useCreateLocation()
   const deleteLocation = useDeleteLocation()
+
+  const {
+    isOverflowing: triggerOverflow,
+    check: checkTrigger,
+    reset: resetTrigger,
+  } = useOverflowTooltip()
+  const {
+    isOverflowing: createOverflow,
+    check: checkCreate,
+    reset: resetCreate,
+  } = useOverflowTooltip()
 
   const remoteLocation = useMemo(
     () => locations.find(isRemote) ?? null,
@@ -54,7 +74,6 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
     return locations.some((l) => l.name.toLowerCase() === q)
   }, [locations, search])
 
-  // Compute flat nav index offsets
   const clearIdx = value !== null ? 0 : -1
   const remoteIdx = remoteLocation ? (value !== null ? 1 : 0) : -1
   const othersStart = (value !== null ? 1 : 0) + (remoteLocation ? 1 : 0)
@@ -108,106 +127,138 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
   }
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={(v) => {
-        handleOpenChange(v)
-        if (!v) setSearch('')
-      }}
-    >
-      <PopoverTrigger asChild>
-        <CellTrigger>{value?.name ?? <EmptyCell />}</CellTrigger>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="w-52 p-1"
-        onOpenAutoFocus={(e) => e.preventDefault()}
+    <Tooltip>
+      <Popover
+        open={open}
+        onOpenChange={(v) => {
+          handleOpenChange(v)
+          if (!v) setSearch('')
+        }}
       >
-        <input
-          autoFocus
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setHighlighted(-1)
-          }}
-          onKeyDown={handleKeyDown}
-          placeholder="Search or create..."
-          className="mb-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
-        />
-
-        <div ref={listRef} className="max-h-56 overflow-y-auto pr-1">
-          {value !== null && (
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={() => select(null)}
-              className={`flex h-[34px] w-full cursor-pointer items-center rounded px-2 text-left text-[14px] text-white/50 transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(clearIdx)}`}
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <CellTrigger
+              className="overflow-hidden"
+              onMouseEnter={() => checkTrigger(triggerTextRef.current)}
+              onMouseLeave={resetTrigger}
             >
-              — Clear
-            </button>
+              <span ref={triggerTextRef} className="min-w-0 truncate">
+                {value?.name ?? <EmptyCell />}
+              </span>
+            </CellTrigger>
+          </PopoverTrigger>
+        </TooltipTrigger>
+
+        <PopoverContent
+          align="start"
+          className="w-52 p-1"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <input
+            autoFocus
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setHighlighted(-1)
+            }}
+            onKeyDown={handleKeyDown}
+            maxLength={50}
+            placeholder="Search or create..."
+            className="mb-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
+          />
+
+          <div ref={listRef} className="max-h-56 overflow-y-auto pr-1">
+            {value !== null && (
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => select(null)}
+                className={`flex h-[34px] w-full cursor-pointer items-center rounded px-2 text-left text-[14px] text-white/50 transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(clearIdx)}`}
+              >
+                — Clear
+              </button>
+            )}
+
+            {remoteLocation && (
+              <div
+                className={`group flex items-center rounded transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(remoteIdx)}`}
+              >
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => select(remoteLocation.id)}
+                  className="flex min-h-[34px] flex-1 cursor-pointer items-center overflow-hidden px-2 py-2 text-left text-[14px] text-foreground"
+                >
+                  <TruncatedText>{remoteLocation.name}</TruncatedText>
+                </button>
+              </div>
+            )}
+
+            {filteredOthers.map((loc, i) => (
+              <div
+                key={loc.id}
+                className={`group flex items-center rounded transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(othersStart + i)}`}
+              >
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => select(loc.id)}
+                  className="flex min-h-[34px] flex-1 cursor-pointer items-center overflow-hidden px-2 py-2 text-left text-[14px] text-foreground"
+                >
+                  <TruncatedText>{loc.name}</TruncatedText>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDelete(loc)
+                  }}
+                  aria-label={`Delete ${loc.name}`}
+                  tabIndex={-1}
+                  className="mr-1 flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded text-white/30 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.05)] hover:text-destructive"
+                >
+                  <Trash2
+                    size={15}
+                    className="text-[#b0b0aa] transition-colors hover:text-destructive"
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {search.trim() && !exactMatch && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={handleCreate}
+                  disabled={createLocation.isPending}
+                  ref={createRef}
+                  onMouseEnter={() => checkCreate(createTextRef.current)}
+                  onMouseLeave={() => resetCreate()}
+                  className={`flex h-[34px] w-full cursor-pointer items-center gap-1.5 overflow-hidden rounded px-2 text-left text-[14px] text-white/50 transition-colors hover:bg-[rgba(255,255,255,0.06)] disabled:opacity-50 ${createIdx >= 0 ? itemClass(createIdx) : ''}`}
+                >
+                  <Plus size={12} className="flex-shrink-0" />
+                  <span ref={createTextRef} className="min-w-0 truncate">
+                    Create &ldquo;{search.trim()}&rdquo;
+                  </span>
+                </button>
+              </TooltipTrigger>
+              {createOverflow && (
+                <TooltipContent side="right" className="max-w-[250px] pr-4">
+                  <span className="min-w-0 break-words">{search.trim()}</span>
+                </TooltipContent>
+              )}
+            </Tooltip>
           )}
-
-          {remoteLocation && (
-            <div
-              className={`group flex items-center rounded transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(remoteIdx)}`}
-            >
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={() => select(remoteLocation.id)}
-                className="flex min-h-[34px] flex-1 cursor-pointer items-center px-2 py-2 text-left text-[14px] text-foreground"
-              >
-                {remoteLocation.name}
-              </button>
-            </div>
-          )}
-
-          {filteredOthers.map((loc, i) => (
-            <div
-              key={loc.id}
-              className={`group flex items-center rounded transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(othersStart + i)}`}
-            >
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={() => select(loc.id)}
-                className="flex min-h-[34px] flex-1 cursor-pointer items-center px-2 py-2 text-left text-[14px] text-foreground"
-              >
-                {loc.name}
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleDelete(loc)
-                }}
-                aria-label={`Delete ${loc.name}`}
-                tabIndex={-1}
-                className="mr-1 flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded text-white/30 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.05)] hover:text-destructive"
-              >
-                <Trash2
-                  size={15}
-                  className="text-[#b0b0aa] transition-colors hover:text-destructive"
-                />
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {search.trim() && !exactMatch && (
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={handleCreate}
-            disabled={createLocation.isPending}
-            ref={createRef}
-            className={`flex h-[34px] w-full cursor-pointer items-center gap-1.5 rounded px-2 text-left text-[14px] text-white/50 transition-colors hover:bg-[rgba(255,255,255,0.06)] disabled:opacity-50 ${createIdx >= 0 ? itemClass(createIdx) : ''}`}
-          >
-            <Plus size={12} />
-            Create &ldquo;{search.trim()}&rdquo;
-          </button>
-        )}
-      </PopoverContent>
-    </Popover>
+        </PopoverContent>
+      </Popover>
+      {triggerOverflow && !open && value && (
+        <TooltipContent side="top" className="max-w-[250px] pr-4">
+          <span className="min-w-0 break-words">{value.name}</span>
+        </TooltipContent>
+      )}
+    </Tooltip>
   )
 }
