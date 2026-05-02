@@ -14,7 +14,7 @@ export function ApplicationTable({
   isLoading,
 }: ApplicationTableProps) {
   return (
-    <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+    <table className="w-full border-collapse">
       <thead>
         <TableHead />
       </thead>
