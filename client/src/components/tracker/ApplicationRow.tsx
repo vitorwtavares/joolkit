@@ -65,6 +65,19 @@ export function ApplicationRow({ app }: ApplicationRowProps) {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   function save(fields: CreateApplicationPayload) {
+    const hasChange = Object.entries(fields).some(([key, value]) => {
+      if (key === 'skill_ids') {
+        const current = app.skills
+          .map((s) => s.skill.id)
+          .sort()
+          .join()
+        const next = [...(value as string[])].sort().join()
+        return current !== next
+      }
+      return (app as unknown as Record<string, unknown>)[key] !== value
+    })
+    if (!hasChange) return
+
     update(
       { id: app.id, ...fields },
       { onError: () => toast.error('Failed to save') },
