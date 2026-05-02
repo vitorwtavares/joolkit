@@ -1,11 +1,20 @@
 import { useState, useRef, useEffect } from 'react'
 import { EmptyCell } from './EmptyCell'
+import { sanitizeUrl } from '@/utils/sanitizeUrl'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { useOverflowTooltip } from '@/hooks/useOverflowTooltip'
 
 interface TextCellProps {
   value: string | null
   onSave: (value: string | null) => void
+  url?: string | null
   bold?: boolean
   className?: string
+  maxLength?: number
 }
 
 const DEBOUNCE_MS = 600
@@ -13,14 +22,19 @@ const DEBOUNCE_MS = 600
 export function TextCell({
   value,
   onSave,
+  url,
   bold,
   className = '',
+  maxLength,
 }: TextCellProps) {
+  const safeUrl = url ? sanitizeUrl(url) : null
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const onSaveRef = useRef(onSave)
   const lastSavedRef = useRef<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const innerRef = useRef<HTMLElement | null>(null)
+  const { isOverflowing, check, reset } = useOverflowTooltip()
 
   useEffect(() => {
     onSaveRef.current = onSave
@@ -68,6 +82,7 @@ export function TextCell({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={confirmAndExit}
+          maxLength={maxLength}
           onKeyDown={(e) => {
             if (e.key === 'Enter') confirmAndExit()
             if (e.key === 'Escape') {
@@ -83,16 +98,51 @@ export function TextCell({
   }
 
   return (
-    <span
-      tabIndex={0}
-      onClick={startEdit}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') startEdit()
-      }}
-      className={`absolute inset-0 flex cursor-text items-center overflow-hidden px-3 text-[14px] transition-colors hover:bg-[rgba(255,255,255,0.04)] ${className}`}
-      style={{ fontWeight: bold ? 500 : undefined }}
-    >
-      <span className="truncate">{value ?? <EmptyCell />}</span>
-    </span>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          tabIndex={0}
+          onClick={startEdit}
+          onMouseEnter={() => {
+            if (value) check(innerRef.current)
+          }}
+          onMouseLeave={reset}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') startEdit()
+          }}
+          className={`absolute inset-0 flex cursor-text items-center overflow-hidden px-3 text-[14px] transition-colors hover:bg-[rgba(255,255,255,0.04)] ${className}`}
+          style={{ fontWeight: bold ? 500 : undefined }}
+        >
+          {safeUrl && value ? (
+            <a
+              ref={(el) => {
+                innerRef.current = el
+              }}
+              href={safeUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="truncate transition-colors hover:text-foreground/80"
+            >
+              {value}
+            </a>
+          ) : (
+            <span
+              ref={(el) => {
+                innerRef.current = el
+              }}
+              className="truncate"
+            >
+              {value ?? <EmptyCell />}
+            </span>
+          )}
+        </span>
+      </TooltipTrigger>
+      {isOverflowing && value && (
+        <TooltipContent side="top" className="max-w-[250px] pr-4">
+          <span className="min-w-0 break-words">{value}</span>
+        </TooltipContent>
+      )}
+    </Tooltip>
   )
 }

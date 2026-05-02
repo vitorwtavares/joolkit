@@ -1,12 +1,15 @@
-import { useState, useMemo, useRef, useLayoutEffect, useEffect } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { EmptyCell } from './EmptyCell'
+import { CellTrigger } from './CellTrigger'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { useKeyboardNav } from '@/hooks/useKeyboardNav'
+import { useOverflowCount } from '@/hooks/useOverflowCount'
 import {
   useSkills,
   useCreateSkill,
@@ -26,53 +29,15 @@ interface SkillsCellProps {
 
 const SKILL_BG = 'rgba(255,255,255,0.10)'
 
-const COUNTER_W = 30
-const GAP = 3
-
 export function SkillsCell({ value, onSave }: SkillsCellProps) {
-  const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const [highlighted, setHighlighted] = useState(-1)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
   const addRef = useRef<HTMLButtonElement>(null)
   const { data: allSkills = [] } = useSkills()
   const createSkill = useCreateSkill()
   const deleteSkill = useDeleteSkill()
 
-  const visibleRef = useRef<HTMLSpanElement>(null)
-  const measurerRef = useRef<HTMLSpanElement>(null)
-  const [visibleCount, setVisibleCount] = useState(value.length)
-
-  useLayoutEffect(() => {
-    const visible = visibleRef.current
-    const measurer = measurerRef.current
-    if (!visible || !measurer) return
-
-    function recalc() {
-      if (!visible || !measurer) return
-      const containerWidth = visible.clientWidth
-      if (containerWidth <= 0) return
-
-      const children = Array.from(measurer.children) as HTMLElement[]
-      let used = 0
-      let count = 0
-      for (let i = 0; i < children.length; i++) {
-        const w = children[i].offsetWidth
-        const next = used + w + (count > 0 ? GAP : 0)
-        const remaining = children.length - 1 - i
-        const reserve = remaining > 0 ? COUNTER_W + GAP : 0
-        if (next + reserve > containerWidth) break
-        used = next
-        count++
-      }
-      setVisibleCount(count)
-    }
-
-    recalc()
-    const ro = new ResizeObserver(recalc)
-    ro.observe(visible)
-    return () => ro.disconnect()
-  }, [value])
+  const { visibleRef, measurerRef, visibleCount } = useOverflowCount(value)
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -89,6 +54,28 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
     () => new Set(value.map((s) => s.skill.id)),
     [value],
   )
+
+  const clearAllIdx = value.length > 0 ? 0 : -1
+  const skillsStart = value.length > 0 ? 1 : 0
+  const addIdx =
+    search.trim() && !exactMatch ? skillsStart + filtered.length : -1
+  const totalItems = skillsStart + filtered.length + (addIdx >= 0 ? 1 : 0)
+
+  const { open, setHighlighted, handleOpenChange, handleKeyDown, itemClass } =
+    useKeyboardNav({
+      totalItems,
+      listRef,
+      onEnter: (i) => {
+        if (i === clearAllIdx) clearAll()
+        else if (i >= skillsStart && i < skillsStart + filtered.length)
+          toggle(filtered[i - skillsStart].id)
+        else if (i === addIdx) handleCreate()
+      },
+      onSearchEnter: () => {
+        if (!exactMatch && search.trim()) handleCreate()
+      },
+      resolveExtraScrollTarget: (i) => (i === addIdx ? addRef.current : null),
+    })
 
   function toggle(skillId: string) {
     const newIds = selectedIds.has(skillId)
@@ -118,69 +105,16 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
     onSave([])
   }
 
-  const clearAllIdx = value.length > 0 ? 0 : -1
-  const skillsStart = value.length > 0 ? 1 : 0
-  const addIdx =
-    search.trim() && !exactMatch ? skillsStart + filtered.length : -1
-  const totalItems = skillsStart + filtered.length + (addIdx >= 0 ? 1 : 0)
-
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setHighlighted((i) => Math.min(i + 1, totalItems - 1))
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setHighlighted((i) => Math.max(i - 1, 0))
-    } else if (e.key === 'Enter') {
-      if (highlighted >= 0) {
-        e.preventDefault()
-        if (highlighted === clearAllIdx) clearAll()
-        else if (
-          highlighted >= skillsStart &&
-          highlighted < skillsStart + filtered.length
-        )
-          toggle(filtered[highlighted - skillsStart].id)
-        else if (highlighted === addIdx) handleCreate()
-      } else if (!exactMatch && search.trim()) {
-        handleCreate()
-      }
-    } else if (e.key === 'Escape') {
-      setOpen(false)
-    }
-  }
-
-  useEffect(() => {
-    if (highlighted < 0) return
-    if (highlighted === addIdx) {
-      addRef.current?.scrollIntoView({ block: 'nearest' })
-    } else {
-      const el = scrollRef.current?.children[highlighted] as
-        | HTMLElement
-        | undefined
-      el?.scrollIntoView({ block: 'nearest' })
-    }
-  }, [highlighted, addIdx])
-
-  function itemClass(idx: number) {
-    return highlighted === idx ? 'bg-[rgba(255,255,255,0.06)]' : ''
-  }
-
   return (
     <Popover
       open={open}
       onOpenChange={(v) => {
-        setOpen(v)
-        if (!v) {
-          setSearch('')
-          setHighlighted(-1)
-        }
+        handleOpenChange(v)
+        if (!v) setSearch('')
       }}
     >
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="absolute inset-0 flex cursor-pointer items-center pr-8 pl-3 text-left transition-colors hover:bg-[rgba(255,255,255,0.04)]"
-        >
+        <CellTrigger className="pr-8 pl-3">
           {value.length === 0 ? (
             <EmptyCell />
           ) : (
@@ -213,7 +147,7 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
               </span>
             </>
           )}
-        </button>
+        </CellTrigger>
       </PopoverTrigger>
       <PopoverContent
         align="start"
@@ -228,11 +162,12 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
             setHighlighted(-1)
           }}
           onKeyDown={handleKeyDown}
+          maxLength={15}
           placeholder="Search or add..."
           className="mb-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
         />
 
-        <div ref={scrollRef} className="max-h-56 overflow-y-auto pr-1">
+        <div ref={listRef} className="max-h-56 overflow-y-auto pr-1">
           {value.length > 0 && (
             <button
               type="button"

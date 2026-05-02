@@ -2,20 +2,20 @@ export const FIRST_COL_PL = 'pl-16'
 export const LAST_COL_PR = 'pr-8'
 
 export const COL_W = {
-  star: '6%',
-  company: '12%',
-  status: '12%',
-  location: '13%',
-  salary: '10%',
-  workStyle: '8%',
-  visa: '6%',
-  applied: '8%',
-  timeInStage: '9%',
-  skills: '16%',
+  star: '60px',
+  company: '200px',
+  status: '170px',
+  location: '150px',
+  salary: '130px',
+  workStyle: '120px',
+  visa: '70px',
+  applied: '90px',
+  timeInStage: '120px',
+  skills: '180px',
 }
 
 export const TH =
   'px-3 py-[9px] text-left text-[14px] font-medium text-muted-foreground uppercase tracking-[0.04em] whitespace-nowrap bg-background sticky top-0 z-10'
 
 export const TD =
-  'px-3 py-2 text-[14px] border-b border-[rgba(255,255,255,0.04)] align-middle whitespace-nowrap'
+  'h-[44px] px-3 py-2 text-[14px] border-b border-[rgba(255,255,255,0.04)] align-middle whitespace-nowrap'
