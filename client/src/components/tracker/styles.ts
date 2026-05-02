@@ -3,15 +3,15 @@ export const LAST_COL_PR = 'pr-8'
 
 export const COL_W = {
   star: '60px',
-  company: '200px',
+  company: '180px',
   status: '170px',
   location: '150px',
   salary: '130px',
   workStyle: '120px',
-  visa: '70px',
-  applied: '90px',
-  timeInStage: '120px',
-  skills: '180px',
+  visa: '85px',
+  applied: '85px',
+  timeInStage: '100px',
+  skills: '160px',
 }
 
 export const TH =
