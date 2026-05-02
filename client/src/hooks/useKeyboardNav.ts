@@ -17,6 +17,10 @@ export function useKeyboardNav({
 }: UseKeyboardNavOptions) {
   const [open, setOpen] = useState(false)
   const [highlighted, setHighlighted] = useState(-1)
+  const highlightedRef = useRef(highlighted)
+  useEffect(() => {
+    highlightedRef.current = highlighted
+  })
   const optsRef = useRef({
     totalItems,
     onEnter,
@@ -47,11 +51,11 @@ export function useKeyboardNav({
       setHighlighted((i) => Math.min(i + 1, totalItems - 1))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      setHighlighted((i) => Math.max(i - 1, 0))
+      setHighlighted((i) => Math.max(i - 1, -1))
     } else if (e.key === 'Enter') {
-      if (highlighted >= 0) {
+      if (highlightedRef.current >= 0) {
         e.preventDefault()
-        onEnter(highlighted)
+        onEnter(highlightedRef.current)
       } else if (onSearchEnter) {
         onSearchEnter()
       }
