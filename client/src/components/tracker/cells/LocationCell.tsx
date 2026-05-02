@@ -215,12 +215,9 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
                   }}
                   aria-label={`Delete ${loc.name}`}
                   tabIndex={-1}
-                  className="mr-1 flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded text-white/30 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.05)] hover:text-destructive"
+                  className="mr-1 flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded text-white/50 transition-all hover:bg-[rgba(255,255,255,0.05)] hover:text-destructive"
                 >
-                  <Trash2
-                    size={15}
-                    className="text-[#b0b0aa] transition-colors hover:text-destructive"
-                  />
+                  <Trash2 size={15} />
                 </button>
               </div>
             ))}
