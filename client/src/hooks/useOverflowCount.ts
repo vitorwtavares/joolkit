@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 
+// Reserved px width for the "+N" overflow badge — keeps space for it when calculating how many items fit
 const COUNTER_W = 30
 const GAP = 3
 
