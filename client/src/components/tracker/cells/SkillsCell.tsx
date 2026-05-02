@@ -162,6 +162,7 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
             setHighlighted(-1)
           }}
           onKeyDown={handleKeyDown}
+          maxLength={15}
           placeholder="Search or add..."
           className="mb-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
         />
