@@ -94,6 +94,7 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
       onSuccess: (skill) => {
         onSave([...value.map((s) => s.skill.id), skill.id])
         setSearch('')
+        setHighlighted(-1)
       },
     })
   }
@@ -108,7 +109,7 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
     value.length > visibleCount ? value.length - visibleCount : 0
 
   return (
-    <Tooltip>
+    <Tooltip open={overflowCount > 0 && !open ? undefined : false}>
       <Popover
         open={open}
         onOpenChange={(v) => {
@@ -189,7 +190,7 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
               setHighlighted(-1)
             }}
             onKeyDown={handleKeyDown}
-            maxLength={15}
+            maxLength={25}
             placeholder="Search or add..."
             className="mb-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
           />
@@ -216,7 +217,8 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
                   }}
                   aria-label={`Delete ${skill.name}`}
                   tabIndex={-1}
-                  className="mr-1 flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded text-white/50 transition-all hover:bg-[rgba(255,255,255,0.05)] hover:text-destructive"
+                  disabled={createSkill.isPending}
+                  className="mr-1 flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded text-white/50 transition-all hover:bg-[rgba(255,255,255,0.05)] hover:text-destructive disabled:opacity-30"
                 >
                   <Trash2 size={15} />
                 </button>
