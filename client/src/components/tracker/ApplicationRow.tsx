@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Star, Trash2 } from 'lucide-react'
+import { Star, Trash2, PanelRightOpen, MoreHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,6 +12,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { TextCell } from './cells/TextCell'
 import { StatusCell } from './cells/StatusCell'
 import { EnumCell } from './cells/EnumCell'
@@ -59,9 +67,15 @@ const VISA_OPTIONS = [
 
 interface ApplicationRowProps {
   app: Application
+  isSelected: boolean
+  onRowClick: () => void
 }
 
-export function ApplicationRow({ app }: ApplicationRowProps) {
+export function ApplicationRow({
+  app,
+  isSelected,
+  onRowClick,
+}: ApplicationRowProps) {
   const { mutate: update } = useUpdateApplication()
   const { mutate: deleteApp } = useDeleteApplication()
   const queryClient = useQueryClient()
@@ -104,24 +118,48 @@ export function ApplicationRow({ app }: ApplicationRowProps) {
 
   return (
     <>
-      <tr className="group hover:bg-[rgba(255,255,255,0.02)]">
+      <tr
+        className={cn(
+          'group',
+          isSelected
+            ? 'bg-[rgba(255,255,255,0.05)]'
+            : 'hover:bg-[rgba(255,255,255,0.02)]',
+        )}
+      >
         {/* Favorite + delete */}
         <td className={`${TD} ${FIRST_COL_PL} relative`}>
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            className="absolute top-1/2 left-4 -translate-y-1/2 cursor-pointer rounded p-0.5 text-muted-foreground/30 opacity-0 transition-all group-hover:opacity-100 hover:text-destructive"
-            aria-label="Delete application"
-          >
-            <Trash2 size={16} />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="absolute top-1/2 left-4 -translate-y-1/2 cursor-pointer rounded p-0.5 text-muted-foreground/30 opacity-0 transition-all group-hover:opacity-100 hover:text-foreground data-[state=open]:text-foreground data-[state=open]:opacity-100"
+                aria-label="Row actions"
+              >
+                <MoreHorizontal size={16} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuItem onClick={onRowClick}>
+                <PanelRightOpen size={14} />
+                Open details
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 size={14} />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <button
             type="button"
             onClick={() => save({ is_favorite: !app.is_favorite })}
             className="cursor-pointer rounded p-0.5 transition-colors hover:bg-[rgba(255,255,255,0.06)]"
           >
             <Star
-              size={14}
+              size={15}
               className={
                 app.is_favorite
                   ? 'fill-[#EF9F27] text-[#EF9F27]'

@@ -9,7 +9,7 @@ export function TableHead() {
         style={{ minWidth: COL_W.star }}
         aria-label="Favorite"
       >
-        <Star size={13} aria-hidden="true" className="ml-0.5" />
+        <Star size={15} aria-hidden="true" className="ml-0.5" />
       </th>
       <th className={`${TH} pl-2`} style={{ minWidth: COL_W.company }}>
         Company

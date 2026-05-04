@@ -7,11 +7,15 @@ import type { Application } from '@/api/hooks/useApplications'
 interface ApplicationTableProps {
   applications: Application[]
   isLoading: boolean
+  selectedAppId: string | null
+  onRowClick: (id: string) => void
 }
 
 export function ApplicationTable({
   applications,
   isLoading,
+  selectedAppId,
+  onRowClick,
 }: ApplicationTableProps) {
   return (
     <table className="w-full border-collapse">
@@ -31,7 +35,14 @@ export function ApplicationTable({
           </tr>
         )}
         {!isLoading &&
-          applications.map((app) => <ApplicationRow key={app.id} app={app} />)}
+          applications.map((app) => (
+            <ApplicationRow
+              key={app.id}
+              app={app}
+              isSelected={app.id === selectedAppId}
+              onRowClick={() => onRowClick(app.id)}
+            />
+          ))}
       </tbody>
     </table>
   )
