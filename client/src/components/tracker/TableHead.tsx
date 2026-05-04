@@ -11,7 +11,7 @@ export function TableHead() {
       >
         <Star size={15} aria-hidden="true" className="ml-0.5" />
       </th>
-      <th className={`${TH} pl-2`} style={{ minWidth: COL_W.company }}>
+      <th className={`${TH} pl-9`} style={{ minWidth: COL_W.company }}>
         Company
       </th>
       <th className={TH} style={{ minWidth: COL_W.status }}>

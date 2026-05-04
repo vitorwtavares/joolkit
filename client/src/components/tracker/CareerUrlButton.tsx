@@ -55,8 +55,8 @@ export function CareerUrlButton({
         <button
           type="button"
           onClick={handleOpen}
-          className={`absolute top-1/2 right-2 z-10 -translate-y-1/2 cursor-pointer rounded p-0.5 transition-all ${
-            url ? '' : 'opacity-0 group-hover:opacity-50 hover:!opacity-100'
+          className={`absolute top-1/2 left-2 z-10 -translate-y-1/2 cursor-pointer rounded p-0.5 transition-all ${
+            url ? 'opacity-100' : 'opacity-25 hover:opacity-100'
           }`}
           aria-label={url ? 'Edit job link' : 'Add job link'}
         >

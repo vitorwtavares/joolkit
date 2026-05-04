@@ -16,7 +16,7 @@ export function ApplicationDrawer({ app, onClose }: ApplicationDrawerProps) {
       {/* Header */}
       <div className="flex flex-shrink-0 items-start justify-between gap-4 border-b border-[rgba(255,255,255,0.07)] px-6 py-5">
         <div className="flex flex-col gap-2.5">
-          <h2 className="text-[26px] leading-tight font-semibold">
+          <h2 className="text-[30px] leading-tight font-semibold">
             {app.company_name || (
               <span className="text-muted-foreground">Untitled</span>
             )}

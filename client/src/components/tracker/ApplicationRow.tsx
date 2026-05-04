@@ -178,7 +178,7 @@ export function ApplicationRow({
             value={app.company_name || null}
             url={app.careers_url}
             bold
-            className="pr-8"
+            className="pl-9"
             maxLength={50}
             onSave={(v) => save({ company_name: v ?? '' })}
           />
@@ -188,6 +188,14 @@ export function ApplicationRow({
             label={app.company_name || null}
             onSaveLabel={(v) => save({ company_name: v ?? '' })}
           />
+          <button
+            type="button"
+            onClick={onRowClick}
+            className="absolute top-1/2 right-2 flex -translate-y-1/2 cursor-pointer items-center rounded border border-[rgba(255,255,255,0.12)] bg-secondary px-1.5 py-1.5 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:border-[rgba(255,255,255,0.22)] hover:text-foreground"
+            aria-label="Open details"
+          >
+            <PanelRightOpen size={15} />
+          </button>
         </td>
 
         {/* Status */}
