@@ -181,6 +181,7 @@ router.post('/', async (req: AuthRequest, res) => {
 
 router.put('/:id', async (req: AuthRequest, res) => {
   const {
+    known_updated_at,
     company_name,
     careers_url,
     job_url,
@@ -195,6 +196,10 @@ router.put('/:id', async (req: AuthRequest, res) => {
     notes,
     skill_ids,
   } = req.body
+
+  if (!known_updated_at) {
+    return res.status(400).json({ error: 'known_updated_at is required' })
+  }
 
   if (location_id) {
     const locationError = await validateLocationOwnership(
@@ -225,11 +230,12 @@ router.put('/:id', async (req: AuthRequest, res) => {
     .update(update)
     .eq('id', req.params.id)
     .eq('user_id', req.userId!)
+    .eq('updated_at', known_updated_at)
     .select('id')
     .maybeSingle()
 
   if (error) return res.status(500).json({ error: error.message })
-  if (!updated) return res.status(404).json({ error: 'Not found' })
+  if (!updated) return res.status(409).json({ error: 'Update conflict' })
 
   if (Array.isArray(skill_ids)) {
     const skillError = await setApplicationSkills(
@@ -237,8 +243,15 @@ router.put('/:id', async (req: AuthRequest, res) => {
       skill_ids,
       req.userId!,
     )
-    if (skillError)
-      return res.status(skillError.status).json({ error: skillError.message })
+    if (skillError) {
+      // Row is already committed. Return current state so the client cache stays
+      // coherent and the next edit doesn't hit a 409.
+      const { data: fallback, error: fallbackErr } =
+        await fetchApplicationWithJoins(updated.id, req.userId!)
+      if (fallbackErr || !fallback)
+        return res.status(500).json({ error: skillError.message })
+      return res.json(fallback)
+    }
   }
 
   const { data, error: fetchErr } = await fetchApplicationWithJoins(
