@@ -75,7 +75,10 @@ export type CreateApplicationPayload = {
   skill_ids?: string[]
 }
 
-export type UpdateApplicationPayload = { id: string } & CreateApplicationPayload
+export type UpdateApplicationPayload = {
+  id: string
+  known_updated_at: string
+} & CreateApplicationPayload
 
 export function useApplications(view: ApplicationView = 'all') {
   return useQuery({

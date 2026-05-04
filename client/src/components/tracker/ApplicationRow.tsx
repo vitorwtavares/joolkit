@@ -19,10 +19,12 @@ import { LocationCell } from './cells/LocationCell'
 import { SkillsCell } from './cells/SkillsCell'
 import { EmptyCell } from './cells/EmptyCell'
 import { CareerUrlButton } from './CareerUrlButton'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   useUpdateApplication,
   useDeleteApplication,
 } from '@/api/hooks/useApplications'
+import { ApiError } from '@/api/api'
 import { formatTimeInStage, getDaysInStage } from '@/utils/formatTimeInStage'
 import { TD, FIRST_COL_PL } from './styles'
 import type {
@@ -62,6 +64,7 @@ interface ApplicationRowProps {
 export function ApplicationRow({ app }: ApplicationRowProps) {
   const { mutate: update } = useUpdateApplication()
   const { mutate: deleteApp } = useDeleteApplication()
+  const queryClient = useQueryClient()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   function save(fields: CreateApplicationPayload) {
@@ -79,8 +82,17 @@ export function ApplicationRow({ app }: ApplicationRowProps) {
     if (!hasChange) return
 
     update(
-      { id: app.id, ...fields },
-      { onError: () => toast.error('Failed to save') },
+      { id: app.id, known_updated_at: app.updated_at, ...fields },
+      {
+        onError: (err) => {
+          if (err instanceof ApiError && err.status === 409) {
+            toast.error('This record was updated elsewhere — reloading')
+            queryClient.invalidateQueries({ queryKey: ['applications'] })
+          } else {
+            toast.error('Failed to save')
+          }
+        },
+      },
     )
   }
 
