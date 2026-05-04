@@ -69,12 +69,14 @@ interface ApplicationRowProps {
   app: Application
   isSelected: boolean
   onRowClick: () => void
+  onAfterDelete?: () => void
 }
 
 export function ApplicationRow({
   app,
   isSelected,
   onRowClick,
+  onAfterDelete,
 }: ApplicationRowProps) {
   const { mutate: update } = useUpdateApplication()
   const { mutate: deleteApp } = useDeleteApplication()
@@ -111,6 +113,7 @@ export function ApplicationRow({
   }
 
   function handleDelete() {
+    onAfterDelete?.()
     deleteApp(app.id, { onError: () => toast.error('Failed to delete') })
   }
 
