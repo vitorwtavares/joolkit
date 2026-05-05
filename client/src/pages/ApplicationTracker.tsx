@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import { Filter, Columns3, Plus } from 'lucide-react'
 import { toast } from 'sonner'
@@ -37,10 +37,23 @@ export default function ApplicationTracker() {
 
   const { data: applications = [], isLoading } = useApplications(view)
   const createApplication = useCreateApplication()
+  const [mountedApp, setMountedApp] = useState<(typeof applications)[0] | null>(
+    null,
+  )
 
-  const mountedApp = mountedAppId
-    ? (applications.find((a) => a.id === mountedAppId) ?? null)
-    : null
+  // Keep mountedApp in sync with live list changes, but never set it to null
+  // from here — that preserves the drawer content during an optimistic delete
+  // until forceCloseDrawer explicitly clears it.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!mountedAppId) {
+      setMountedApp(null)
+      return
+    }
+    const app = applications.find((a) => a.id === mountedAppId) ?? null
+    if (app) setMountedApp(app)
+  }, [applications, mountedAppId])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   function forceCloseDrawer() {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
@@ -53,6 +66,8 @@ export default function ApplicationTracker() {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
     setSelectedAppId(id)
     setMountedAppId(id)
+    const app = applications.find((a) => a.id === id) ?? null
+    setMountedApp(app)
     requestAnimationFrame(() => setDrawerOpen(true))
   }
 
@@ -165,7 +180,11 @@ export default function ApplicationTracker() {
         }}
       >
         {mountedApp && (
-          <ApplicationDrawer app={mountedApp} onClose={closeDrawer} />
+          <ApplicationDrawer
+            app={mountedApp}
+            onClose={closeDrawer}
+            onDelete={forceCloseDrawer}
+          />
         )}
       </div>
     </div>

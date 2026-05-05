@@ -1,0 +1,81 @@
+import { ChevronsRight, MoreHorizontal, Trash2 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { StatusCell } from '../cells/StatusCell'
+import { CompanyNameEditor } from './CompanyNameEditor'
+import { getDaysInStage } from '@/utils/formatTimeInStage'
+import { timeInStageColor } from '../styles'
+import type { Application } from '@/api/hooks/useApplications'
+import type { CreateApplicationPayload } from '@/api/hooks/useApplications'
+
+interface DrawerHeaderProps {
+  app: Application
+  save: (fields: CreateApplicationPayload) => void
+  onClose: () => void
+  onDeleteClick: () => void
+}
+
+export function DrawerHeader({
+  app,
+  save,
+  onClose,
+  onDeleteClick,
+}: DrawerHeaderProps) {
+  const days = getDaysInStage(app.last_moved_at)
+
+  return (
+    <>
+      {/* Top bar */}
+      <div className="flex flex-shrink-0 items-center justify-between px-4 py-1">
+        <button
+          type="button"
+          onClick={onClose}
+          className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-foreground"
+          aria-label="Close drawer"
+        >
+          <ChevronsRight size={22} />
+        </button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-foreground"
+              aria-label="More options"
+            >
+              <MoreHorizontal size={22} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuItem variant="destructive" onClick={onDeleteClick}>
+              <Trash2 size={14} />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Company name + status */}
+      <div className="flex flex-shrink-0 flex-col gap-2 border-b border-[rgba(255,255,255,0.07)] px-16 pt-2 pb-4">
+        <CompanyNameEditor
+          value={app.company_name || null}
+          onSave={(v) => save({ company_name: v ?? '' })}
+        />
+        <div className="flex items-center gap-3">
+          <StatusCell
+            value={app.status}
+            onSave={(v) => save({ status: v })}
+            inline
+          />
+          <span className={`text-[13px] ${timeInStageColor(days)}`}>
+            {days === 1 ? '1 day in stage' : `${days} days in stage`}
+          </span>
+        </div>
+      </div>
+    </>
+  )
+}
