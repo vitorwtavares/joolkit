@@ -27,43 +27,15 @@ import { LocationCell } from './cells/LocationCell'
 import { SkillsCell } from './cells/SkillsCell'
 import { EmptyCell } from './cells/EmptyCell'
 import { CareerUrlButton } from './CareerUrlButton'
-import { useQueryClient } from '@tanstack/react-query'
-import {
-  useUpdateApplication,
-  useDeleteApplication,
-} from '@/api/hooks/useApplications'
-import { ApiError } from '@/api/api'
+import { useDeleteApplication } from '@/api/hooks/useApplications'
+import { useApplicationSave } from '@/api/hooks/useApplicationSave'
 import { formatTimeInStage, getDaysInStage } from '@/utils/formatTimeInStage'
-import { TD, FIRST_COL_PL } from './styles'
+import { TD, FIRST_COL_PL, timeInStageColor } from './styles'
+import { WORK_STYLE_OPTIONS, VISA_OPTIONS, VISA_COLORS } from './enumOptions'
 import type {
   Application,
   ApplicationStatus,
-  CreateApplicationPayload,
 } from '@/api/hooks/useApplications'
-
-function timeInStageColor(days: number) {
-  if (days > 45) return 'text-[#f09595]'
-  if (days > 30) return 'text-[#f0c040]'
-  return 'text-foreground'
-}
-
-const WORK_STYLE_OPTIONS = [
-  { value: 'remote' as const, label: 'Remote' },
-  { value: 'hybrid' as const, label: 'Hybrid' },
-  { value: 'on-site' as const, label: 'On-site' },
-]
-
-const VISA_COLORS = {
-  yes: '#7dd4a0',
-  no: '#f09595',
-  unknown: '#fbbf24',
-} as const
-
-const VISA_OPTIONS = [
-  { value: 'yes' as const, label: 'Yes', color: VISA_COLORS.yes },
-  { value: 'no' as const, label: 'No', color: VISA_COLORS.no },
-  { value: 'unknown' as const, label: 'Unknown', color: VISA_COLORS.unknown },
-]
 
 interface ApplicationRowProps {
   app: Application
@@ -78,39 +50,9 @@ export function ApplicationRow({
   onRowClick,
   onAfterDelete,
 }: ApplicationRowProps) {
-  const { mutate: update } = useUpdateApplication()
+  const save = useApplicationSave(app)
   const { mutate: deleteApp } = useDeleteApplication()
-  const queryClient = useQueryClient()
   const [confirmDelete, setConfirmDelete] = useState(false)
-
-  function save(fields: CreateApplicationPayload) {
-    const hasChange = Object.entries(fields).some(([key, value]) => {
-      if (key === 'skill_ids') {
-        const current = app.skills
-          .map((s) => s.skill.id)
-          .sort()
-          .join()
-        const next = [...(value as string[])].sort().join()
-        return current !== next
-      }
-      return (app as unknown as Record<string, unknown>)[key] !== value
-    })
-    if (!hasChange) return
-
-    update(
-      { id: app.id, known_updated_at: app.updated_at, ...fields },
-      {
-        onError: (err) => {
-          if (err instanceof ApiError && err.status === 409) {
-            toast.error('This record was updated elsewhere — reloading')
-            queryClient.invalidateQueries({ queryKey: ['applications'] })
-          } else {
-            toast.error('Failed to save')
-          }
-        },
-      },
-    )
-  }
 
   function handleDelete() {
     onAfterDelete?.()

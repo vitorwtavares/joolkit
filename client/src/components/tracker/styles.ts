@@ -19,3 +19,9 @@ export const TH =
 
 export const TD =
   'h-[44px] px-3 py-2 text-[14px] border-b border-[rgba(255,255,255,0.04)] align-middle whitespace-nowrap'
+
+export function timeInStageColor(days: number) {
+  if (days > 45) return 'text-[#f09595]'
+  if (days > 30) return 'text-[#f0c040]'
+  return 'text-foreground'
+}
