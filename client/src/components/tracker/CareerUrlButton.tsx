@@ -84,7 +84,9 @@ export function CareerUrlButton({
           />
         </div>
         <div>
-          <p className="mb-1 text-[12px] text-muted-foreground">Job URL</p>
+          <p className="mb-1 text-[12px] text-muted-foreground">
+            Careers page link
+          </p>
           <div className="flex gap-1.5">
             <input
               value={draft}
