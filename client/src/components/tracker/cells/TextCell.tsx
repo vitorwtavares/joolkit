@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { EmptyCell } from './EmptyCell'
 import { sanitizeUrl } from '@/utils/sanitizeUrl'
+import { cn } from '@/lib/utils'
 import {
   Tooltip,
   TooltipContent,
@@ -14,6 +15,7 @@ interface TextCellProps {
   url?: string | null
   bold?: boolean
   className?: string
+  linkClassName?: string
   maxLength?: number
 }
 
@@ -25,6 +27,7 @@ export function TextCell({
   url,
   bold,
   className = '',
+  linkClassName,
   maxLength,
 }: TextCellProps) {
   const safeUrl = url ? sanitizeUrl(url) : null
@@ -122,7 +125,10 @@ export function TextCell({
               target="_blank"
               rel="noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="truncate transition-colors hover:text-foreground/80"
+              className={cn(
+                'truncate transition-colors hover:text-foreground/80',
+                linkClassName,
+              )}
             >
               {value}
             </a>
