@@ -2,8 +2,8 @@ packages:
   - client
   - server
 
-onlyBuiltDependencies:
-  - canvas
-  - esbuild
-  - msw
-  - puppeteer
+allowBuilds:
+  canvas: true
+  esbuild: true
+  msw: true
+  puppeteer: true
