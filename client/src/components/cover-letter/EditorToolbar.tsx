@@ -52,6 +52,7 @@ function FontSizeInput({ editor, activeSize }: FontSizeInputProps) {
 
   // Sync input when editor selection changes (e.g. cursor moves to different-sized text)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setInputVal(activeSize)
   }, [activeSize])
 
