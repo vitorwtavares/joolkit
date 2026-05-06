@@ -30,7 +30,7 @@ export function DrawerHeader({
 
   return (
     <>
-      {/* Top bar */}
+      {/* Top bar (fixed because header is outside the scroll container) */}
       <div className="flex flex-shrink-0 items-center justify-between px-4 py-1">
         <button
           type="button"

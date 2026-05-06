@@ -29,7 +29,7 @@ export interface Application {
   is_favorite: boolean
   date_applied: string | null
   next_deadline: string | null
-  notes: Record<string, unknown> | null
+  notes: string | null
   last_moved_at: string | null
   created_at: string
   updated_at: string
@@ -73,7 +73,7 @@ export type CreateApplicationPayload = {
   is_favorite?: boolean
   date_applied?: string | null
   next_deadline?: string | null
-  notes?: Record<string, unknown> | null
+  notes?: string | null
   skill_ids?: string[]
 }
 
