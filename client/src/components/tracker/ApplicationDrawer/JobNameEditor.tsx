@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useDebouncedSave } from '@/hooks/useDebouncedSave'
 
 interface JobNameEditorProps {
@@ -8,6 +9,13 @@ interface JobNameEditorProps {
 export function JobNameEditor({ value, onSave }: JobNameEditorProps) {
   const { draft, setDraft, lastSavedRef, cancelTimer, flushSave, schedule } =
     useDebouncedSave(value, onSave)
+
+  useEffect(() => {
+    if (value === lastSavedRef.current) return
+    cancelTimer()
+    setDraft(value ?? '')
+    lastSavedRef.current = value
+  }, [value, cancelTimer, lastSavedRef, setDraft])
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setDraft(e.target.value)

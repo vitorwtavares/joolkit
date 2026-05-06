@@ -4,6 +4,7 @@ import { useApplicationSave } from '@/api/hooks/useApplicationSave'
 import { useDeleteApplication } from '@/api/hooks/useApplications'
 import { DrawerHeader } from './DrawerHeader'
 import { DrawerMetaFields } from './DrawerMetaFields'
+import { NotesEditor } from './NotesEditor'
 import { DeleteApplicationDialog } from '../DeleteApplicationDialog'
 import type { Application } from '@/api/hooks/useApplications'
 
@@ -44,10 +45,11 @@ export function ApplicationDrawer({
           onClose={onClose}
           onDeleteClick={() => setConfirmDelete(true)}
         />
-        <DrawerMetaFields app={app} save={save} />
 
-        {/* Notes (next phase) */}
-        <div className="flex-1 overflow-y-auto px-16 py-4" />
+        <div className="flex flex-1 flex-col overflow-y-auto">
+          <DrawerMetaFields app={app} save={save} />
+          <NotesEditor app={app} save={save} />
+        </div>
       </div>
 
       <DeleteApplicationDialog
