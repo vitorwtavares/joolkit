@@ -34,7 +34,6 @@ export function ResumeButton({
   useLayoutEffect(() => {
     const wasUploading = prevUploadingRef.current
     prevUploadingRef.current = uploading
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!uploading && wasUploading && resumeUrl) setIconPop(true)
   }, [uploading])
 

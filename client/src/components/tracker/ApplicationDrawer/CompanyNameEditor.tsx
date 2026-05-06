@@ -19,7 +19,6 @@ export function CompanyNameEditor({ value, onSave }: CompanyNameEditorProps) {
     setEditing(false)
   }
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (value === lastSavedRef.current) return
     cancelTimer()
@@ -27,7 +26,6 @@ export function CompanyNameEditor({ value, onSave }: CompanyNameEditorProps) {
     lastSavedRef.current = value
     setEditing(true)
   }, [value])
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (!editing) return

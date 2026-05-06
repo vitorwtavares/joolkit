@@ -163,7 +163,6 @@ export function CoverLetterEditor() {
       },
       { emitUpdate: false },
     )
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsDirty(false)
   }, [editor, template, variation, templatesLoading])
 

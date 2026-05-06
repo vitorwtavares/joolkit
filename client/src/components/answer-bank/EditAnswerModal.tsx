@@ -48,6 +48,7 @@ export function EditAnswerModal({
   const updateAnswer = useUpdateAnswer()
   const deleteAnswer = useDeleteAnswer()
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (open) {
       setQuestion(answer?.question ?? '')
@@ -57,6 +58,7 @@ export function EditAnswerModal({
       setConfirmDelete(false)
     }
   }, [open, answer])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const isDirty =
     question !== (answer?.question ?? '') ||
