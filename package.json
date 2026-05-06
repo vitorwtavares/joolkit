@@ -2,7 +2,7 @@
   "name": "noloop",
   "version": "1.0.0",
   "private": true,
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.0.6",
   "engines": {
     "npm": "use-pnpm",
     "yarn": "use-pnpm"
