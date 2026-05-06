@@ -7,20 +7,25 @@ import {
 } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { sanitizeUrl } from '@/utils/sanitizeUrl'
+import { INPUT_BASE } from './styles'
 
-interface CareerUrlButtonProps {
+interface LabelUrlButtonProps {
   url: string | null
   onSave: (url: string | null) => void
   label?: string | null
   onSaveLabel?: (label: string | null) => void
+  labelTitle?: string
+  urlTitle?: string
 }
 
-export function CareerUrlButton({
+export function LabelUrlButton({
   url,
   onSave,
   label,
   onSaveLabel,
-}: CareerUrlButtonProps) {
+  labelTitle = 'Company name',
+  urlTitle = 'Careers page link',
+}: LabelUrlButtonProps) {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState('')
   const [labelDraft, setLabelDraft] = useState('')
@@ -55,10 +60,14 @@ export function CareerUrlButton({
         <button
           type="button"
           onClick={handleOpen}
-          className={`absolute top-1/2 right-2 z-10 -translate-y-1/2 cursor-pointer rounded p-0.5 transition-all ${
-            url ? '' : 'opacity-0 group-hover:opacity-50 hover:!opacity-100'
+          className={`absolute top-1/2 left-2 z-10 -translate-y-1/2 cursor-pointer rounded p-0.5 transition-all ${
+            url ? 'opacity-100' : 'opacity-25 hover:opacity-100'
           }`}
-          aria-label={url ? 'Edit job link' : 'Add job link'}
+          aria-label={
+            url
+              ? `Edit ${urlTitle.toLowerCase()}`
+              : `Add ${urlTitle.toLowerCase()}`
+          }
         >
           <Link2 size={16} className="text-[#4a9eff]" />
         </button>
@@ -69,7 +78,7 @@ export function CareerUrlButton({
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="mb-1.5">
-          <p className="mb-1 text-[12px] text-muted-foreground">Company name</p>
+          <p className="mb-1 text-[12px] text-muted-foreground">{labelTitle}</p>
           <input
             autoFocus
             value={labelDraft}
@@ -79,12 +88,12 @@ export function CareerUrlButton({
               if (e.key === 'Escape') setOpen(false)
             }}
             maxLength={50}
-            placeholder="Company name"
-            className="w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
+            placeholder={labelTitle}
+            className={`w-full ${INPUT_BASE}`}
           />
         </div>
         <div>
-          <p className="mb-1 text-[12px] text-muted-foreground">Job URL</p>
+          <p className="mb-1 text-[12px] text-muted-foreground">{urlTitle}</p>
           <div className="flex gap-1.5">
             <input
               value={draft}

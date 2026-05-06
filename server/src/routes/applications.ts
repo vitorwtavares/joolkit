@@ -114,6 +114,7 @@ router.get('/:id', async (req: AuthRequest, res) => {
 router.post('/', async (req: AuthRequest, res) => {
   const {
     company_name,
+    job_name,
     careers_url,
     job_url,
     status,
@@ -141,6 +142,7 @@ router.post('/', async (req: AuthRequest, res) => {
     .insert({
       user_id: req.userId!,
       company_name: company_name ?? '',
+      job_name: job_name ?? null,
       careers_url: careers_url ?? null,
       job_url: job_url ?? null,
       status: status ?? 'prospect',
@@ -183,6 +185,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
   const {
     known_updated_at,
     company_name,
+    job_name,
     careers_url,
     job_url,
     status,
@@ -213,6 +216,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
     updated_at: new Date().toISOString(),
   }
   if (company_name !== undefined) update.company_name = company_name
+  if (job_name !== undefined) update.job_name = job_name
   if (careers_url !== undefined) update.careers_url = careers_url
   if (job_url !== undefined) update.job_url = job_url
   if (status !== undefined) update.status = status

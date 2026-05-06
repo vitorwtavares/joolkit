@@ -7,6 +7,7 @@ import {
 import { useKeyboardNav } from '@/hooks/useKeyboardNav'
 import { CellTrigger } from './CellTrigger'
 import { EmptyCell } from './EmptyCell'
+import { POPOVER_ITEM_CLASS } from '../styles'
 
 interface EnumOption<T extends string> {
   value: T
@@ -79,7 +80,7 @@ export function EnumCell<T extends string>({
           <button
             type="button"
             onClick={() => select(null)}
-            className={`flex h-[34px] w-full cursor-pointer items-center gap-2 rounded px-2 text-left text-[14px] text-white/50 transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(0)}`}
+            className={`${POPOVER_ITEM_CLASS} gap-2 text-white/50 ${itemClass(0)}`}
           >
             — Clear
           </button>
@@ -88,7 +89,7 @@ export function EnumCell<T extends string>({
               key={opt.value}
               type="button"
               onClick={() => select(opt.value)}
-              className={`flex h-[34px] w-full cursor-pointer items-center gap-2 rounded px-2 text-left text-[14px] transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(i + 1)}`}
+              className={`${POPOVER_ITEM_CLASS} gap-2 ${itemClass(i + 1)}`}
               style={{ color: opt.color ?? 'var(--foreground)' }}
             >
               {opt.label}

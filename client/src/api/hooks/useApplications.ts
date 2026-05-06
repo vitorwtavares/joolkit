@@ -17,6 +17,7 @@ export interface Application {
   id: string
   user_id: string
   company_name: string
+  job_name: string | null
   careers_url: string | null
   job_url: string | null
   status: ApplicationStatus
@@ -61,6 +62,7 @@ export type ApplicationView =
 
 export type CreateApplicationPayload = {
   company_name?: string
+  job_name?: string | null
   careers_url?: string | null
   job_url?: string | null
   status?: ApplicationStatus
@@ -189,6 +191,7 @@ export function useCreateApplication() {
         id: tempId,
         user_id: '',
         company_name: payload.company_name ?? '',
+        job_name: payload.job_name ?? null,
         careers_url: payload.careers_url ?? null,
         job_url: payload.job_url ?? null,
         status: payload.status ?? 'prospect',
@@ -313,12 +316,10 @@ export function useDeleteApplication() {
   return useMutation({
     mutationFn: (id: string) =>
       api.delete<{ id: string }>(`/api/applications/${id}`),
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ['applications'] })
-      const snapshots = queryClient.getQueriesData<Application[]>({
+    onSuccess: (_data, id) => {
+      for (const [key, data] of queryClient.getQueriesData<Application[]>({
         queryKey: ['applications'],
-      })
-      for (const [key, data] of snapshots) {
+      })) {
         if (!Array.isArray(data)) continue
         queryClient.setQueryData<Application[]>(
           key,
@@ -326,12 +327,6 @@ export function useDeleteApplication() {
         )
       }
       queryClient.removeQueries({ queryKey: ['applications', 'detail', id] })
-      return { snapshots }
-    },
-    onError: (_err, _id, ctx) => {
-      for (const [key, data] of ctx?.snapshots ?? []) {
-        queryClient.setQueryData(key, data)
-      }
     },
   })
 }

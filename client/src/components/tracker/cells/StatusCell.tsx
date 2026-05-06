@@ -13,11 +13,12 @@ import type { ApplicationStatus } from '@/api/hooks/useApplications'
 interface StatusCellProps {
   value: ApplicationStatus
   onSave: (value: ApplicationStatus) => void
+  inline?: boolean
 }
 
 const ALL_STATUSES = Object.keys(STATUS_CONFIG) as ApplicationStatus[]
 
-export function StatusCell({ value, onSave }: StatusCellProps) {
+export function StatusCell({ value, onSave, inline = false }: StatusCellProps) {
   const listRef = useRef<HTMLDivElement>(null)
   const {
     open,
@@ -40,9 +41,18 @@ export function StatusCell({ value, onSave }: StatusCellProps) {
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <CellTrigger>
-          <StatusBadge status={value} />
-        </CellTrigger>
+        {inline ? (
+          <button
+            type="button"
+            className="cursor-pointer rounded px-1.5 py-1 transition-colors hover:bg-[rgba(255,255,255,0.04)]"
+          >
+            <StatusBadge status={value} />
+          </button>
+        ) : (
+          <CellTrigger>
+            <StatusBadge status={value} />
+          </CellTrigger>
+        )}
       </PopoverTrigger>
       <PopoverContent
         align="start"

@@ -1,16 +1,14 @@
 import { useState } from 'react'
-import { Star, Trash2 } from 'lucide-react'
+import { Star, Trash2, PanelRightOpen, MoreHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { TextCell } from './cells/TextCell'
 import { StatusCell } from './cells/StatusCell'
 import { EnumCell } from './cells/EnumCell'
@@ -18,110 +16,94 @@ import { DateCell } from './cells/DateCell'
 import { LocationCell } from './cells/LocationCell'
 import { SkillsCell } from './cells/SkillsCell'
 import { EmptyCell } from './cells/EmptyCell'
-import { CareerUrlButton } from './CareerUrlButton'
-import { useQueryClient } from '@tanstack/react-query'
-import {
-  useUpdateApplication,
-  useDeleteApplication,
-} from '@/api/hooks/useApplications'
-import { ApiError } from '@/api/api'
+import { LabelUrlButton } from './LabelUrlButton'
+import { DeleteApplicationDialog } from './DeleteApplicationDialog'
+import { useDeleteApplication } from '@/api/hooks/useApplications'
+import { useApplicationSave } from '@/api/hooks/useApplicationSave'
 import { formatTimeInStage, getDaysInStage } from '@/utils/formatTimeInStage'
-import { TD, FIRST_COL_PL } from './styles'
+import { TD, FIRST_COL_PL, timeInStageColor } from './styles'
+import { WORK_STYLE_OPTIONS, VISA_OPTIONS, VISA_COLORS } from './enumOptions'
 import type {
   Application,
   ApplicationStatus,
-  CreateApplicationPayload,
 } from '@/api/hooks/useApplications'
-
-function timeInStageColor(days: number) {
-  if (days > 45) return 'text-[#f09595]'
-  if (days > 30) return 'text-[#f0c040]'
-  return 'text-foreground'
-}
-
-const WORK_STYLE_OPTIONS = [
-  { value: 'remote' as const, label: 'Remote' },
-  { value: 'hybrid' as const, label: 'Hybrid' },
-  { value: 'on-site' as const, label: 'On-site' },
-]
-
-const VISA_COLORS = {
-  yes: '#7dd4a0',
-  no: '#f09595',
-  unknown: '#fbbf24',
-} as const
-
-const VISA_OPTIONS = [
-  { value: 'yes' as const, label: 'Yes', color: VISA_COLORS.yes },
-  { value: 'no' as const, label: 'No', color: VISA_COLORS.no },
-  { value: 'unknown' as const, label: 'Unknown', color: VISA_COLORS.unknown },
-]
 
 interface ApplicationRowProps {
   app: Application
+  isSelected: boolean
+  onRowClick: () => void
+  onAfterDelete?: () => void
 }
 
-export function ApplicationRow({ app }: ApplicationRowProps) {
-  const { mutate: update } = useUpdateApplication()
-  const { mutate: deleteApp } = useDeleteApplication()
-  const queryClient = useQueryClient()
+export function ApplicationRow({
+  app,
+  isSelected,
+  onRowClick,
+  onAfterDelete,
+}: ApplicationRowProps) {
+  const save = useApplicationSave(app)
+  const { mutate: deleteApp, isPending: isDeleting } = useDeleteApplication()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  function save(fields: CreateApplicationPayload) {
-    const hasChange = Object.entries(fields).some(([key, value]) => {
-      if (key === 'skill_ids') {
-        const current = app.skills
-          .map((s) => s.skill.id)
-          .sort()
-          .join()
-        const next = [...(value as string[])].sort().join()
-        return current !== next
-      }
-      return (app as unknown as Record<string, unknown>)[key] !== value
-    })
-    if (!hasChange) return
-
-    update(
-      { id: app.id, known_updated_at: app.updated_at, ...fields },
-      {
-        onError: (err) => {
-          if (err instanceof ApiError && err.status === 409) {
-            toast.error('This record was updated elsewhere — reloading')
-            queryClient.invalidateQueries({ queryKey: ['applications'] })
-          } else {
-            toast.error('Failed to save')
-          }
-        },
-      },
-    )
-  }
-
   function handleDelete() {
-    deleteApp(app.id, { onError: () => toast.error('Failed to delete') })
+    deleteApp(app.id, {
+      onSuccess: () => {
+        setConfirmDelete(false)
+        onAfterDelete?.()
+      },
+      onError: () => {
+        toast.error('Failed to delete')
+        setConfirmDelete(false)
+      },
+    })
   }
 
   const visaColor = app.visa_support ? VISA_COLORS[app.visa_support] : undefined
 
   return (
     <>
-      <tr className="group hover:bg-[rgba(255,255,255,0.02)]">
+      <tr
+        className={cn(
+          'group',
+          isSelected
+            ? 'bg-[rgba(255,255,255,0.05)]'
+            : 'hover:bg-[rgba(255,255,255,0.02)]',
+        )}
+      >
         {/* Favorite + delete */}
         <td className={`${TD} ${FIRST_COL_PL} relative`}>
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            className="absolute top-1/2 left-4 -translate-y-1/2 cursor-pointer rounded p-0.5 text-muted-foreground/30 opacity-0 transition-all group-hover:opacity-100 hover:text-destructive"
-            aria-label="Delete application"
-          >
-            <Trash2 size={16} />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="absolute top-1/2 left-4 -translate-y-1/2 cursor-pointer rounded p-0.5 text-muted-foreground/30 opacity-0 transition-all group-hover:opacity-100 hover:text-foreground data-[state=open]:text-foreground data-[state=open]:opacity-100"
+                aria-label="Row actions"
+              >
+                <MoreHorizontal size={16} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuItem onClick={onRowClick}>
+                <PanelRightOpen size={14} />
+                Open details
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 size={14} />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <button
             type="button"
             onClick={() => save({ is_favorite: !app.is_favorite })}
             className="cursor-pointer rounded p-0.5 transition-colors hover:bg-[rgba(255,255,255,0.06)]"
           >
             <Star
-              size={14}
+              size={15}
               className={
                 app.is_favorite
                   ? 'fill-[#EF9F27] text-[#EF9F27]'
@@ -137,15 +119,42 @@ export function ApplicationRow({ app }: ApplicationRowProps) {
             value={app.company_name || null}
             url={app.careers_url}
             bold
-            className="pr-8"
+            className="pl-9"
             maxLength={50}
             onSave={(v) => save({ company_name: v ?? '' })}
           />
-          <CareerUrlButton
+          <LabelUrlButton
             url={app.careers_url}
             onSave={(url) => save({ careers_url: url })}
             label={app.company_name || null}
             onSaveLabel={(v) => save({ company_name: v ?? '' })}
+          />
+          <button
+            type="button"
+            onClick={onRowClick}
+            className="absolute top-1/2 right-2 flex -translate-y-1/2 cursor-pointer items-center rounded border border-[rgba(255,255,255,0.12)] bg-secondary px-1.5 py-1.5 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:border-[rgba(255,255,255,0.22)] hover:text-foreground"
+            aria-label="Open details"
+          >
+            <PanelRightOpen size={15} />
+          </button>
+        </td>
+
+        {/* Job title */}
+        <td className={`${TD} relative`} style={{ padding: 0 }}>
+          <TextCell
+            value={app.job_name}
+            url={app.job_url}
+            className="pl-9"
+            maxLength={100}
+            onSave={(v) => save({ job_name: v })}
+          />
+          <LabelUrlButton
+            url={app.job_url}
+            onSave={(url) => save({ job_url: url })}
+            label={app.job_name}
+            onSaveLabel={(v) => save({ job_name: v })}
+            labelTitle="Job title"
+            urlTitle="Job posting link"
           />
         </td>
 
@@ -221,25 +230,13 @@ export function ApplicationRow({ app }: ApplicationRowProps) {
         </td>
       </tr>
 
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this application?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {app.company_name
-                ? `This will permanently remove ${app.company_name} from your tracker.`
-                : 'This will permanently remove this application from your tracker.'}{' '}
-              This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={handleDelete}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteApplicationDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        companyName={app.company_name || null}
+        isDeleting={isDeleting}
+        onConfirm={handleDelete}
+      />
     </>
   )
 }

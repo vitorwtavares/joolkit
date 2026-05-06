@@ -6,7 +6,7 @@ export function getDaysInStage(lastMovedAt: string | null): number {
 export function formatTimeInStage(lastMovedAt: string | null): string {
   if (!lastMovedAt) return '—'
   const days = getDaysInStage(lastMovedAt)
-  if (days <= 0) return 'Today'
+  if (days <= 0) return 'Moved today'
   if (days === 1) return '1 day'
   return `${days} days`
 }

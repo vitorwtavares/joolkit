@@ -1,8 +1,10 @@
 import { useState, useMemo, useRef } from 'react'
-import { Plus, Trash2, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { EmptyCell } from './EmptyCell'
 import { CellTrigger } from './CellTrigger'
+import { PopoverListRow } from './PopoverListRow'
+import { INPUT_BASE, POPOVER_ITEM_CLASS } from '../styles'
 import {
   Popover,
   PopoverContent,
@@ -30,11 +32,16 @@ interface SkillRef {
 interface SkillsCellProps {
   value: { skill: SkillRef }[]
   onSave: (skillIds: string[]) => void
+  multiLine?: boolean
 }
 
 const SKILL_BG = 'rgba(255,255,255,0.10)'
 
-export function SkillsCell({ value, onSave }: SkillsCellProps) {
+export function SkillsCell({
+  value,
+  onSave,
+  multiLine = false,
+}: SkillsCellProps) {
   const [search, setSearch] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
   const addRef = useRef<HTMLButtonElement>(null)
@@ -42,7 +49,9 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
   const createSkill = useCreateSkill()
   const deleteSkill = useDeleteSkill()
 
-  const { visibleRef, measurerRef, visibleCount } = useOverflowCount(value)
+  const { visibleRef, measurerRef, visibleCount } = useOverflowCount(value, {
+    maxLines: multiLine ? 2 : 1,
+  })
 
   const selectedIds = useMemo(
     () => new Set(value.map((s) => s.skill.id)),
@@ -119,40 +128,77 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
       >
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
-            <CellTrigger className="overflow-hidden pr-8 pl-3">
-              {value.length === 0 ? (
-                <EmptyCell />
-              ) : (
-                <>
-                  <span
-                    ref={measurerRef}
-                    aria-hidden="true"
-                    className="pointer-events-none invisible absolute top-0 left-0 flex items-center gap-[3px] whitespace-nowrap"
-                  >
-                    {value.map(({ skill }) => (
-                      <Badge key={skill.id} bg={SKILL_BG}>
-                        {skill.name}
-                      </Badge>
-                    ))}
-                  </span>
-                  <span
-                    ref={visibleRef}
-                    className="flex w-full min-w-0 flex-1 items-center gap-[3px] overflow-hidden"
-                  >
-                    {value.slice(0, visibleCount).map(({ skill }) => (
-                      <Badge key={skill.id} bg={SKILL_BG}>
-                        {skill.name}
-                      </Badge>
-                    ))}
-                    {overflowCount > 0 && (
-                      <span className="inline-flex flex-shrink-0 items-center rounded-md bg-[rgba(255,255,255,0.08)] px-[5px] py-px text-[12px] text-white/60">
-                        +{overflowCount}
-                      </span>
-                    )}
-                  </span>
-                </>
-              )}
-            </CellTrigger>
+            {multiLine ? (
+              <button
+                type="button"
+                className="relative w-full cursor-pointer rounded px-3 py-2 text-left text-[14px] transition-colors hover:bg-[rgba(255,255,255,0.04)]"
+              >
+                <span
+                  ref={measurerRef}
+                  aria-hidden="true"
+                  className="pointer-events-none invisible absolute top-0 left-0 flex items-center gap-[3px] whitespace-nowrap"
+                >
+                  {value.map(({ skill }) => (
+                    <Badge key={skill.id} bg={SKILL_BG}>
+                      {skill.name}
+                    </Badge>
+                  ))}
+                </span>
+                <span ref={visibleRef} className="flex flex-wrap gap-[3px]">
+                  {value.length === 0 ? (
+                    <EmptyCell />
+                  ) : (
+                    <>
+                      {value.slice(0, visibleCount).map(({ skill }) => (
+                        <Badge key={skill.id} bg={SKILL_BG}>
+                          {skill.name}
+                        </Badge>
+                      ))}
+                      {overflowCount > 0 && (
+                        <span className="inline-flex flex-shrink-0 items-center rounded-md bg-[rgba(255,255,255,0.08)] px-[5px] py-px text-[12px] text-white/60">
+                          +{overflowCount}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </span>
+              </button>
+            ) : (
+              <CellTrigger className="overflow-hidden pr-8 pl-3">
+                {value.length === 0 ? (
+                  <EmptyCell />
+                ) : (
+                  <>
+                    <span
+                      ref={measurerRef}
+                      aria-hidden="true"
+                      className="pointer-events-none invisible absolute top-0 left-0 flex items-center gap-[3px] whitespace-nowrap"
+                    >
+                      {value.map(({ skill }) => (
+                        <Badge key={skill.id} bg={SKILL_BG}>
+                          {skill.name}
+                        </Badge>
+                      ))}
+                    </span>
+                    <span
+                      ref={visibleRef}
+                      className="flex w-full min-w-0 flex-1 items-center gap-[3px] overflow-hidden"
+                    >
+                      {value.slice(0, visibleCount).map(({ skill }) => (
+                        <Badge key={skill.id} bg={SKILL_BG}>
+                          {skill.name}
+                        </Badge>
+                      ))}
+                      {overflowCount > 0 && (
+                        <span className="inline-flex flex-shrink-0 items-center rounded-md bg-[rgba(255,255,255,0.08)] px-[5px] py-px text-[12px] text-white/60">
+                          +{overflowCount}
+                        </span>
+                      )}
+                    </span>
+                  </>
+                )}
+              </CellTrigger>
+            )}
           </PopoverTrigger>
         </TooltipTrigger>
 
@@ -192,14 +238,17 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
             onKeyDown={handleKeyDown}
             maxLength={25}
             placeholder="Search or add..."
-            className="mb-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
+            className={`mb-1 w-full ${INPUT_BASE}`}
           />
 
           <div ref={listRef} className="max-h-56 overflow-y-auto pr-1">
             {filtered.map((skill, i) => (
-              <div
+              <PopoverListRow
                 key={skill.id}
-                className={`group flex items-center rounded transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(i)}`}
+                className={itemClass(i)}
+                onDelete={() => handleDeleteSkillOption(skill.id)}
+                deleteLabel={`Delete ${skill.name}`}
+                deleteDisabled={createSkill.isPending}
               >
                 <button
                   type="button"
@@ -209,20 +258,7 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
                 >
                   <Badge bg={SKILL_BG}>{skill.name}</Badge>
                 </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDeleteSkillOption(skill.id)
-                  }}
-                  aria-label={`Delete ${skill.name}`}
-                  tabIndex={-1}
-                  disabled={createSkill.isPending}
-                  className="mr-1 flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded text-white/50 transition-all hover:bg-[rgba(255,255,255,0.05)] hover:text-destructive disabled:opacity-30"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
+              </PopoverListRow>
             ))}
           </div>
 
@@ -233,7 +269,7 @@ export function SkillsCell({ value, onSave }: SkillsCellProps) {
               tabIndex={-1}
               onClick={handleCreate}
               disabled={createSkill.isPending}
-              className={`flex h-[34px] w-full cursor-pointer items-center gap-1.5 rounded px-2 text-left text-[14px] text-white/50 transition-colors hover:bg-[rgba(255,255,255,0.06)] disabled:opacity-50 ${addIdx >= 0 ? itemClass(addIdx) : ''}`}
+              className={`${POPOVER_ITEM_CLASS} gap-1.5 text-white/50 disabled:opacity-50 ${addIdx >= 0 ? itemClass(addIdx) : ''}`}
             >
               <Plus size={12} />
               Add &ldquo;{search.trim()}&rdquo;
