@@ -1,23 +1,7 @@
 import { useState } from 'react'
-import {
-  Star,
-  Trash2,
-  PanelRightOpen,
-  MoreHorizontal,
-  Loader2,
-} from 'lucide-react'
+import { Star, Trash2, PanelRightOpen, MoreHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +17,7 @@ import { LocationCell } from './cells/LocationCell'
 import { SkillsCell } from './cells/SkillsCell'
 import { EmptyCell } from './cells/EmptyCell'
 import { LabelUrlButton } from './LabelUrlButton'
+import { DeleteApplicationDialog } from './DeleteApplicationDialog'
 import { useDeleteApplication } from '@/api/hooks/useApplications'
 import { useApplicationSave } from '@/api/hooks/useApplicationSave'
 import { formatTimeInStage, getDaysInStage } from '@/utils/formatTimeInStage'
@@ -245,41 +230,13 @@ export function ApplicationRow({
         </td>
       </tr>
 
-      <AlertDialog
+      <DeleteApplicationDialog
         open={confirmDelete}
-        onOpenChange={(v) => {
-          if (!isDeleting) setConfirmDelete(v)
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this application?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {app.company_name
-                ? `This will permanently remove ${app.company_name} from your tracker.`
-                : 'This will permanently remove this application from your tracker.'}{' '}
-              This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={isDeleting}
-              onClick={(e) => {
-                e.preventDefault()
-                handleDelete()
-              }}
-            >
-              {isDeleting ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                'Delete'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onOpenChange={setConfirmDelete}
+        companyName={app.company_name || null}
+        isDeleting={isDeleting}
+        onConfirm={handleDelete}
+      />
     </>
   )
 }
