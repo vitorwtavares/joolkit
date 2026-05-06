@@ -20,6 +20,22 @@ export function DrawerMetaFields({ app, save }: DrawerMetaFieldsProps) {
   return (
     <div className="flex-shrink-0 border-b border-[rgba(255,255,255,0.07)] px-16 py-4">
       <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+        <Field label="Job link">
+          <TextCell
+            value={app.job_url}
+            url={app.job_url}
+            linkClassName="text-[#85B7EB] hover:text-[#85B7EB]/80"
+            onSave={(v) => save({ job_url: v })}
+          />
+        </Field>
+        <Field label="Careers page link">
+          <TextCell
+            value={app.careers_url}
+            url={app.careers_url}
+            linkClassName="text-[#85B7EB] hover:text-[#85B7EB]/80"
+            onSave={(v) => save({ careers_url: v })}
+          />
+        </Field>
         <Field label="Location">
           <LocationCell
             value={app.location}
@@ -64,22 +80,6 @@ export function DrawerMetaFields({ app, save }: DrawerMetaFieldsProps) {
             value={app.next_deadline}
             onSave={(v) => save({ next_deadline: v })}
             extended
-          />
-        </Field>
-        <Field label="Job link">
-          <TextCell
-            value={app.job_url}
-            url={app.job_url}
-            linkClassName="text-[#85B7EB] hover:text-[#85B7EB]/80"
-            onSave={(v) => save({ job_url: v })}
-          />
-        </Field>
-        <Field label="Careers page link">
-          <TextCell
-            value={app.careers_url}
-            url={app.careers_url}
-            linkClassName="text-[#85B7EB] hover:text-[#85B7EB]/80"
-            onSave={(v) => save({ careers_url: v })}
           />
         </Field>
         <Field label="Skills" className="col-span-2">
