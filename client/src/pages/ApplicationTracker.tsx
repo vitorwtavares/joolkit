@@ -84,7 +84,10 @@ export default function ApplicationTracker() {
   function handleNewEntry() {
     createApplication.mutate(
       { status: 'prospect' },
-      { onError: () => toast.error('Failed to create entry') },
+      {
+        onSuccess: (app) => openDrawer(app.id),
+        onError: () => toast.error('Failed to create entry'),
+      },
     )
   }
 

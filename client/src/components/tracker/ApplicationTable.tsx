@@ -1,6 +1,6 @@
 import { TableHead } from './TableHead'
 import { COL_W } from './styles'
-import { TableSkeleton } from './TableSkeleton'
+import { TableSkeleton, SkeletonRow } from './TableSkeleton'
 import { ApplicationRow } from './ApplicationRow'
 import type { Application } from '@/api/hooks/useApplications'
 
@@ -37,17 +37,21 @@ export function ApplicationTable({
           </tr>
         )}
         {!isLoading &&
-          applications.map((app) => (
-            <ApplicationRow
-              key={app.id}
-              app={app}
-              isSelected={app.id === selectedAppId}
-              onRowClick={() => onRowClick(app.id)}
-              onAfterDelete={
-                app.id === selectedAppId ? onDeleteSelected : undefined
-              }
-            />
-          ))}
+          applications.map((app) =>
+            app.id.startsWith('temp-') ? (
+              <SkeletonRow key={app.id} />
+            ) : (
+              <ApplicationRow
+                key={app.id}
+                app={app}
+                isSelected={app.id === selectedAppId}
+                onRowClick={() => onRowClick(app.id)}
+                onAfterDelete={
+                  app.id === selectedAppId ? onDeleteSelected : undefined
+                }
+              />
+            ),
+          )}
       </tbody>
     </table>
   )
