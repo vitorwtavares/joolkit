@@ -1,3 +1,9 @@
 packages:
   - client
   - server
+
+allowBuilds:
+  canvas: true
+  esbuild: true
+  msw: true
+  puppeteer: true
