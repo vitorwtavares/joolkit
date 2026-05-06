@@ -18,7 +18,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.0",
     "pdf-parse": "^1.1.4",
-    "pdfjs-dist": "^3.11.174",
+    "pdfjs-dist": "^5.7.284",
     "puppeteer": "^24.42.0"
   },
   "devDependencies": {
