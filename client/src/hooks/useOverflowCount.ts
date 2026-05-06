@@ -52,7 +52,6 @@ export function useOverflowCount<T>(items: T[], options: Options = {}) {
           if (lineWidth + wWithGap + reserve > containerWidth) {
             if (linesUsed < maxLines - 1) {
               linesUsed++
-              lineWidth = 0
               const nowOnLastLine = linesUsed === maxLines - 1
               let reserveNow = 0
               if (nowOnLastLine && remaining > 0) {
