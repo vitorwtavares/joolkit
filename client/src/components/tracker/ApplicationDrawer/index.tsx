@@ -47,7 +47,7 @@ export function ApplicationDrawer({
 
   return (
     <>
-      <div className="flex h-full w-[700px] flex-shrink-0 flex-col overflow-hidden bg-card">
+      <div className="flex h-full w-[650px] flex-shrink-0 flex-col overflow-hidden bg-card">
         <DrawerHeader
           app={app}
           save={save}

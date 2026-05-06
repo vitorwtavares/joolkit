@@ -174,7 +174,7 @@ export default function ApplicationTracker() {
           mountedApp && 'border-l border-[rgba(255,255,255,0.07)]',
         )}
         style={{
-          width: drawerOpen ? 700 : 0,
+          width: drawerOpen ? 650 : 0,
           transition: 'width 150ms ease-in-out',
           willChange: 'width',
         }}
