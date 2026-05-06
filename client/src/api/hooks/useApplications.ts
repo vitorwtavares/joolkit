@@ -17,6 +17,7 @@ export interface Application {
   id: string
   user_id: string
   company_name: string
+  job_name: string | null
   careers_url: string | null
   job_url: string | null
   status: ApplicationStatus
@@ -61,6 +62,7 @@ export type ApplicationView =
 
 export type CreateApplicationPayload = {
   company_name?: string
+  job_name?: string | null
   careers_url?: string | null
   job_url?: string | null
   status?: ApplicationStatus
@@ -189,6 +191,7 @@ export function useCreateApplication() {
         id: tempId,
         user_id: '',
         company_name: payload.company_name ?? '',
+        job_name: payload.job_name ?? null,
         careers_url: payload.careers_url ?? null,
         job_url: payload.job_url ?? null,
         status: payload.status ?? 'prospect',
