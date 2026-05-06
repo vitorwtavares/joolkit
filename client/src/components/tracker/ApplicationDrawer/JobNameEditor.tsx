@@ -1,6 +1,4 @@
-import { useRef, useState } from 'react'
-
-const DEBOUNCE_MS = 600
+import { useDebouncedSave } from '@/hooks/useDebouncedSave'
 
 interface JobNameEditorProps {
   value: string | null
@@ -8,32 +6,12 @@ interface JobNameEditorProps {
 }
 
 export function JobNameEditor({ value, onSave }: JobNameEditorProps) {
-  const [draft, setDraft] = useState(value ?? '')
-  const onSaveRef = useRef(onSave)
-  const lastSavedRef = useRef<string | null>(value)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  function cancelTimer() {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
-  }
-
-  function flushSave(next: string | null) {
-    if (next === lastSavedRef.current) return
-    lastSavedRef.current = next
-    onSaveRef.current(next)
-  }
+  const { draft, setDraft, lastSavedRef, cancelTimer, flushSave, schedule } =
+    useDebouncedSave(value, onSave)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const next = e.target.value
-    setDraft(next)
-    cancelTimer()
-    timerRef.current = setTimeout(
-      () => flushSave(next.trim() || null),
-      DEBOUNCE_MS,
-    )
+    setDraft(e.target.value)
+    schedule(e.target.value.trim() || null)
   }
 
   function handleBlur() {

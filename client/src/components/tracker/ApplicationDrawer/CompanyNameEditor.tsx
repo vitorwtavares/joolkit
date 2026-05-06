@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-
-const NAME_DEBOUNCE_MS = 600
+import { useDebouncedSave } from '@/hooks/useDebouncedSave'
 
 interface CompanyNameEditorProps {
   value: string | null
@@ -9,29 +8,10 @@ interface CompanyNameEditorProps {
 
 export function CompanyNameEditor({ value, onSave }: CompanyNameEditorProps) {
   const [editing, setEditing] = useState(true)
-  const [draft, setDraft] = useState(value ?? '')
-  const onSaveRef = useRef(onSave)
-  const lastSavedRef = useRef<string | null>(value)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { draft, setDraft, lastSavedRef, cancelTimer, flushSave, schedule } =
+    useDebouncedSave(value, onSave)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const skipNextBlurRef = useRef(false)
-
-  useEffect(() => {
-    onSaveRef.current = onSave
-  })
-
-  function cancelTimer() {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
-  }
-
-  function flushSave(next: string | null) {
-    if (next === lastSavedRef.current) return
-    lastSavedRef.current = next
-    onSaveRef.current(next)
-  }
 
   function confirmAndExit() {
     cancelTimer()
@@ -51,10 +31,7 @@ export function CompanyNameEditor({ value, onSave }: CompanyNameEditorProps) {
 
   useEffect(() => {
     if (!editing) return
-    cancelTimer()
-    const next = draft.trim() || null
-    if (next === lastSavedRef.current) return
-    timerRef.current = setTimeout(() => flushSave(next), NAME_DEBOUNCE_MS)
+    schedule(draft.trim() || null)
     return cancelTimer
   }, [draft, editing])
 

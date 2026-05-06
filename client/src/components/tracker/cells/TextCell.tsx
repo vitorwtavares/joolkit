@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { EmptyCell } from './EmptyCell'
 import { sanitizeUrl } from '@/utils/sanitizeUrl'
 import { cn } from '@/lib/utils'
@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useOverflowTooltip } from '@/hooks/useOverflowTooltip'
+import { useDebouncedSave } from '@/hooks/useDebouncedSave'
 
 interface TextCellProps {
   value: string | null
@@ -18,8 +19,6 @@ interface TextCellProps {
   linkClassName?: string
   maxLength?: number
 }
-
-const DEBOUNCE_MS = 600
 
 export function TextCell({
   value,
@@ -32,29 +31,10 @@ export function TextCell({
 }: TextCellProps) {
   const safeUrl = url ? sanitizeUrl(url) : null
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState('')
-  const onSaveRef = useRef(onSave)
-  const lastSavedRef = useRef<string | null>(null)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { draft, setDraft, lastSavedRef, cancelTimer, flushSave, schedule } =
+    useDebouncedSave(value, onSave)
   const innerRef = useRef<HTMLElement | null>(null)
   const { isOverflowing, check, reset } = useOverflowTooltip()
-
-  useEffect(() => {
-    onSaveRef.current = onSave
-  })
-
-  function cancelTimer() {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
-  }
-
-  function flushSave(next: string | null) {
-    if (next === lastSavedRef.current) return
-    lastSavedRef.current = next
-    onSaveRef.current(next)
-  }
 
   function startEdit() {
     setDraft(value ?? '')
@@ -70,10 +50,7 @@ export function TextCell({
 
   useEffect(() => {
     if (!editing) return
-    cancelTimer()
-    const next = draft.trim() || null
-    if (next === lastSavedRef.current) return
-    timerRef.current = setTimeout(() => flushSave(next), DEBOUNCE_MS)
+    schedule(draft.trim() || null)
     return cancelTimer
   }, [draft, editing])
 
