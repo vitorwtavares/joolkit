@@ -102,6 +102,7 @@ export function CompanyNameEditor({ value, onSave }: CompanyNameEditorProps) {
           if (e.key === 'Enter') {
             e.preventDefault()
             confirmAndExit()
+            e.currentTarget.blur()
           }
           if (e.key === 'Escape') {
             cancelTimer()
