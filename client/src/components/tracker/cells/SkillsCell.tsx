@@ -1,8 +1,10 @@
 import { useState, useMemo, useRef } from 'react'
-import { Plus, Trash2, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { EmptyCell } from './EmptyCell'
 import { CellTrigger } from './CellTrigger'
+import { PopoverListRow } from './PopoverListRow'
+import { INPUT_BASE, POPOVER_ITEM_CLASS } from '../styles'
 import {
   Popover,
   PopoverContent,
@@ -236,14 +238,17 @@ export function SkillsCell({
             onKeyDown={handleKeyDown}
             maxLength={25}
             placeholder="Search or add..."
-            className="mb-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
+            className={`mb-1 w-full ${INPUT_BASE}`}
           />
 
           <div ref={listRef} className="max-h-56 overflow-y-auto pr-1">
             {filtered.map((skill, i) => (
-              <div
+              <PopoverListRow
                 key={skill.id}
-                className={`group flex items-center rounded transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(i)}`}
+                className={itemClass(i)}
+                onDelete={() => handleDeleteSkillOption(skill.id)}
+                deleteLabel={`Delete ${skill.name}`}
+                deleteDisabled={createSkill.isPending}
               >
                 <button
                   type="button"
@@ -253,20 +258,7 @@ export function SkillsCell({
                 >
                   <Badge bg={SKILL_BG}>{skill.name}</Badge>
                 </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDeleteSkillOption(skill.id)
-                  }}
-                  aria-label={`Delete ${skill.name}`}
-                  tabIndex={-1}
-                  disabled={createSkill.isPending}
-                  className="mr-1 flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded text-white/50 transition-all hover:bg-[rgba(255,255,255,0.05)] hover:text-destructive disabled:opacity-30"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
+              </PopoverListRow>
             ))}
           </div>
 
@@ -277,7 +269,7 @@ export function SkillsCell({
               tabIndex={-1}
               onClick={handleCreate}
               disabled={createSkill.isPending}
-              className={`flex h-[34px] w-full cursor-pointer items-center gap-1.5 rounded px-2 text-left text-[14px] text-white/50 transition-colors hover:bg-[rgba(255,255,255,0.06)] disabled:opacity-50 ${addIdx >= 0 ? itemClass(addIdx) : ''}`}
+              className={`${POPOVER_ITEM_CLASS} gap-1.5 text-white/50 disabled:opacity-50 ${addIdx >= 0 ? itemClass(addIdx) : ''}`}
             >
               <Plus size={12} />
               Add &ldquo;{search.trim()}&rdquo;

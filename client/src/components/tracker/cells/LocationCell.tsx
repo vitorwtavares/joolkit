@@ -1,8 +1,10 @@
 import { useState, useMemo, useRef } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { EmptyCell } from './EmptyCell'
 import { CellTrigger } from './CellTrigger'
+import { PopoverListRow } from './PopoverListRow'
+import { INPUT_BASE, POPOVER_ITEM_CLASS } from '../styles'
 import {
   Popover,
   PopoverContent,
@@ -164,7 +166,7 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
             onKeyDown={handleKeyDown}
             maxLength={50}
             placeholder="Search or create..."
-            className="mb-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
+            className={`mb-1 w-full ${INPUT_BASE}`}
           />
 
           <div ref={listRef} className="max-h-56 overflow-y-auto pr-1">
@@ -173,16 +175,14 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
                 type="button"
                 tabIndex={-1}
                 onClick={() => select(null)}
-                className={`flex h-[34px] w-full cursor-pointer items-center rounded px-2 text-left text-[14px] text-white/50 transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(clearIdx)}`}
+                className={`${POPOVER_ITEM_CLASS} text-white/50 ${itemClass(clearIdx)}`}
               >
                 — Clear
               </button>
             )}
 
             {remoteLocation && (
-              <div
-                className={`group flex items-center rounded transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(remoteIdx)}`}
-              >
+              <PopoverListRow className={itemClass(remoteIdx)}>
                 <button
                   type="button"
                   tabIndex={-1}
@@ -191,13 +191,15 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
                 >
                   <TruncatedText>{remoteLocation.name}</TruncatedText>
                 </button>
-              </div>
+              </PopoverListRow>
             )}
 
             {filteredOthers.map((loc, i) => (
-              <div
+              <PopoverListRow
                 key={loc.id}
-                className={`group flex items-center rounded transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(othersStart + i)}`}
+                className={itemClass(othersStart + i)}
+                onDelete={() => handleDelete(loc)}
+                deleteLabel={`Delete ${loc.name}`}
               >
                 <button
                   type="button"
@@ -207,19 +209,7 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
                 >
                   <TruncatedText>{loc.name}</TruncatedText>
                 </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDelete(loc)
-                  }}
-                  aria-label={`Delete ${loc.name}`}
-                  tabIndex={-1}
-                  className="mr-1 flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded text-white/50 transition-all hover:bg-[rgba(255,255,255,0.05)] hover:text-destructive"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
+              </PopoverListRow>
             ))}
           </div>
 
@@ -234,7 +224,7 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
                   ref={createRef}
                   onMouseEnter={() => checkCreate(createTextRef.current)}
                   onMouseLeave={() => resetCreate()}
-                  className={`flex h-[34px] w-full cursor-pointer items-center gap-1.5 overflow-hidden rounded px-2 text-left text-[14px] text-white/50 transition-colors hover:bg-[rgba(255,255,255,0.06)] disabled:opacity-50 ${createIdx >= 0 ? itemClass(createIdx) : ''}`}
+                  className={`${POPOVER_ITEM_CLASS} gap-1.5 overflow-hidden text-white/50 disabled:opacity-50 ${createIdx >= 0 ? itemClass(createIdx) : ''}`}
                 >
                   <Plus size={12} className="flex-shrink-0" />
                   <span ref={createTextRef} className="min-w-0 truncate">

@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { sanitizeUrl } from '@/utils/sanitizeUrl'
+import { INPUT_BASE } from './styles'
 
 interface LabelUrlButtonProps {
   url: string | null
@@ -88,7 +89,7 @@ export function LabelUrlButton({
             }}
             maxLength={50}
             placeholder={labelTitle}
-            className="w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
+            className={`w-full ${INPUT_BASE}`}
           />
         </div>
         <div>
