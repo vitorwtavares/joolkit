@@ -1,3 +1,9 @@
 packages:
   - client
   - server
+
+onlyBuiltDependencies:
+  - canvas
+  - esbuild
+  - msw
+  - puppeteer
