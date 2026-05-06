@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { StatusCell } from '../cells/StatusCell'
 import { CompanyNameEditor } from './CompanyNameEditor'
+import { JobNameEditor } from './JobNameEditor'
 import { getDaysInStage } from '@/utils/formatTimeInStage'
 import { timeInStageColor } from '../styles'
 import type { Application } from '@/api/hooks/useApplications'
@@ -61,10 +62,16 @@ export function DrawerHeader({
 
       {/* Company name + status */}
       <div className="flex flex-shrink-0 flex-col gap-2 border-b border-[rgba(255,255,255,0.07)] px-16 pt-2 pb-4">
-        <CompanyNameEditor
-          value={app.company_name || null}
-          onSave={(v) => save({ company_name: v ?? '' })}
-        />
+        <div className="flex flex-col">
+          <CompanyNameEditor
+            value={app.company_name || null}
+            onSave={(v) => save({ company_name: v ?? '' })}
+          />
+          <JobNameEditor
+            value={app.job_name}
+            onSave={(v) => save({ job_name: v })}
+          />
+        </div>
         <div className="flex items-center gap-3">
           <StatusCell
             value={app.status}
