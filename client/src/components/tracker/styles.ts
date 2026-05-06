@@ -3,7 +3,8 @@ export const LAST_COL_PR = 'pr-8'
 
 export const COL_W = {
   star: '60px',
-  company: '180px',
+  company: '170px',
+  jobName: '190px',
   status: '170px',
   location: '150px',
   salary: '130px',
@@ -11,7 +12,7 @@ export const COL_W = {
   visa: '85px',
   applied: '85px',
   timeInStage: '100px',
-  skills: '160px',
+  skills: '200px',
 }
 
 export const TH =

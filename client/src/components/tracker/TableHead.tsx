@@ -14,6 +14,9 @@ export function TableHead() {
       <th className={`${TH} pl-9`} style={{ minWidth: COL_W.company }}>
         Company
       </th>
+      <th className={`${TH} pl-9`} style={{ minWidth: COL_W.jobName }}>
+        Job title
+      </th>
       <th className={TH} style={{ minWidth: COL_W.status }}>
         Status
       </th>

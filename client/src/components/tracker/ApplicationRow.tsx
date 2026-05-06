@@ -26,7 +26,7 @@ import { DateCell } from './cells/DateCell'
 import { LocationCell } from './cells/LocationCell'
 import { SkillsCell } from './cells/SkillsCell'
 import { EmptyCell } from './cells/EmptyCell'
-import { CareerUrlButton } from './CareerUrlButton'
+import { LabelUrlButton } from './LabelUrlButton'
 import { useDeleteApplication } from '@/api/hooks/useApplications'
 import { useApplicationSave } from '@/api/hooks/useApplicationSave'
 import { formatTimeInStage, getDaysInStage } from '@/utils/formatTimeInStage'
@@ -124,7 +124,7 @@ export function ApplicationRow({
             maxLength={50}
             onSave={(v) => save({ company_name: v ?? '' })}
           />
-          <CareerUrlButton
+          <LabelUrlButton
             url={app.careers_url}
             onSave={(url) => save({ careers_url: url })}
             label={app.company_name || null}
@@ -138,6 +138,25 @@ export function ApplicationRow({
           >
             <PanelRightOpen size={15} />
           </button>
+        </td>
+
+        {/* Job title */}
+        <td className={`${TD} relative`} style={{ padding: 0 }}>
+          <TextCell
+            value={app.job_name}
+            url={app.job_url}
+            className="pl-9"
+            maxLength={100}
+            onSave={(v) => save({ job_name: v })}
+          />
+          <LabelUrlButton
+            url={app.job_url}
+            onSave={(url) => save({ job_url: url })}
+            label={app.job_name}
+            onSaveLabel={(v) => save({ job_name: v })}
+            labelTitle="Job title"
+            urlTitle="Job posting link"
+          />
         </td>
 
         {/* Status */}
