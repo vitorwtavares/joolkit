@@ -316,12 +316,10 @@ export function useDeleteApplication() {
   return useMutation({
     mutationFn: (id: string) =>
       api.delete<{ id: string }>(`/api/applications/${id}`),
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ['applications'] })
-      const snapshots = queryClient.getQueriesData<Application[]>({
+    onSuccess: (_data, id) => {
+      for (const [key, data] of queryClient.getQueriesData<Application[]>({
         queryKey: ['applications'],
-      })
-      for (const [key, data] of snapshots) {
+      })) {
         if (!Array.isArray(data)) continue
         queryClient.setQueryData<Application[]>(
           key,
@@ -329,12 +327,6 @@ export function useDeleteApplication() {
         )
       }
       queryClient.removeQueries({ queryKey: ['applications', 'detail', id] })
-      return { snapshots }
-    },
-    onError: (_err, _id, ctx) => {
-      for (const [key, data] of ctx?.snapshots ?? []) {
-        queryClient.setQueryData(key, data)
-      }
     },
   })
 }

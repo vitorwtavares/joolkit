@@ -1,5 +1,11 @@
 import { useState } from 'react'
-import { Star, Trash2, PanelRightOpen, MoreHorizontal } from 'lucide-react'
+import {
+  Star,
+  Trash2,
+  PanelRightOpen,
+  MoreHorizontal,
+  Loader2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
@@ -51,12 +57,20 @@ export function ApplicationRow({
   onAfterDelete,
 }: ApplicationRowProps) {
   const save = useApplicationSave(app)
-  const { mutate: deleteApp } = useDeleteApplication()
+  const { mutate: deleteApp, isPending: isDeleting } = useDeleteApplication()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   function handleDelete() {
-    onAfterDelete?.()
-    deleteApp(app.id, { onError: () => toast.error('Failed to delete') })
+    deleteApp(app.id, {
+      onSuccess: () => {
+        setConfirmDelete(false)
+        onAfterDelete?.()
+      },
+      onError: () => {
+        toast.error('Failed to delete')
+        setConfirmDelete(false)
+      },
+    })
   }
 
   const visaColor = app.visa_support ? VISA_COLORS[app.visa_support] : undefined
@@ -231,7 +245,12 @@ export function ApplicationRow({
         </td>
       </tr>
 
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+      <AlertDialog
+        open={confirmDelete}
+        onOpenChange={(v) => {
+          if (!isDeleting) setConfirmDelete(v)
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this application?</AlertDialogTitle>
@@ -243,9 +262,20 @@ export function ApplicationRow({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={handleDelete}>
-              Delete
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={(e) => {
+                e.preventDefault()
+                handleDelete()
+              }}
+            >
+              {isDeleting ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
