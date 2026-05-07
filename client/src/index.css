@@ -37,6 +37,10 @@
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: #8a8a85;
   --brand: #ff5757;
+  --brand-foreground: #fff;
+  --surface-raised: #2a2a28;
+  --success: #7dd4a0;
+  --success-soft: #052e16;
 
   /* Palette — matches the 10-color Notion-style picker */
   --palette-default: #3d3b38;
@@ -86,6 +90,10 @@
   --color-foreground: var(--foreground);
   --color-background: var(--background);
   --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-surface-raised: var(--surface-raised);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
   --color-palette-default: var(--palette-default);
   --color-palette-gray: var(--palette-gray);
   --color-palette-brown: var(--palette-brown);

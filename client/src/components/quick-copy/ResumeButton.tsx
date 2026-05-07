@@ -142,7 +142,7 @@ export function ResumeButton({
               falling
                 ? undefined
                 : showAsFilled
-                  ? 'bg-green-950'
+                  ? 'bg-success-soft'
                   : 'bg-background',
               iconPop && 'animate-icon-pop',
               falling && 'animate-icon-fall',
@@ -160,7 +160,7 @@ export function ResumeButton({
             ) : showAsFilled ? (
               <FileText
                 size={13}
-                className={falling ? undefined : 'text-green-400'}
+                className={falling ? undefined : 'text-success'}
               />
             ) : (
               <Upload size={13} className="text-muted-foreground/40" />

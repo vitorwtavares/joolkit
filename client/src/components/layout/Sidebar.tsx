@@ -123,7 +123,7 @@ export default function Sidebar() {
             >
               <AvatarFallback
                 className="bg-transparent text-[14px] font-semibold"
-                style={{ color: '#fff' }}
+                style={{ color: 'var(--brand-foreground)' }}
               >
                 {initial}
               </AvatarFallback>

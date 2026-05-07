@@ -176,7 +176,7 @@ export function CoverLetterCard({
             className="flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[13px] font-medium transition-opacity hover:opacity-90"
             style={{
               background: 'color-mix(in srgb, var(--brand) 72%, black)',
-              color: '#fff',
+              color: 'var(--brand-foreground)',
             }}
           >
             <ExternalLink size={13} />
@@ -245,7 +245,7 @@ export function CoverLetterCard({
                       fallingSlot === v
                         ? undefined
                         : showAsFilled
-                          ? 'bg-green-950'
+                          ? 'bg-success-soft'
                           : 'bg-background',
                       iconPop === v && 'animate-icon-pop',
                       fallingSlot === v && 'animate-icon-fall',
@@ -264,7 +264,7 @@ export function CoverLetterCard({
                       <FileText
                         size={13}
                         className={
-                          fallingSlot === v ? undefined : 'text-green-400'
+                          fallingSlot === v ? undefined : 'text-success'
                         }
                       />
                     ) : (
