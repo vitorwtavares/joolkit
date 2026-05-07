@@ -179,7 +179,7 @@ export default function QuickCopy() {
         <h2 className="mb-2.5 text-[12px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
           Files
         </h2>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-6">
+        <div className="grid grid-cols-1 gap-6 min-[1200px]:grid-cols-[minmax(220px,1fr)_minmax(0,3fr)]">
           <ResumeButton
             resumeUrl={profile.resume_url}
             userId={user.id}
@@ -194,7 +194,7 @@ export default function QuickCopy() {
               )
             }
           />
-          <div className="col-span-3">
+          <div>
             <CoverLetterCard
               templates={templates}
               userId={user.id}
