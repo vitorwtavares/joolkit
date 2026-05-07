@@ -60,7 +60,7 @@ export function LabelUrlButton({
         <button
           type="button"
           onClick={handleOpen}
-          className={`absolute top-1/2 left-2 z-10 -translate-y-1/2 cursor-pointer rounded p-0.5 transition-all ${
+          className={`absolute top-1/2 left-2 z-10 -translate-y-1/2 cursor-pointer rounded p-0.5 text-link transition-all duration-150 ease-out hover:text-info ${
             url ? 'opacity-100' : 'opacity-25 hover:opacity-100'
           }`}
           aria-label={
@@ -69,7 +69,10 @@ export function LabelUrlButton({
               : `Add ${urlTitle.toLowerCase()}`
           }
         >
-          <Link2 size={16} className="text-link" />
+          <Link2
+            size={16}
+            className="transition-colors duration-150 ease-out"
+          />
         </button>
       </PopoverTrigger>
       <PopoverContent
