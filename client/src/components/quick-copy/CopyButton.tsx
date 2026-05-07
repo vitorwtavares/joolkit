@@ -83,7 +83,7 @@ export function CopyButton({
 
   if (editing) {
     return (
-      <div className="flex items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-3">
+      <div className="flex items-center gap-2.5 rounded-lg border border-border bg-secondary px-3 py-3">
         <div
           className={cn(
             'flex size-[30px] flex-shrink-0 items-center justify-center rounded-md',
@@ -137,7 +137,7 @@ export function CopyButton({
       <button
         onClick={filled ? copy : startEdit}
         className={cn(
-          'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border bg-card px-3 py-3 text-left transition-colors hover:bg-secondary/30',
+          'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border bg-secondary px-3 py-3 text-left transition-colors hover:bg-secondary/70',
           filled ? 'border-border' : 'border-dashed border-border/50',
         )}
       >
@@ -186,7 +186,7 @@ export function CopyButton({
       </button>
       <button
         onClick={startEdit}
-        className="absolute top-1/2 -right-[11px] z-10 flex size-[24px] -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-card shadow-sm hover:bg-secondary"
+        className="absolute top-1/2 -right-[11px] z-10 flex size-[24px] -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-secondary shadow-sm transition-colors hover:bg-surface-selected"
       >
         <Pencil size={13} className="text-muted-foreground" />
       </button>

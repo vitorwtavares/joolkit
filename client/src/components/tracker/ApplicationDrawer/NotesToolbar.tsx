@@ -24,7 +24,7 @@ import { sanitizeUrl } from '@/utils/sanitizeUrl'
 const BTN = 'h-8 w-8 min-w-8 rounded-md'
 const ICON = 'size-4'
 const HEADING_ICON = 'size-[18px]'
-const SEP = <div className="mx-1 h-[16px] w-px bg-[rgba(255,255,255,0.08)]" />
+const SEP = <div className="mx-1 h-[16px] w-px bg-border" />
 
 interface NotesToolbarProps {
   editor: Editor | null
@@ -98,7 +98,7 @@ function LinkPopover({
             if (e.key === 'Escape') setOpen(false)
           }}
           placeholder="https://..."
-          className="mb-1.5 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
+          className="mb-1.5 w-full rounded border border-input-border-strong bg-input-subtle px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
         />
         <div className="flex gap-1.5">
           {editor.isActive('link') && (

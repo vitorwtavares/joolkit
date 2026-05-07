@@ -75,7 +75,7 @@ export function useKeyboardNav({
   }, [highlighted])
 
   function itemClass(idx: number) {
-    return highlighted === idx ? 'bg-[rgba(255,255,255,0.06)]' : ''
+    return highlighted === idx ? 'bg-muted' : ''
   }
 
   function focusListOnOpen(e: Event) {

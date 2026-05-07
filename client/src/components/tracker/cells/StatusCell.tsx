@@ -44,7 +44,7 @@ export function StatusCell({ value, onSave, inline = false }: StatusCellProps) {
         {inline ? (
           <button
             type="button"
-            className="cursor-pointer rounded px-1.5 py-1 transition-colors hover:bg-[rgba(255,255,255,0.04)]"
+            className="cursor-pointer rounded px-1.5 py-1 transition-colors hover:bg-surface-hover-subtle"
           >
             <StatusBadge status={value} />
           </button>
@@ -70,7 +70,7 @@ export function StatusCell({ value, onSave, inline = false }: StatusCellProps) {
               key={status}
               type="button"
               onClick={() => select(status)}
-              className={`flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-[rgba(255,255,255,0.06)] ${itemClass(i)}`}
+              className={`flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-muted ${itemClass(i)}`}
             >
               <StatusBadge status={status} />
             </button>

@@ -60,14 +60,14 @@ const linkFields: {
     key: 'linkedin',
     label: 'LinkedIn',
     icon: <LinkedInIcon />,
-    iconBg: 'bg-[#2a2a28]',
+    iconBg: 'bg-surface-raised',
     emptyText: 'Add link...',
   },
   {
     key: 'github',
     label: 'GitHub',
     icon: <GitHubIcon />,
-    iconBg: 'bg-[#2a2a28]',
+    iconBg: 'bg-surface-raised',
     emptyText: 'Add link...',
   },
   {

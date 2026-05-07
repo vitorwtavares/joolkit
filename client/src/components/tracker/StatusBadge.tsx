@@ -9,7 +9,7 @@ interface StatusBadgeProps {
 export function StatusBadge({ status }: StatusBadgeProps) {
   const config = STATUS_CONFIG[status] ?? {
     label: status,
-    bg: 'rgba(255,255,255,0.13)',
+    bg: 'var(--border-overlay)',
   }
 
   return <Badge bg={config.bg}>{config.label}</Badge>

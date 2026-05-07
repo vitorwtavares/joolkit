@@ -65,9 +65,7 @@ export function ApplicationRow({
       <tr
         className={cn(
           'group',
-          isSelected
-            ? 'bg-[rgba(255,255,255,0.05)]'
-            : 'hover:bg-[rgba(255,255,255,0.02)]',
+          isSelected ? 'bg-surface-hover' : 'hover:bg-surface-hover-ghost',
         )}
       >
         {/* Favorite + delete */}
@@ -100,13 +98,13 @@ export function ApplicationRow({
           <button
             type="button"
             onClick={() => save({ is_favorite: !app.is_favorite })}
-            className="cursor-pointer rounded p-0.5 transition-colors hover:bg-[rgba(255,255,255,0.06)]"
+            className="cursor-pointer rounded p-0.5 transition-colors hover:bg-muted"
           >
             <Star
               size={15}
               className={
                 app.is_favorite
-                  ? 'fill-[#EF9F27] text-[#EF9F27]'
+                  ? 'fill-warning-accent text-warning-accent'
                   : 'text-muted-foreground/30'
               }
             />
@@ -132,7 +130,7 @@ export function ApplicationRow({
           <button
             type="button"
             onClick={onRowClick}
-            className="absolute top-1/2 right-2 flex -translate-y-1/2 cursor-pointer items-center rounded border border-[rgba(255,255,255,0.12)] bg-secondary px-1.5 py-1.5 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:border-[rgba(255,255,255,0.22)] hover:text-foreground"
+            className="absolute top-1/2 right-2 flex -translate-y-1/2 cursor-pointer items-center rounded border border-border-overlay bg-secondary px-1.5 py-1.5 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:border-border-overlay-strong hover:text-foreground"
             aria-label="Open details"
           >
             <PanelRightOpen size={15} />

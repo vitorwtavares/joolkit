@@ -5,9 +5,9 @@ export const WORK_STYLE_OPTIONS = [
 ]
 
 export const VISA_COLORS = {
-  yes: '#7dd4a0',
-  no: '#f09595',
-  unknown: '#fbbf24',
+  yes: 'var(--success)',
+  no: 'var(--danger)',
+  unknown: 'var(--warning)',
 } as const
 
 export const VISA_OPTIONS = [

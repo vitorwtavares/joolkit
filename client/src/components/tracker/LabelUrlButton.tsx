@@ -60,7 +60,7 @@ export function LabelUrlButton({
         <button
           type="button"
           onClick={handleOpen}
-          className={`absolute top-1/2 left-2 z-10 -translate-y-1/2 cursor-pointer rounded p-0.5 transition-all ${
+          className={`absolute top-1/2 left-2 z-10 -translate-y-1/2 cursor-pointer rounded p-0.5 text-link transition-all duration-150 ease-out hover:text-info ${
             url ? 'opacity-100' : 'opacity-25 hover:opacity-100'
           }`}
           aria-label={
@@ -69,7 +69,10 @@ export function LabelUrlButton({
               : `Add ${urlTitle.toLowerCase()}`
           }
         >
-          <Link2 size={16} className="text-[#4a9eff]" />
+          <Link2
+            size={16}
+            className="transition-colors duration-150 ease-out"
+          />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -103,14 +106,14 @@ export function LabelUrlButton({
                 if (e.key === 'Escape') setOpen(false)
               }}
               placeholder="https://..."
-              className="flex-1 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
+              className="flex-1 rounded border border-input-border-strong bg-input-subtle px-2 py-1.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
             />
             {safeUrl && (
               <a
                 href={safeUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded border border-[rgba(255,255,255,0.1)] text-muted-foreground transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-foreground"
+                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded border border-input-border-strong text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 onClick={(e) => e.stopPropagation()}
               >
                 <ExternalLink size={14} />

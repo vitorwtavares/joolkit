@@ -35,7 +35,7 @@ interface SkillsCellProps {
   multiLine?: boolean
 }
 
-const SKILL_BG = 'rgba(255,255,255,0.10)'
+const SKILL_BG = 'var(--input-border-strong)'
 
 export function SkillsCell({
   value,
@@ -131,7 +131,7 @@ export function SkillsCell({
             {multiLine ? (
               <button
                 type="button"
-                className="relative w-full cursor-pointer rounded px-3 py-2 text-left text-[14px] transition-colors hover:bg-[rgba(255,255,255,0.04)]"
+                className="relative w-full cursor-pointer rounded px-3 py-2 text-left text-[14px] transition-colors hover:bg-surface-hover-subtle"
               >
                 <span
                   ref={measurerRef}
@@ -155,7 +155,7 @@ export function SkillsCell({
                         </Badge>
                       ))}
                       {overflowCount > 0 && (
-                        <span className="inline-flex flex-shrink-0 items-center rounded-md bg-[rgba(255,255,255,0.08)] px-[5px] py-px text-[12px] text-white/60">
+                        <span className="inline-flex flex-shrink-0 items-center rounded-md bg-border px-[5px] py-px text-[12px] text-text-dim">
                           +{overflowCount}
                         </span>
                       )}
@@ -190,7 +190,7 @@ export function SkillsCell({
                         </Badge>
                       ))}
                       {overflowCount > 0 && (
-                        <span className="inline-flex flex-shrink-0 items-center rounded-md bg-[rgba(255,255,255,0.08)] px-[5px] py-px text-[12px] text-white/60">
+                        <span className="inline-flex flex-shrink-0 items-center rounded-md bg-border px-[5px] py-px text-[12px] text-text-dim">
                           +{overflowCount}
                         </span>
                       )}
@@ -212,14 +212,14 @@ export function SkillsCell({
               {value.map(({ skill }) => (
                 <span
                   key={skill.id}
-                  className="inline-flex items-center gap-1 rounded-md bg-[rgba(255,255,255,0.10)] py-[1px] pr-1 pl-2 text-[14px] font-medium text-foreground"
+                  className="inline-flex items-center gap-1 rounded-md bg-input-border-strong py-[1px] pr-1 pl-2 text-[14px] font-medium text-foreground"
                 >
                   {skill.name}
                   <button
                     type="button"
                     onClick={() => toggle(skill.id)}
                     aria-label={`Remove ${skill.name}`}
-                    className="flex h-4 w-4 cursor-pointer items-center justify-center rounded-full text-white/40 transition-colors hover:text-foreground"
+                    className="flex h-4 w-4 cursor-pointer items-center justify-center rounded-full text-text-muted-softer transition-colors hover:text-foreground"
                   >
                     <X size={14} />
                   </button>
@@ -269,7 +269,7 @@ export function SkillsCell({
               tabIndex={-1}
               onClick={handleCreate}
               disabled={createSkill.isPending}
-              className={`${POPOVER_ITEM_CLASS} gap-1.5 text-white/50 disabled:opacity-50 ${addIdx >= 0 ? itemClass(addIdx) : ''}`}
+              className={`${POPOVER_ITEM_CLASS} gap-1.5 text-text-faint disabled:opacity-50 ${addIdx >= 0 ? itemClass(addIdx) : ''}`}
             >
               <Plus size={12} />
               Add &ldquo;{search.trim()}&rdquo;
@@ -277,7 +277,7 @@ export function SkillsCell({
           )}
 
           {filtered.length === 0 && !search.trim() && (
-            <p className="px-2 py-1 text-[14px] text-white/30">
+            <p className="px-2 py-1 text-[14px] text-text-muted-soft">
               {allSkills.length === 0 ? 'No skills yet.' : 'All selected.'}
             </p>
           )}

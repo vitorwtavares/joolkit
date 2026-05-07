@@ -14,9 +14,9 @@ export function ErrorBanner({ role, company }: ErrorBannerProps) {
   if (missing.length === 0) return null
 
   return (
-    <div className="mx-auto mb-5 flex max-w-[620px] items-start gap-2.5 rounded-lg border border-[rgba(220,80,80,0.30)] bg-[rgba(220,80,80,0.08)] px-3.5 py-2.5">
-      <Info className="mt-px size-[15px] shrink-0 text-[#f09595]" />
-      <div className="text-xs leading-relaxed text-[#f09595]">
+    <div className="mx-auto mb-5 flex max-w-[620px] items-start gap-2.5 rounded-lg border border-danger-border-soft bg-danger-soft-strong px-3.5 py-2.5">
+      <Info className="mt-px size-[15px] shrink-0 text-danger" />
+      <div className="text-xs leading-relaxed text-danger">
         <strong className="mb-0.5 block font-medium">
           Unresolved tokens detected
         </strong>
