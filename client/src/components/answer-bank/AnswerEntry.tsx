@@ -68,7 +68,7 @@ export function AnswerEntry({ position, answer, onEdit }: AnswerEntryProps) {
       {copiedBubble}
       <div
         className={cn(
-          'flex h-[56px] w-full items-center rounded-lg border border-border bg-secondary transition-colors',
+          'flex min-h-[56px] w-full items-center rounded-lg border border-border bg-secondary transition-colors',
           !isDragging && 'hover:bg-secondary/70',
         )}
       >
@@ -91,12 +91,12 @@ export function AnswerEntry({ position, answer, onEdit }: AnswerEntryProps) {
               handleCopy()
             }
           }}
-          className="flex h-full flex-1 cursor-pointer items-center gap-2 rounded-r-lg pr-5 text-left focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+          className="flex min-h-[56px] min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5 rounded-r-lg py-3 pr-8 text-left focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
         >
           <span className="min-w-[16px] text-center text-[13px] text-muted-foreground">
             {position}
           </span>
-          <span className="max-w-[530px] min-w-0 flex-1 truncate text-[15px] text-foreground">
+          <span className="min-w-[200px] flex-1 truncate text-[15px] text-foreground">
             {answer.question || (
               <span className="text-muted-foreground italic">No question</span>
             )}
@@ -121,7 +121,7 @@ export function AnswerEntry({ position, answer, onEdit }: AnswerEntryProps) {
               />
             </div>
           )}
-          <span className="ml-1 flex-shrink-0 text-[13px] text-muted-foreground/70">
+          <span className="pointer-events-none ml-1 flex-shrink-0 text-[13px] text-muted-foreground/70 select-none">
             Click to copy
           </span>
         </div>
