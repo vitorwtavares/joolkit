@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Plus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { EmptyCell } from './EmptyCell'
@@ -36,6 +36,15 @@ interface SkillsCellProps {
 }
 
 const SKILL_BG = 'var(--input-border-strong)'
+const SKILLS_SAVE_DEBOUNCE_MS = 450
+
+function sameSkillIds(left: string[], right: string[]) {
+  if (left.length !== right.length) return false
+
+  const sortedLeft = [...left].sort()
+  const sortedRight = [...right].sort()
+  return sortedLeft.every((id, index) => id === sortedRight[index])
+}
 
 export function SkillsCell({
   value,
@@ -45,17 +54,62 @@ export function SkillsCell({
   const [search, setSearch] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
   const addRef = useRef<HTMLButtonElement>(null)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { data: allSkills = [] } = useSkills()
   const createSkill = useCreateSkill()
   const deleteSkill = useDeleteSkill()
+  const propIds = useMemo(() => value.map((s) => s.skill.id), [value])
+  const [draftIds, setDraftIds] = useState<string[] | null>(null)
+  const lastFlushedIdsRef = useRef<string[] | null>(null)
 
-  const { visibleRef, measurerRef, visibleCount } = useOverflowCount(value, {
-    maxLines: multiLine ? 2 : 1,
-  })
+  const selectedSkillIds = useMemo(() => {
+    if (!draftIds || sameSkillIds(draftIds, propIds)) return propIds
+    return draftIds
+  }, [draftIds, propIds])
+
+  useEffect(() => {
+    if (
+      draftIds &&
+      lastFlushedIdsRef.current &&
+      !sameSkillIds(propIds, lastFlushedIdsRef.current)
+    ) {
+      setDraftIds(null)
+      lastFlushedIdsRef.current = null
+    }
+  }, [draftIds, propIds])
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    }
+  }, [])
+
+  const skillsById = useMemo(
+    () => new Map(allSkills.map((skill) => [skill.id, skill])),
+    [allSkills],
+  )
+  const selectedSkills = useMemo(
+    () =>
+      selectedSkillIds.map((id) => ({
+        skill: skillsById.get(id) ??
+          value.find((entry) => entry.skill.id === id)?.skill ?? {
+            id,
+            name: '…',
+          },
+      })),
+    [selectedSkillIds, skillsById, value],
+  )
+
+  const { visibleRef, measurerRef, visibleCount } = useOverflowCount(
+    selectedSkills,
+    {
+      maxLines: multiLine ? 2 : 1,
+    },
+  )
 
   const selectedIds = useMemo(
-    () => new Set(value.map((s) => s.skill.id)),
-    [value],
+    () => new Set(selectedSkillIds),
+    [selectedSkillIds],
   )
 
   const filtered = useMemo(() => {
@@ -89,11 +143,36 @@ export function SkillsCell({
       resolveExtraScrollTarget: (i) => (i === addIdx ? addRef.current : null),
     })
 
+  function flushSave(nextIds: string[]) {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = null
+    }
+
+    if (sameSkillIds(nextIds, propIds)) {
+      setDraftIds(null)
+      lastFlushedIdsRef.current = null
+      return
+    }
+
+    lastFlushedIdsRef.current = nextIds
+    onSave(nextIds)
+  }
+
+  function scheduleSave(nextIds: string[]) {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      flushSave(nextIds)
+    }, SKILLS_SAVE_DEBOUNCE_MS)
+  }
+
   function toggle(skillId: string) {
     const newIds = selectedIds.has(skillId)
-      ? value.filter((s) => s.skill.id !== skillId).map((s) => s.skill.id)
-      : [...value.map((s) => s.skill.id), skillId]
-    onSave(newIds)
+      ? selectedSkillIds.filter((id) => id !== skillId)
+      : [...selectedSkillIds, skillId]
+
+    setDraftIds(newIds)
+    scheduleSave(newIds)
   }
 
   function handleCreate() {
@@ -101,7 +180,9 @@ export function SkillsCell({
     if (!name) return
     createSkill.mutate(name, {
       onSuccess: (skill) => {
-        onSave([...value.map((s) => s.skill.id), skill.id])
+        const newIds = [...selectedSkillIds, skill.id]
+        setDraftIds(newIds)
+        flushSave(newIds)
         setSearch('')
         setHighlighted(-1)
       },
@@ -115,7 +196,9 @@ export function SkillsCell({
   }
 
   const overflowCount =
-    value.length > visibleCount ? value.length - visibleCount : 0
+    selectedSkills.length > visibleCount
+      ? selectedSkills.length - visibleCount
+      : 0
 
   return (
     <Tooltip open={overflowCount > 0 && !open ? undefined : false}>
@@ -123,7 +206,10 @@ export function SkillsCell({
         open={open}
         onOpenChange={(v) => {
           handleOpenChange(v)
-          if (!v) setSearch('')
+          if (!v) {
+            setSearch('')
+            flushSave(selectedSkillIds)
+          }
         }}
       >
         <TooltipTrigger asChild>
@@ -138,22 +224,24 @@ export function SkillsCell({
                   aria-hidden="true"
                   className="pointer-events-none invisible absolute top-0 left-0 flex items-center gap-[3px] whitespace-nowrap"
                 >
-                  {value.map(({ skill }) => (
+                  {selectedSkills.map(({ skill }) => (
                     <Badge key={skill.id} bg={SKILL_BG}>
                       {skill.name}
                     </Badge>
                   ))}
                 </span>
                 <span ref={visibleRef} className="flex flex-wrap gap-[3px]">
-                  {value.length === 0 ? (
+                  {selectedSkills.length === 0 ? (
                     <EmptyCell />
                   ) : (
                     <>
-                      {value.slice(0, visibleCount).map(({ skill }) => (
-                        <Badge key={skill.id} bg={SKILL_BG}>
-                          {skill.name}
-                        </Badge>
-                      ))}
+                      {selectedSkills
+                        .slice(0, visibleCount)
+                        .map(({ skill }) => (
+                          <Badge key={skill.id} bg={SKILL_BG}>
+                            {skill.name}
+                          </Badge>
+                        ))}
                       {overflowCount > 0 && (
                         <span className="inline-flex flex-shrink-0 items-center rounded-md bg-border px-[5px] py-px text-[12px] text-text-dim">
                           +{overflowCount}
@@ -165,7 +253,7 @@ export function SkillsCell({
               </button>
             ) : (
               <CellTrigger className="overflow-hidden pr-8 pl-3">
-                {value.length === 0 ? (
+                {selectedSkills.length === 0 ? (
                   <EmptyCell />
                 ) : (
                   <>
@@ -174,7 +262,7 @@ export function SkillsCell({
                       aria-hidden="true"
                       className="pointer-events-none invisible absolute top-0 left-0 flex items-center gap-[3px] whitespace-nowrap"
                     >
-                      {value.map(({ skill }) => (
+                      {selectedSkills.map(({ skill }) => (
                         <Badge key={skill.id} bg={SKILL_BG}>
                           {skill.name}
                         </Badge>
@@ -184,11 +272,13 @@ export function SkillsCell({
                       ref={visibleRef}
                       className="flex w-full min-w-0 flex-1 items-center gap-[3px] overflow-hidden"
                     >
-                      {value.slice(0, visibleCount).map(({ skill }) => (
-                        <Badge key={skill.id} bg={SKILL_BG}>
-                          {skill.name}
-                        </Badge>
-                      ))}
+                      {selectedSkills
+                        .slice(0, visibleCount)
+                        .map(({ skill }) => (
+                          <Badge key={skill.id} bg={SKILL_BG}>
+                            {skill.name}
+                          </Badge>
+                        ))}
                       {overflowCount > 0 && (
                         <span className="inline-flex flex-shrink-0 items-center rounded-md bg-border px-[5px] py-px text-[12px] text-text-dim">
                           +{overflowCount}
@@ -207,9 +297,9 @@ export function SkillsCell({
           className="w-52 p-1"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
-          {value.length > 0 && (
+          {selectedSkills.length > 0 && (
             <div className="mb-1 flex flex-wrap gap-1 px-1 pt-1 pb-0.5">
-              {value.map(({ skill }) => (
+              {selectedSkills.map(({ skill }) => (
                 <span
                   key={skill.id}
                   className="inline-flex items-center gap-1 rounded-md bg-input-border-strong py-[1px] pr-1 pl-2 text-[14px] font-medium text-foreground"
@@ -287,7 +377,7 @@ export function SkillsCell({
       {overflowCount > 0 && !open && (
         <TooltipContent side="top" className="max-w-[250px]">
           <span className="break-words">
-            {value.map((s) => s.skill.name).join(', ')}
+            {selectedSkills.map((s) => s.skill.name).join(', ')}
           </span>
         </TooltipContent>
       )}

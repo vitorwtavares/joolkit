@@ -3,6 +3,7 @@ import {
   useMutation,
   useQueryClient,
   type QueryKey,
+  type QueryClient,
 } from '@tanstack/react-query'
 import { api } from '../api'
 import type { Skill } from './useSkills'
@@ -81,6 +82,92 @@ export type UpdateApplicationPayload = {
   id: string
   known_updated_at: string
 } & CreateApplicationPayload
+
+export function getCachedApplication(
+  queryClient: QueryClient,
+  id: string,
+): Application | null {
+  const detail = queryClient.getQueryData<Application>([
+    'applications',
+    'detail',
+    id,
+  ])
+  if (detail) return detail
+
+  for (const [, data] of queryClient.getQueriesData<Application[]>({
+    queryKey: ['applications'],
+  })) {
+    if (!Array.isArray(data)) continue
+    const app = data.find((row) => row.id === id)
+    if (app) return app
+  }
+
+  return null
+}
+
+function buildApplicationPatch(
+  queryClient: QueryClient,
+  payload: CreateApplicationPayload,
+): Partial<Application> {
+  const { skill_ids, location_id, ...simpleFields } = payload
+  const patch: Partial<Application> = { ...simpleFields }
+
+  if (simpleFields.status !== undefined) {
+    patch.last_moved_at = new Date().toISOString()
+  }
+
+  if (location_id !== undefined) {
+    patch.location_id = location_id
+    if (location_id === null) {
+      patch.location = null
+    } else {
+      const locations = queryClient.getQueryData<Location[]>(['locations'])
+      patch.location = locations?.find((l) => l.id === location_id) ?? null
+    }
+  }
+
+  if (skill_ids !== undefined) {
+    const skills = queryClient.getQueryData<Skill[]>(['skills'])
+    patch.skills = skill_ids.map((sid) => ({
+      skill: skills?.find((s) => s.id === sid) ?? { id: sid, name: '…' },
+    }))
+  }
+
+  return patch
+}
+
+export function patchApplicationInCache(
+  queryClient: QueryClient,
+  id: string,
+  payload: CreateApplicationPayload,
+) {
+  const patch = buildApplicationPatch(queryClient, payload)
+
+  for (const [key, data] of queryClient.getQueriesData<Application[]>({
+    queryKey: ['applications'],
+  })) {
+    if (!Array.isArray(data)) continue
+    const view = String(key[1] ?? 'all')
+    const idx = data.findIndex((a) => a.id === id)
+    if (idx === -1) continue
+    const patched: Application = { ...data[idx], ...patch }
+    if (appMatchesView(patched, view)) {
+      const next = [...data]
+      next[idx] = patched
+      queryClient.setQueryData<Application[]>(key, next)
+    } else {
+      queryClient.setQueryData<Application[]>(
+        key,
+        data.filter((a) => a.id !== id),
+      )
+    }
+  }
+
+  queryClient.setQueryData<Application>(
+    ['applications', 'detail', id],
+    (old) => (old ? { ...old, ...patch } : old),
+  )
+}
 
 export function useApplications(view: ApplicationView = 'all') {
   return useQuery({
@@ -243,59 +330,12 @@ export function useUpdateApplication() {
   return useMutation({
     mutationFn: ({ id, ...payload }: UpdateApplicationPayload) =>
       api.put<Application>(`/api/applications/${id}`, payload),
-    onMutate: async ({ id, skill_ids, location_id, ...simpleFields }) => {
+    onMutate: async ({ id, ...payload }) => {
       await queryClient.cancelQueries({ queryKey: ['applications'] })
       const snapshot = queryClient.getQueriesData<Application[] | Application>({
         queryKey: ['applications'],
       })
-
-      const patch: Partial<Application> = { ...simpleFields }
-
-      if (simpleFields.status !== undefined) {
-        patch.last_moved_at = new Date().toISOString()
-      }
-
-      if (location_id !== undefined) {
-        patch.location_id = location_id
-        if (location_id === null) {
-          patch.location = null
-        } else {
-          const locations = queryClient.getQueryData<Location[]>(['locations'])
-          patch.location = locations?.find((l) => l.id === location_id) ?? null
-        }
-      }
-
-      if (skill_ids !== undefined) {
-        const skills = queryClient.getQueryData<Skill[]>(['skills'])
-        patch.skills = skill_ids.map((sid) => ({
-          skill: skills?.find((s) => s.id === sid) ?? { id: sid, name: '…' },
-        }))
-      }
-
-      for (const [key, data] of queryClient.getQueriesData<Application[]>({
-        queryKey: ['applications'],
-      })) {
-        if (!Array.isArray(data)) continue
-        const view = String(key[1] ?? 'all')
-        const idx = data.findIndex((a) => a.id === id)
-        if (idx === -1) continue
-        const patched: Application = { ...data[idx], ...patch }
-        if (appMatchesView(patched, view)) {
-          const next = [...data]
-          next[idx] = patched
-          queryClient.setQueryData<Application[]>(key, next)
-        } else {
-          queryClient.setQueryData<Application[]>(
-            key,
-            data.filter((a) => a.id !== id),
-          )
-        }
-      }
-
-      queryClient.setQueryData<Application>(
-        ['applications', 'detail', id],
-        (old) => (old ? { ...old, ...patch } : old),
-      )
+      patchApplicationInCache(queryClient, id, payload)
 
       return { snapshot }
     },
