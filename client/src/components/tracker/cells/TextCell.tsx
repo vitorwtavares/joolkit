@@ -31,20 +31,50 @@ export function TextCell({
 }: TextCellProps) {
   const safeUrl = url ? sanitizeUrl(url) : null
   const [editing, setEditing] = useState(false)
+  const [committedDisplayValue, setCommittedDisplayValue] = useState<
+    string | null | undefined
+  >(undefined)
   const { draft, setDraft, lastSavedRef, cancelTimer, flushSave, schedule } =
     useDebouncedSave(value, onSave)
   const innerRef = useRef<HTMLElement | null>(null)
+  const committedDisplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  )
   const { isOverflowing, check, reset } = useOverflowTooltip()
+  const displayValue =
+    committedDisplayValue !== undefined ? committedDisplayValue : value
+
+  function clearCommittedDisplay() {
+    if (committedDisplayTimerRef.current) {
+      clearTimeout(committedDisplayTimerRef.current)
+      committedDisplayTimerRef.current = null
+    }
+    setCommittedDisplayValue(undefined)
+  }
+
+  function holdCommittedDisplay(next: string | null) {
+    if (committedDisplayTimerRef.current) {
+      clearTimeout(committedDisplayTimerRef.current)
+    }
+    setCommittedDisplayValue(next)
+    committedDisplayTimerRef.current = setTimeout(() => {
+      committedDisplayTimerRef.current = null
+      setCommittedDisplayValue(undefined)
+    }, 300)
+  }
 
   function startEdit() {
-    setDraft(value ?? '')
-    lastSavedRef.current = value
+    setDraft(displayValue ?? '')
+    lastSavedRef.current = displayValue
     setEditing(true)
   }
 
   function confirmAndExit() {
     cancelTimer()
-    flushSave(draft.trim() || null)
+    const next = draft.trim() || null
+    if (next !== value) holdCommittedDisplay(next)
+    else clearCommittedDisplay()
+    flushSave(next)
     setEditing(false)
   }
 
@@ -52,7 +82,15 @@ export function TextCell({
     if (!editing) return
     schedule(draft.trim() || null)
     return cancelTimer
-  }, [draft, editing])
+  }, [cancelTimer, draft, editing, schedule])
+
+  useEffect(() => {
+    return () => {
+      if (committedDisplayTimerRef.current) {
+        clearTimeout(committedDisplayTimerRef.current)
+      }
+    }
+  }, [])
 
   if (editing) {
     return (
@@ -84,7 +122,7 @@ export function TextCell({
           tabIndex={0}
           onClick={startEdit}
           onMouseEnter={() => {
-            if (value) check(innerRef.current)
+            if (displayValue) check(innerRef.current)
           }}
           onMouseLeave={reset}
           onKeyDown={(e) => {
@@ -93,7 +131,7 @@ export function TextCell({
           className={`absolute inset-0 flex cursor-text items-center overflow-hidden px-3 text-[14px] transition-colors hover:bg-surface-hover-subtle ${className}`}
           style={{ fontWeight: bold ? 500 : undefined }}
         >
-          {safeUrl && value ? (
+          {safeUrl && displayValue ? (
             <a
               ref={(el) => {
                 innerRef.current = el
@@ -107,7 +145,7 @@ export function TextCell({
                 linkClassName,
               )}
             >
-              {value}
+              {displayValue}
             </a>
           ) : (
             <span
@@ -116,14 +154,14 @@ export function TextCell({
               }}
               className="truncate"
             >
-              {value ?? <EmptyCell />}
+              {displayValue ?? <EmptyCell />}
             </span>
           )}
         </span>
       </TooltipTrigger>
-      {isOverflowing && value && (
+      {isOverflowing && displayValue && (
         <TooltipContent side="top" className="max-w-[250px] pr-4">
-          <span className="min-w-0 break-words">{value}</span>
+          <span className="min-w-0 break-words">{displayValue}</span>
         </TooltipContent>
       )}
     </Tooltip>
