@@ -65,10 +65,23 @@
   --warning-accent: #ef9f27;
   --info: #85b7eb;
   --link: #4a9eff;
+  --link-foreground: #fff;
   --text-dim: rgba(255, 255, 255, 0.6);
   --text-faint: rgba(255, 255, 255, 0.5);
   --text-muted-soft: rgba(255, 255, 255, 0.3);
   --text-muted-softer: rgba(255, 255, 255, 0.4);
+  --editor-foreground: #c8c8c4;
+  --success-bright: #4ade80;
+  --success-soft-strong: rgba(97, 194, 127, 0.18);
+  --success-border: rgba(97, 194, 127, 0.5);
+  --danger-bright: #f87171;
+  --danger-strong: #ef4444;
+  --danger-deep: #2d0a0a;
+  --danger-deeper: #450a0a;
+  --danger-soft-fill: rgba(220, 80, 80, 0.18);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.12);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
+  --checkbox-border: rgba(255, 255, 255, 0.2);
   --canvas-shadow:
     0px 0px 10px 4px rgba(0, 0, 0, 0.25), 0 0 0 0.5px rgba(255, 255, 255, 0.06);
 
@@ -148,10 +161,23 @@
   --color-warning-accent: var(--warning-accent);
   --color-info: var(--info);
   --color-link: var(--link);
+  --color-link-foreground: var(--link-foreground);
   --color-text-dim: var(--text-dim);
   --color-text-faint: var(--text-faint);
   --color-text-muted-soft: var(--text-muted-soft);
   --color-text-muted-softer: var(--text-muted-softer);
+  --color-editor-foreground: var(--editor-foreground);
+  --color-success-bright: var(--success-bright);
+  --color-success-soft-strong: var(--success-soft-strong);
+  --color-success-border: var(--success-border);
+  --color-danger-bright: var(--danger-bright);
+  --color-danger-strong: var(--danger-strong);
+  --color-danger-deep: var(--danger-deep);
+  --color-danger-deeper: var(--danger-deeper);
+  --color-danger-soft-fill: var(--danger-soft-fill);
+  --color-scrollbar-thumb: var(--scrollbar-thumb);
+  --color-scrollbar-thumb-hover: var(--scrollbar-thumb-hover);
+  --color-checkbox-border: var(--checkbox-border);
   --color-palette-default: var(--palette-default);
   --color-palette-gray: var(--palette-gray);
   --color-palette-brown: var(--palette-brown);
@@ -190,19 +216,19 @@
   0% {
     transform: translateY(0) rotate(0deg);
     opacity: 1;
-    color: #4ade80;
-    background-color: #052e16;
+    color: var(--success-bright);
+    background-color: var(--success-soft);
   }
   20% {
     transform: translateY(1px) rotate(-4deg);
-    color: #f87171;
-    background-color: #2d0a0a;
+    color: var(--danger-bright);
+    background-color: var(--danger-deep);
   }
   100% {
     transform: translateY(16px) rotate(12deg);
     opacity: 0;
-    color: #ef4444;
-    background-color: #450a0a;
+    color: var(--danger-strong);
+    background-color: var(--danger-deeper);
   }
 }
 
@@ -263,11 +289,11 @@
     background: transparent;
   }
   *::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--scrollbar-thumb);
     border-radius: 4px;
   }
   *::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.22);
+    background: var(--scrollbar-thumb-hover);
   }
 }
 
@@ -276,7 +302,7 @@
   font-family: Helvetica, Arial, sans-serif;
   font-size: 12pt;
   line-height: 1.15;
-  color: #c8c8c4;
+  color: var(--editor-foreground);
   outline: none;
   min-height: 100%;
 }
@@ -284,19 +310,19 @@
   margin-bottom: 6px;
 }
 .ProseMirror a {
-  color: #4a9eff;
+  color: var(--link);
   text-decoration: underline;
   cursor: pointer;
 }
 
 .token-resolved {
-  background: rgba(97, 194, 127, 0.18);
-  color: #7dd4a0;
+  background: var(--success-soft-strong);
+  color: var(--success);
   border-radius: 3px;
   padding: 0 2px;
   margin: 0 5px;
   font-family: 'SF Mono', 'Fira Code', monospace;
-  outline: 1.5px solid rgba(97, 194, 127, 0.5);
+  outline: 1.5px solid var(--success-border);
   outline-offset: 1px;
 }
 
@@ -315,13 +341,13 @@
 }
 
 .token-unresolved {
-  background: rgba(220, 80, 80, 0.18);
-  color: #f09595;
+  background: var(--danger-soft-fill);
+  color: var(--danger);
   border-radius: 3px;
   padding: 0 2px;
   margin: 0 5px;
   font-family: 'SF Mono', 'Fira Code', monospace;
-  outline: 1.5px solid rgba(220, 80, 80, 0.5);
+  outline: 1.5px solid var(--danger-border);
   outline-offset: 1px;
 }
 
@@ -329,7 +355,7 @@
 .notes-editor .ProseMirror {
   font-size: 16px;
   line-height: 1.6;
-  color: #e8e8e4;
+  color: var(--foreground);
   outline: none;
   min-height: 400px;
 }
@@ -341,21 +367,21 @@
   font-weight: 700;
   margin-bottom: 6px;
   margin-top: 16px;
-  color: #e8e8e4;
+  color: var(--foreground);
 }
 .notes-editor .ProseMirror h2 {
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 6px;
   margin-top: 14px;
-  color: #e8e8e4;
+  color: var(--foreground);
 }
 .notes-editor .ProseMirror h3 {
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 6px;
   margin-top: 12px;
-  color: #e8e8e4;
+  color: var(--foreground);
 }
 .notes-editor .ProseMirror h1:first-child,
 .notes-editor .ProseMirror h2:first-child,
@@ -365,12 +391,12 @@
 .notes-editor .ProseMirror code {
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 12px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--border);
   border-radius: 3px;
   padding: 1px 4px;
 }
 .notes-editor .ProseMirror a {
-  color: #4a9eff;
+  color: var(--link);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -419,8 +445,8 @@
   width: 16px;
   height: 16px;
   border-radius: 3px;
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid var(--checkbox-border);
+  background: var(--input-subtle);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -434,8 +460,8 @@
   .ProseMirror
   ul[data-type='taskList']
   input[type='checkbox']:checked {
-  background: #4a9eff;
-  border-color: #4a9eff;
+  background: var(--link);
+  border-color: var(--link);
 }
 .notes-editor
   .ProseMirror
@@ -445,7 +471,7 @@
   display: block;
   width: 4px;
   height: 7px;
-  border: 1.5px solid #fff;
+  border: 1.5px solid var(--link-foreground);
   border-top: none;
   border-left: none;
   transform: rotate(45deg) translate(-1px, -1px);

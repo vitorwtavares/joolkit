@@ -322,7 +322,7 @@ export function CoverLetterCard({
               }}
               onBlur={() => flushTokenSave(role, company)}
               placeholder="e.g. Software Engineer"
-              className="w-full rounded-md border border-[rgba(255,255,255,0.08)] bg-card px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40"
+              className="w-full rounded-md border border-border bg-card px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -337,7 +337,7 @@ export function CoverLetterCard({
               }}
               onBlur={() => flushTokenSave(role, company)}
               placeholder="e.g. Xiaomi"
-              className="w-full rounded-md border border-[rgba(255,255,255,0.08)] bg-card px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40"
+              className="w-full rounded-md border border-border bg-card px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40"
             />
           </div>
         </div>
