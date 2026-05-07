@@ -93,7 +93,7 @@ export function ResumeButton({
   const showAsFilled = !!resumeUrl || falling
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 rounded-lg border border-dashed border-border/50 bg-card px-4 py-3.5">
+    <div className="flex h-full min-h-0 flex-col gap-3 rounded-lg border border-dashed border-border/50 bg-secondary px-4 py-3.5">
       <div className="flex items-center gap-2.5">
         <div className="flex size-[30px] flex-shrink-0 items-center justify-center rounded-md bg-secondary">
           <FileText size={14} className="text-muted-foreground/40" />
@@ -124,12 +124,12 @@ export function ResumeButton({
           className={cn(
             'relative flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
             showAsFilled
-              ? 'border-border bg-card hover:bg-secondary/30'
-              : 'border-dashed border-border/50 bg-secondary hover:bg-secondary/70',
+              ? 'border-border bg-secondary hover:bg-card'
+              : 'border-dashed border-border/50 bg-surface-selected hover:bg-surface-selected-hover',
           )}
         >
           {removing && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-md bg-card/80">
+            <div className="absolute inset-0 flex items-center justify-center rounded-md bg-popover/90">
               <Loader2
                 size={16}
                 className="animate-spin text-muted-foreground"
@@ -186,7 +186,7 @@ export function ResumeButton({
                 setRemoving(false)
               }
             }}
-            className="absolute -top-[11px] -right-[11px] z-10 flex size-[24px] cursor-pointer items-center justify-center rounded-full border border-border bg-card shadow-sm hover:bg-secondary disabled:pointer-events-none"
+            className="absolute -top-[11px] -right-[11px] z-10 flex size-[24px] cursor-pointer items-center justify-center rounded-full border border-border bg-secondary shadow-sm transition-colors hover:bg-surface-selected disabled:pointer-events-none"
           >
             {removing ? (
               <Loader2

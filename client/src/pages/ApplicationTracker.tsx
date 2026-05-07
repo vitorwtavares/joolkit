@@ -121,7 +121,7 @@ export default function ApplicationTracker() {
                   'mb-[-0.5px]',
                   view === value
                     ? 'border-foreground text-foreground'
-                    : 'border-transparent text-muted-foreground hover:bg-secondary/50 hover:text-foreground',
+                    : 'border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground',
                 )}
               >
                 {label}
@@ -147,7 +147,7 @@ export default function ApplicationTracker() {
             <button
               onClick={handleNewEntry}
               disabled={createApplication.isPending}
-              className="flex min-w-[110px] cursor-pointer items-center justify-center gap-[5px] rounded-md border border-input px-2.5 py-1 text-[14px] whitespace-nowrap text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-w-[110px] cursor-pointer items-center justify-center gap-[5px] rounded-md border border-input bg-secondary px-2.5 py-1 text-[14px] whitespace-nowrap text-foreground transition-colors hover:bg-surface-selected disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus size={16} />
               New entry

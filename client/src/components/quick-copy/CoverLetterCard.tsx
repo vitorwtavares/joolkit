@@ -146,7 +146,7 @@ export function CoverLetterCard({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-dashed border-border/50 bg-card px-4 py-3.5">
+    <div className="flex flex-col gap-3 rounded-lg border border-dashed border-border/50 bg-secondary px-4 py-3.5">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -227,12 +227,12 @@ export function CoverLetterCard({
                   className={cn(
                     'flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
                     showAsFilled
-                      ? 'border-border bg-card hover:bg-secondary/30'
-                      : 'border-dashed border-border/50 bg-secondary hover:bg-secondary/70',
+                      ? 'border-border bg-secondary hover:bg-card'
+                      : 'border-dashed border-border/50 bg-surface-selected hover:bg-surface-selected-hover',
                   )}
                 >
                   {removing === v && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-md bg-card/80">
+                    <div className="absolute inset-0 flex items-center justify-center rounded-md bg-popover/90">
                       <Loader2
                         size={16}
                         className="animate-spin text-muted-foreground"
@@ -291,7 +291,7 @@ export function CoverLetterCard({
                         setRemoving(null)
                       }
                     }}
-                    className="absolute -top-[11px] -right-[11px] z-10 flex size-[24px] cursor-pointer items-center justify-center rounded-full border border-border bg-card shadow-sm hover:bg-secondary disabled:pointer-events-none"
+                    className="absolute -top-[11px] -right-[11px] z-10 flex size-[24px] cursor-pointer items-center justify-center rounded-full border border-border bg-secondary shadow-sm transition-colors hover:bg-surface-selected disabled:pointer-events-none"
                   >
                     {removing === v ? (
                       <Loader2
@@ -309,7 +309,7 @@ export function CoverLetterCard({
         </div>
 
         {/* Tokens panel */}
-        <div className="flex flex-[35] flex-col gap-2 rounded-md border border-border/40 bg-secondary/30 p-3">
+        <div className="flex flex-[35] flex-col gap-2 rounded-md border border-border bg-secondary p-3">
           <div className="flex flex-col gap-1.5">
             <div className="font-mono text-[13px] text-muted-foreground">
               {TOKEN_ROLE}
@@ -322,7 +322,7 @@ export function CoverLetterCard({
               }}
               onBlur={() => flushTokenSave(role, company)}
               placeholder="e.g. Software Engineer"
-              className="w-full rounded-md border border-border bg-card px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40"
+              className="w-full rounded-md border border-border bg-background px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -337,7 +337,7 @@ export function CoverLetterCard({
               }}
               onBlur={() => flushTokenSave(role, company)}
               placeholder="e.g. Xiaomi"
-              className="w-full rounded-md border border-border bg-card px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40"
+              className="w-full rounded-md border border-border bg-background px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40"
             />
           </div>
         </div>
