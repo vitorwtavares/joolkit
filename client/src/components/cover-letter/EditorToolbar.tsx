@@ -69,7 +69,7 @@ function FontSizeInput({ editor, activeSize }: FontSizeInputProps) {
   return (
     <div className="relative ml-1 flex h-8 w-[52px] items-center rounded-[5px] border border-border bg-secondary shadow-none focus-within:border-border-strong">
       <input
-        className="w-full bg-transparent px-1.5 text-center text-xs text-foreground outline-none"
+        className="w-full bg-transparent px-1.5 text-center text-sm text-foreground outline-none"
         value={inputVal}
         onChange={(e) => setInputVal(e.target.value)}
         onFocus={() => setOpen(true)}
@@ -90,7 +90,7 @@ function FontSizeInput({ editor, activeSize }: FontSizeInputProps) {
           {FONT_SIZE_PRESETS.map((s) => (
             <div
               key={s}
-              className="cursor-pointer px-3 py-1 text-xs text-popover-foreground hover:bg-accent"
+              className="cursor-pointer px-3 py-1 text-sm text-popover-foreground hover:bg-accent"
               onMouseDown={(e) => {
                 e.preventDefault() // keep input focused so blur doesn't fire first
                 setInputVal(s)
@@ -178,13 +178,18 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       >
         <SelectTrigger
           size="sm"
-          className="w-[104px] gap-1 rounded-[5px] border-border bg-secondary px-1.5 text-xs text-foreground shadow-none hover:bg-secondary dark:bg-secondary dark:hover:bg-secondary"
+          className="w-[112px] gap-1 rounded-[5px] border-border bg-secondary px-2 text-sm text-foreground shadow-none hover:bg-secondary dark:bg-secondary dark:hover:bg-secondary"
         >
           <SelectValue />
         </SelectTrigger>
         <SelectContent position="popper" sideOffset={4} align="start">
           {FONT_FAMILIES.map((f) => (
-            <SelectItem key={f} value={f} style={{ fontFamily: f }}>
+            <SelectItem
+              key={f}
+              value={f}
+              className="text-sm"
+              style={{ fontFamily: f }}
+            >
               {f}
             </SelectItem>
           ))}

@@ -287,22 +287,28 @@ export function CoverLetterEditor() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex shrink-0 items-center border-b border-border-subtle px-[18px] py-3.5">
-        <div className="flex min-w-40 flex-col gap-0.5">
-          {templatesLoading ? (
-            <Skeleton className="h-[14px] w-36" />
-          ) : (
-            <span className="text-[14px] leading-tight text-muted-foreground">
-              {template?.file_url?.split('/').pop() ?? 'No file uploaded'}
-            </span>
-          )}
+      <div className="flex h-[62px] shrink-0 border-b border-border-subtle">
+        <div className="relative flex min-w-0 flex-1 items-center px-[18px]">
+          <div className="flex w-[250px] min-w-[250px] flex-col gap-0.5">
+            {templatesLoading ? (
+              <Skeleton className="h-[14px] w-36" />
+            ) : (
+              <span className="truncate text-[14px] leading-tight text-muted-foreground">
+                {template?.file_url?.split('/').pop() ?? 'No file uploaded'}
+              </span>
+            )}
+          </div>
+
+          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2">
+            <div className="pointer-events-auto">
+              <VariationToggle variation={variation} onChange={setVariation} />
+            </div>
+          </div>
+
+          <div className="ml-auto w-[250px] min-w-[250px]" />
         </div>
 
-        <div className="flex flex-1 justify-center">
-          <VariationToggle variation={variation} onChange={setVariation} />
-        </div>
-
-        <div className="min-w-40" />
+        <div className="w-80 min-w-60" />
       </div>
 
       <div className="flex flex-1 flex-row overflow-hidden">
