@@ -1,9 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// pdfjs-dist v3 — CommonJS legacy build; worker not available in Node.js
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfjsLib: any = require('pdfjs-dist/legacy/build/pdf.js')
-pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+import { pathToFileURL } from 'url'
+
+// pdfjs-dist v5 is ESM-only; use a lazy dynamic import() in this CommonJS project.
+// workerSrc must be a file:// URL to the worker — empty string is no longer valid in v5.
+let _pdfjsLib: any = null
+
+async function getPdfjs() {
+  if (!_pdfjsLib) {
+    _pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
+    _pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(
+      require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs'),
+    ).href
+  }
+  return _pdfjsLib
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -34,6 +45,7 @@ interface FontMeta {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export async function pdfToTiptap(buffer: Buffer): Promise<TiptapDoc> {
+  const pdfjsLib = await getPdfjs()
   let pdf: any
   try {
     pdf = await pdfjsLib.getDocument({
@@ -53,10 +65,9 @@ export async function pdfToTiptap(buffer: Buffer): Promise<TiptapDoc> {
     for (let p = 1; p <= pdf.numPages; p++) {
       const page = await pdf.getPage(p)
 
-      // getOperatorList triggers font loading into page.commonObjs (side effect
-      // of pdfjs-dist 3.x internals — verified against ^3.11.174). If pdfjs ever
-      // stops populating commonObjs as part of this call, resolveFontMeta will
-      // silently fall back to CSS heuristics; bold/italic detection may degrade.
+      // getOperatorList triggers font loading into page.commonObjs as a side
+      // effect. If pdfjs ever stops doing this, resolveFontMeta will silently
+      // fall back to CSS heuristics and bold/italic detection may degrade.
       // getAnnotations fetches link annotations. Run all three in parallel.
       const [tc, , rawAnnotations] = await Promise.all([
         page.getTextContent({ includeMarkedContent: false }),
@@ -125,7 +136,7 @@ export async function pdfToTiptap(buffer: Buffer): Promise<TiptapDoc> {
       `Failed to parse PDF: ${err instanceof Error ? err.message : String(err)}`,
     )
   } finally {
-    pdf.destroy()
+    await pdf.destroy()
   }
 }
 
@@ -251,13 +262,31 @@ function buildDoc(segments: Segment[]): TiptapDoc {
     const prevRightEdge = prevLastSeg.x + prevLastSeg.width
     const isShortLine = maxRight - prevRightEdge > SHORT_LINE_SLACK
 
-    if (currPage !== prevPage || gap > PARA_GAP || isShortLine) {
+    // Font-height guard: a gap > 2.5× the previous line's font height is always
+    // a paragraph break. This handles sparse documents (few lines, single-line
+    // paragraphs) where medLineGap ends up being a paragraph-level gap itself,
+    // making PARA_GAP too large to detect any break.
+    const prevLineMaxH = Math.max(...prevLine.map((s) => s.h), 0)
+    const isLargeGap = prevLineMaxH > 0 && gap > prevLineMaxH * 2.5
+
+    if (currPage !== prevPage || gap > PARA_GAP || isShortLine || isLargeGap) {
       paraGroups.push(curPara)
-      // A gap more than 1.8× the normal line spacing on the same page indicates
-      // a blank line that pdfjs has no text item for. Regular paragraph breaks
-      // land just above PARA_GAP (1.5×); blank lines land around 2×, so 1.8×
-      // sits cleanly between them.
-      if (currPage === prevPage && gap > medLineGap * 1.8) paraGroups.push([])
+      // Insert an empty paragraph for a visible blank line (no text item in PDF).
+      // Use whichever threshold fires first: medLineGap ratio for dense docs,
+      // or 3× font height for sparse docs.
+      const isBlankLine =
+        currPage === prevPage &&
+        (gap > medLineGap * 1.8 || (prevLineMaxH > 0 && gap > prevLineMaxH * 3))
+      if (isBlankLine) {
+        // Count how many blank lines this gap represents. Clamp normalSpacing to
+        // font height so medLineGap doesn't over-count in sparse documents.
+        const normalSpacing =
+          prevLineMaxH > 0
+            ? Math.min(medLineGap, prevLineMaxH * 1.6)
+            : medLineGap
+        const numBlanks = Math.max(1, Math.round(gap / normalSpacing) - 1)
+        for (let b = 0; b < numBlanks; b++) paraGroups.push([])
+      }
       curPara = [lines[i]]
     } else {
       curPara.push(lines[i])

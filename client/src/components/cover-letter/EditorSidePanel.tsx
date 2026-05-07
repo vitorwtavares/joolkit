@@ -143,9 +143,9 @@ export function EditorSidePanel({
   const confirmCopy = pendingAction ? CONFIRM_COPY[pendingAction.type] : null
 
   return (
-    <div className="flex w-80 min-w-60 flex-col overflow-y-auto bg-[#1a1a18]">
+    <div className="flex w-80 min-w-60 flex-col overflow-y-auto bg-surface-panel">
       {/* Tokens */}
-      <div className="border-b border-[rgba(255,255,255,0.07)] p-4 pb-[18px]">
+      <div className="border-b border-border-subtle p-4 pb-[18px]">
         <div className="mb-3 text-[11px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
           Tokens
         </div>
@@ -168,7 +168,7 @@ export function EditorSidePanel({
           <>
             <div className="mb-2.5">
               <div
-                className={`mb-1 font-mono text-xs ${roleEmpty ? 'text-[#f09595]' : 'text-muted-foreground'}`}
+                className={`mb-1 font-mono text-xs ${roleEmpty ? 'text-danger' : 'text-muted-foreground'}`}
               >
                 {TOKEN_ROLE}
               </div>
@@ -179,15 +179,15 @@ export function EditorSidePanel({
                 placeholder="e.g. Software Engineer"
                 className={`w-full rounded-md px-2.5 py-[7px] font-sans text-sm outline-none ${
                   roleEmpty
-                    ? 'border border-[rgba(220,80,80,0.50)] bg-[rgba(220,80,80,0.06)] text-[#f09595] placeholder:text-[rgba(240,149,149,0.5)]'
-                    : 'border border-[rgba(255,255,255,0.08)] bg-secondary text-foreground'
+                    ? 'border border-danger-border bg-danger-soft text-danger placeholder:text-danger-muted'
+                    : 'border border-border bg-secondary text-foreground'
                 }`}
               />
             </div>
 
             <div>
               <div
-                className={`mb-1 font-mono text-xs ${companyEmpty ? 'text-[#f09595]' : 'text-muted-foreground'}`}
+                className={`mb-1 font-mono text-xs ${companyEmpty ? 'text-danger' : 'text-muted-foreground'}`}
               >
                 {TOKEN_COMPANY}
               </div>
@@ -198,19 +198,19 @@ export function EditorSidePanel({
                 placeholder="e.g. Xiaomi"
                 className={`w-full rounded-md px-2.5 py-[7px] font-sans text-sm outline-none ${
                   companyEmpty
-                    ? 'border border-[rgba(220,80,80,0.50)] bg-[rgba(220,80,80,0.06)] text-[#f09595] placeholder:text-[rgba(240,149,149,0.5)]'
-                    : 'border border-[rgba(255,255,255,0.08)] bg-secondary text-foreground'
+                    ? 'border border-danger-border bg-danger-soft text-danger placeholder:text-danger-muted'
+                    : 'border border-border bg-secondary text-foreground'
                 }`}
               />
             </div>
 
             <div className="mt-2.5 flex items-center gap-1.5 text-xs leading-normal">
               <span
-                className={`size-1.5 shrink-0 rounded-full ${hasUnresolved ? 'bg-[#f09595]' : 'bg-[#7dd4a0]'}`}
+                className={`size-1.5 shrink-0 rounded-full ${hasUnresolved ? 'bg-danger' : 'bg-success'}`}
               />
               <span
                 className={
-                  hasUnresolved ? 'text-[#f09595]' : 'text-muted-foreground'
+                  hasUnresolved ? 'text-danger' : 'text-muted-foreground'
                 }
               >
                 {hasUnresolved
@@ -228,7 +228,7 @@ export function EditorSidePanel({
       </div>
 
       {/* Version */}
-      <div className="border-b border-[rgba(255,255,255,0.07)] p-4 pb-[18px]">
+      <div className="border-b border-border-subtle p-4 pb-[18px]">
         <div className="mb-3 text-[11px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
           Version
         </div>
@@ -297,7 +297,7 @@ export function EditorSidePanel({
             <button
               onClick={handleRemoveClick}
               disabled={isRemoving || isUploading || !template?.file_url}
-              className="mb-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-[rgba(255,255,255,0.08)] bg-transparent py-[7px] text-center text-sm text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="mb-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border bg-transparent py-[7px] text-center text-sm text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isRemoving ? (
                 <Loader2 className="size-3 animate-spin" />
@@ -312,7 +312,7 @@ export function EditorSidePanel({
               disabled={
                 isRestoring || isUploading || isRemoving || !template?.file_url
               }
-              className="mt-1 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-[rgba(255,255,255,0.08)] bg-transparent py-[7px] text-center text-sm text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-1 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border bg-transparent py-[7px] text-center text-sm text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isRestoring ? (
                 <Loader2 className="size-3 animate-spin" />
@@ -335,7 +335,7 @@ export function EditorSidePanel({
           <Skeleton className="mb-2.5 h-[18px] w-48" />
         ) : (
           <p
-            className={`mb-2.5 text-xs leading-normal ${hasUnresolved || isEditorEmpty ? 'text-[#f09595]' : 'text-muted-foreground'}`}
+            className={`mb-2.5 text-xs leading-normal ${hasUnresolved || isEditorEmpty ? 'text-danger' : 'text-muted-foreground'}`}
           >
             {isEditorEmpty
               ? 'Editor is empty. Add content to enable download.'

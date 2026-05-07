@@ -5,11 +5,10 @@ import StarterKit from '@tiptap/starter-kit'
 import TextAlign from '@tiptap/extension-text-align'
 import UnderlineExt from '@tiptap/extension-underline'
 import FontFamily from '@tiptap/extension-font-family'
-import FontSize from '@tiptap/extension-font-size'
 import { Extension } from '@tiptap/core'
 import { Plugin } from '@tiptap/pm/state'
 import { TOKEN_ROLE, TOKEN_COMPANY } from '@/constants'
-import { TextStyle } from '@tiptap/extension-text-style'
+import { TextStyle, FontSize } from '@tiptap/extension-text-style'
 import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
@@ -163,7 +162,6 @@ export function CoverLetterEditor() {
       },
       { emitUpdate: false },
     )
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsDirty(false)
   }, [editor, template, variation, templatesLoading])
 
@@ -289,38 +287,35 @@ export function CoverLetterEditor() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Header */}
-      <div
-        className="flex shrink-0 items-center px-[18px] py-3.5"
-        style={{ borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}
-      >
-        <div className="flex min-w-40 flex-col gap-0.5">
-          {templatesLoading ? (
-            <Skeleton className="h-[14px] w-36" />
-          ) : (
-            <span className="text-[14px] leading-tight text-muted-foreground">
-              {template?.file_url?.split('/').pop() ?? 'No file uploaded'}
-            </span>
-          )}
+      <div className="flex h-[62px] shrink-0 border-b border-border-subtle">
+        <div className="relative flex min-w-0 flex-1 items-center px-[18px]">
+          <div className="flex w-[250px] min-w-[250px] flex-col gap-0.5">
+            {templatesLoading ? (
+              <Skeleton className="h-[14px] w-36" />
+            ) : (
+              <span className="truncate text-[14px] leading-tight text-muted-foreground">
+                {template?.file_url?.split('/').pop() ?? 'No file uploaded'}
+              </span>
+            )}
+          </div>
+
+          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2">
+            <div className="pointer-events-auto">
+              <VariationToggle variation={variation} onChange={setVariation} />
+            </div>
+          </div>
+
+          <div className="ml-auto w-[250px] min-w-[250px]" />
         </div>
 
-        <div className="flex flex-1 justify-center">
-          <VariationToggle variation={variation} onChange={setVariation} />
-        </div>
-
-        <div className="min-w-40" />
+        <div className="w-80 min-w-60" />
       </div>
 
       <div className="flex flex-1 flex-row overflow-hidden">
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Toolbar */}
-          <div
-            className="flex shrink-0"
-            style={{ borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}
-          >
-            <div
-              className="flex flex-1 items-center"
-              style={{ borderRight: '0.5px solid rgba(255,255,255,0.07)' }}
-            >
+          <div className="flex shrink-0 border-b border-border-subtle">
+            <div className="flex flex-1 items-center border-r border-border-subtle">
               <EditorToolbar editor={editor} />
               {isDirty && (
                 <span className="mr-3 text-[14px] text-destructive/60">
@@ -339,13 +334,7 @@ export function CoverLetterEditor() {
 
           {/* Body */}
           <div className="flex flex-1 overflow-hidden">
-            <div
-              className="flex flex-1 flex-col overflow-hidden"
-              style={{
-                borderRight: '0.5px solid rgba(255,255,255,0.07)',
-                background: '#111110',
-              }}
-            >
+            <div className="flex flex-1 flex-col overflow-hidden border-r border-border-subtle bg-surface-editor">
               <EditorCanvas
                 isLoading={
                   templatesLoading ||

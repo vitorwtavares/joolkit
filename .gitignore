@@ -5,6 +5,5 @@ dist/
 .env.local
 .DS_Store
 .pnpm-store/
-project-refs/
 skills-lock.json
 .claude/settings.local.json

@@ -4,6 +4,7 @@ import Layout from './components/layout/Layout'
 import QuickCopy from './pages/QuickCopy'
 import CoverLetter from './pages/CoverLetter'
 import AnswerBank from './pages/AnswerBank'
+import ApplicationTracker from './pages/ApplicationTracker'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import NotFound from './pages/NotFound'
@@ -23,10 +24,7 @@ export default function App() {
               <Route path="/quick-copy" element={<QuickCopy />} />
               <Route path="/cover-letter" element={<CoverLetter />} />
               <Route path="/answer-bank" element={<AnswerBank />} />
-              <Route
-                path="/tracker"
-                element={<Navigate to="/quick-copy" replace />}
-              />
+              <Route path="/tracker" element={<ApplicationTracker />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />

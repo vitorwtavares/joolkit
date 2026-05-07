@@ -26,9 +26,8 @@ export function EditorCanvas({ isLoading, editor }: EditorCanvasProps) {
         style={{
           width: '794px',
           height: '1123px',
-          background: '#1e1e1c',
-          boxShadow:
-            '0px 0px 10px 4px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(255,255,255,0.06)',
+          background: 'var(--card)',
+          boxShadow: 'var(--canvas-shadow)',
         }}
       >
         <EditorContent editor={editor} className="px-[100px] py-[80px]" />

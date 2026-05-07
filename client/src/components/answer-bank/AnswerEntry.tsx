@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { useCopiedBubble } from '@/hooks/useCopiedBubble'
 import { useUpdateAnswer } from '@/api/hooks/useAnswers'
 import type { Answer } from '@/api/hooks/useAnswers'
+import { SegmentedToggle } from '@/components/ui/segmented-toggle'
 
 interface AnswerEntryProps {
   position: number
@@ -58,12 +59,6 @@ export function AnswerEntry({ position, answer, onEdit }: AnswerEntryProps) {
     }
   }
 
-  function handleVariantChange(variant: 'short' | 'long', e: React.MouseEvent) {
-    e.stopPropagation()
-    setLocalVariant(variant)
-    updateAnswer.mutate({ id: answer.id, preferred_variant: variant })
-  }
-
   return (
     <div
       ref={setNodeRef}
@@ -73,8 +68,8 @@ export function AnswerEntry({ position, answer, onEdit }: AnswerEntryProps) {
       {copiedBubble}
       <div
         className={cn(
-          'flex h-[52px] w-full items-center rounded-lg border border-border bg-card transition-colors',
-          !isDragging && 'hover:bg-secondary/30',
+          'flex min-h-[56px] w-full items-center rounded-lg border border-border bg-secondary transition-colors',
+          !isDragging && 'hover:bg-secondary/70',
         )}
       >
         <button
@@ -96,46 +91,37 @@ export function AnswerEntry({ position, answer, onEdit }: AnswerEntryProps) {
               handleCopy()
             }
           }}
-          className="flex h-full flex-1 cursor-pointer items-center gap-3 rounded-r-lg pr-5 text-left focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+          className="flex min-h-[56px] min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5 rounded-r-lg py-3 pr-8 text-left focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
         >
-          <span className="min-w-[16px] text-center text-[12px] text-muted-foreground">
+          <span className="min-w-[16px] text-center text-[13px] text-muted-foreground">
             {position}
           </span>
-          <span className="flex-1 truncate text-[14px] text-foreground">
+          <span className="min-w-[200px] flex-1 truncate text-[15px] text-foreground">
             {answer.question || (
               <span className="text-muted-foreground italic">No question</span>
             )}
           </span>
           {hasBothVariants && (
-            <div
-              className="flex flex-shrink-0 gap-[1px] rounded-full border border-border/60 bg-secondary p-0.5"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={(e) => handleVariantChange('short', e)}
-                className={cn(
-                  'cursor-pointer rounded-full px-2.5 py-[3px] text-[11px] transition-colors',
-                  effectiveVariant === 'short'
-                    ? 'bg-secondary-foreground/10 font-medium text-foreground'
-                    : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                Default
-              </button>
-              <button
-                onClick={(e) => handleVariantChange('long', e)}
-                className={cn(
-                  'cursor-pointer rounded-full px-2.5 py-[3px] text-[11px] transition-colors',
-                  effectiveVariant === 'long'
-                    ? 'bg-secondary-foreground/10 font-medium text-foreground'
-                    : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                Detailed
-              </button>
+            <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+              <SegmentedToggle
+                value={effectiveVariant}
+                onChange={(variant) => {
+                  setLocalVariant(variant)
+                  updateAnswer.mutate({
+                    id: answer.id,
+                    preferred_variant: variant,
+                  })
+                }}
+                options={[
+                  { label: 'Default', value: 'short' },
+                  { label: 'Detailed', value: 'long' },
+                ]}
+                variant="compact"
+                className="border-border/60 p-0.5"
+              />
             </div>
           )}
-          <span className="flex-shrink-0 text-[12px] text-muted-foreground/50">
+          <span className="pointer-events-none ml-1 flex-shrink-0 text-[13px] text-muted-foreground/70 select-none">
             Click to copy
           </span>
         </div>
@@ -146,9 +132,9 @@ export function AnswerEntry({ position, answer, onEdit }: AnswerEntryProps) {
           e.stopPropagation()
           onEdit(answer)
         }}
-        className="absolute top-1/2 -right-[11px] z-10 flex size-[22px] -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-card shadow-sm hover:bg-secondary"
+        className="absolute top-1/2 -right-[11px] z-10 flex size-[24px] -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-secondary shadow-sm transition-colors hover:bg-surface-selected"
       >
-        <Pencil size={11} className="text-muted-foreground" />
+        <Pencil size={13} className="text-muted-foreground" />
       </button>
     </div>
   )
@@ -164,12 +150,12 @@ export function EmptyAnswerEntry({ position, onAdd }: EmptyAnswerEntryProps) {
     <div className="relative">
       <button
         onClick={onAdd}
-        className="group flex h-[52px] w-full cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-card px-5 hover:border-border/80"
+        className="group flex h-[56px] w-full cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-secondary px-5 transition-colors hover:border-border/80 hover:bg-secondary/70"
       >
-        <span className="min-w-[16px] text-center text-[12px] text-muted-foreground">
+        <span className="min-w-[16px] text-center text-[13px] text-muted-foreground">
           {position}
         </span>
-        <span className="flex items-center gap-1.5 text-[14px] text-muted-foreground/50 transition-colors duration-200 group-hover:text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-[15px] text-muted-foreground/50 transition-colors duration-200 group-hover:text-muted-foreground">
           <Plus size={14} />
           Add answer
         </span>

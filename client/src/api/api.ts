@@ -9,6 +9,15 @@ async function getAuthHeaders(): Promise<HeadersInit> {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
+export class ApiError extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const authHeaders = await getAuthHeaders()
   const hasBody = options.body !== undefined
@@ -23,7 +32,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.error ?? `Request failed: ${res.status}`)
+    throw new ApiError(
+      body.error ?? `Request failed: ${res.status}`,
+      res.status,
+    )
   }
 
   if (res.status === 204) return undefined as T

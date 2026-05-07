@@ -17,7 +17,6 @@ export function useTokenState(tokenData: TokenData | null | undefined) {
 
   useEffect(() => {
     if (didSync.current || !tokenData) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRole(tokenData.role ?? '')
     setCompany(tokenData.company ?? '')
     didSync.current = true

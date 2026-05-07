@@ -29,10 +29,6 @@ Rules for working in this repo. Follow these exactly.
   3. If it exists, add it to the project with the shadcn CLI (`pnpm dlx shadcn@latest add <component>` from the `client/` directory) and use it.
   4. Only write custom markup if no shadcn component covers the use case.
 
-## Project references
-
-All project information lives in `project-refs/` at the repo root — implementation plan, specs, screenshots, and styled HTML wireframes. Consult this folder before starting any feature work.
-
 ## Client folder structure
 
 - `client/src/api/` — Supabase client, base API client, and TanStack Query hooks (`api/hooks/`)

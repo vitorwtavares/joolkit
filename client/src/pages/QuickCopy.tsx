@@ -1,4 +1,5 @@
 import { Globe, Link2, Mail, MapPin, Phone, User } from 'lucide-react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/auth'
 import { useProfile, useUpdateProfile } from '@/api/hooks/useProfile'
@@ -59,14 +60,14 @@ const linkFields: {
     key: 'linkedin',
     label: 'LinkedIn',
     icon: <LinkedInIcon />,
-    iconBg: 'bg-[#2a2a28]',
+    iconBg: 'bg-surface-raised',
     emptyText: 'Add link...',
   },
   {
     key: 'github',
     label: 'GitHub',
     icon: <GitHubIcon />,
-    iconBg: 'bg-[#2a2a28]',
+    iconBg: 'bg-surface-raised',
     emptyText: 'Add link...',
   },
   {
@@ -131,12 +132,10 @@ export default function QuickCopy() {
 
   return (
     <div className="flex-1 overflow-y-auto p-16 pb-6">
-      <h1 className="mb-1 text-[36px] font-medium tracking-tight">
-        Quick copy
-      </h1>
-      <p className="mb-8 text-[14px] text-muted-foreground">
-        Click any filled field to copy. Click the pencil to edit.
-      </p>
+      <PageHeader
+        title="Quick copy"
+        subtitle="Click any filled field to copy. Click the pencil to edit."
+      />
 
       <section className="mb-10">
         <h2 className="mb-2.5 text-[12px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
@@ -180,7 +179,7 @@ export default function QuickCopy() {
         <h2 className="mb-2.5 text-[12px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
           Files
         </h2>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-6">
+        <div className="grid grid-cols-1 gap-6 min-[1200px]:grid-cols-[minmax(220px,1fr)_minmax(0,3fr)]">
           <ResumeButton
             resumeUrl={profile.resume_url}
             userId={user.id}
@@ -195,7 +194,7 @@ export default function QuickCopy() {
               )
             }
           />
-          <div className="col-span-3">
+          <div>
             <CoverLetterCard
               templates={templates}
               userId={user.id}

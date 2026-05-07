@@ -32,7 +32,12 @@ const navItems = [
     disabled: false,
   },
   { to: '/answer-bank', label: 'Answers', icon: AlignLeft, disabled: false },
-  { to: '/tracker', label: 'Applications', icon: CalendarDays, disabled: true },
+  {
+    to: '/tracker',
+    label: 'Applications',
+    icon: CalendarDays,
+    disabled: false,
+  },
 ]
 
 export default function Sidebar() {
@@ -43,8 +48,8 @@ export default function Sidebar() {
   const initial = email ? getInitials(email) : '?'
 
   return (
-    <aside className="flex w-[210px] min-w-[210px] flex-col gap-0.5 border-r border-border bg-card px-3 py-5">
-      <div className="mb-2 border-b border-border px-2 pb-4 text-center">
+    <aside className="flex w-[210px] min-w-[210px] flex-col gap-0.5 border-r border-sidebar-border bg-sidebar px-3 py-5 text-sidebar-foreground">
+      <div className="mb-2 border-b border-sidebar-border px-2 pb-4 text-center">
         <img
           src="/noloop_logo_text_horizontal_crop_white.png"
           alt="noloop"
@@ -81,8 +86,8 @@ export default function Sidebar() {
               cn(
                 'flex items-center gap-2 rounded-lg px-2 py-[7px] text-sm transition-colors',
                 isActive
-                  ? 'bg-secondary font-medium text-foreground'
-                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground',
+                  ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
+                  : 'text-muted-foreground hover:bg-sidebar-hover hover:text-sidebar-foreground',
               )
             }
           >
@@ -106,8 +111,8 @@ export default function Sidebar() {
           <button
             className={cn(
               'flex w-full items-center gap-2 rounded-lg px-2 py-[7px] text-sm transition-colors',
-              'text-muted-foreground hover:bg-secondary/50 hover:text-foreground',
-              'data-[state=open]:bg-secondary data-[state=open]:text-foreground',
+              'text-muted-foreground hover:bg-sidebar-hover hover:text-sidebar-foreground',
+              'data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground',
             )}
           >
             <Avatar
@@ -118,7 +123,7 @@ export default function Sidebar() {
             >
               <AvatarFallback
                 className="bg-transparent text-[14px] font-semibold"
-                style={{ color: '#fff' }}
+                style={{ color: 'var(--brand-foreground)' }}
               >
                 {initial}
               </AvatarFallback>
@@ -131,7 +136,7 @@ export default function Sidebar() {
           side="top"
           align="start"
           sideOffset={8}
-          className="w-[186px] gap-0 overflow-hidden rounded-xl p-0"
+          className="w-[186px] gap-0 overflow-hidden rounded-xl border-sidebar-border bg-sidebar-popover p-0"
         >
           <div className="px-3 py-3">
             <span className="block truncate text-xs leading-tight text-muted-foreground">
@@ -147,7 +152,7 @@ export default function Sidebar() {
                 toast.error('Failed to sign out. Please try again.'),
               )
             }
-            className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
+            className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground transition-colors outline-none hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:bg-sidebar-hover focus-visible:text-sidebar-foreground focus-visible:outline-none"
           >
             <LogOut size={14} className="opacity-70" />
             Sign out
