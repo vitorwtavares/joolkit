@@ -154,7 +154,7 @@ export function CopyButton({
             {label}
           </span>
           {saving ? (
-            <Skeleton className="h-[21px] w-3/5" />
+            <Skeleton className="h-[21px] w-3/5 bg-surface-selected" />
           ) : splitName && filled && value && value.includes(' ') ? (
             <span className="flex gap-1 text-[14px] text-foreground">
               <span
