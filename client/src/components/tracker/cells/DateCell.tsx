@@ -67,7 +67,7 @@ export function DateCell({ value, onSave, extended = false }: DateCellProps) {
   const trigger = (
     <button
       type="button"
-      className="absolute inset-0 flex cursor-pointer items-center px-3 text-left text-[14px] transition-colors hover:bg-[rgba(255,255,255,0.04)]"
+      className="absolute inset-0 flex cursor-pointer items-center px-3 text-left text-[14px] transition-colors hover:bg-surface-hover-subtle"
     >
       {value ? formatDisplay(value, extended) : <EmptyCell />}
     </button>
@@ -91,7 +91,7 @@ export function DateCell({ value, onSave, extended = false }: DateCellProps) {
           <button
             type="button"
             onClick={() => handleSelect(undefined)}
-            className="w-full cursor-pointer rounded px-2 py-1.5 text-[14px] text-muted-foreground transition-colors hover:bg-[rgba(255,255,255,0.06)]"
+            className="w-full cursor-pointer rounded px-2 py-1.5 text-[14px] text-muted-foreground transition-colors hover:bg-muted"
           >
             Clear
           </button>

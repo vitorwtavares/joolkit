@@ -3,7 +3,7 @@ import { TH, FIRST_COL_PL, LAST_COL_PR, COL_W } from './styles'
 
 export function TableHead() {
   return (
-    <tr className="border-b border-[rgba(255,255,255,0.07)]">
+    <tr className="border-b border-border-subtle">
       <th
         className={`${TH} ${FIRST_COL_PL}`}
         style={{ minWidth: COL_W.star }}

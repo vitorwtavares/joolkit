@@ -66,7 +66,7 @@ export function NotesEditor({ app, save }: NotesEditorProps) {
   return (
     <div className="flex flex-1 flex-col">
       {/* Toolbar */}
-      <div className="flex flex-shrink-0 items-center border-b border-[rgba(255,255,255,0.07)] px-16 py-2">
+      <div className="flex flex-shrink-0 items-center border-b border-border-subtle px-16 py-2">
         <NotesToolbar editor={editor} />
       </div>
 

@@ -105,10 +105,7 @@ export default function ApplicationTracker() {
         </div>
 
         {/* View tabs + actions row */}
-        <div
-          className="flex flex-shrink-0 items-center overflow-x-auto [scrollbar-width:none] max-[1350px]:flex-wrap [&::-webkit-scrollbar]:hidden"
-          style={{ borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}
-        >
+        <div className="flex flex-shrink-0 items-center overflow-x-auto border-b border-border-subtle [scrollbar-width:none] max-[1350px]:flex-wrap [&::-webkit-scrollbar]:hidden">
           <div
             role="tablist"
             className="flex items-center gap-0.5 ps-16 pe-[6px]"
@@ -135,14 +132,14 @@ export default function ApplicationTracker() {
           <div className="flex flex-1 items-center justify-end gap-2 pe-7 pb-2 max-[1350px]:flex-none max-[1350px]:justify-start max-[1350px]:pt-2 max-[1350px]:pl-16">
             <button
               disabled
-              className="flex cursor-not-allowed items-center gap-[5px] rounded-md border border-[rgba(255,255,255,0.08)] px-2.5 py-1 text-[14px] text-muted-foreground opacity-50"
+              className="flex cursor-not-allowed items-center gap-[5px] rounded-md border border-border px-2.5 py-1 text-[14px] text-muted-foreground opacity-50"
             >
               <Filter size={16} />
               Filter
             </button>
             <button
               disabled
-              className="flex cursor-not-allowed items-center gap-[5px] rounded-md border border-[rgba(255,255,255,0.08)] px-2.5 py-1 text-[14px] text-muted-foreground opacity-50"
+              className="flex cursor-not-allowed items-center gap-[5px] rounded-md border border-border px-2.5 py-1 text-[14px] text-muted-foreground opacity-50"
             >
               <Columns3 size={16} />
               Columns
@@ -150,7 +147,7 @@ export default function ApplicationTracker() {
             <button
               onClick={handleNewEntry}
               disabled={createApplication.isPending}
-              className="flex min-w-[110px] cursor-pointer items-center justify-center gap-[5px] rounded-md border border-[rgba(255,255,255,0.15)] px-2.5 py-1 text-[14px] whitespace-nowrap text-foreground transition-colors hover:bg-[rgba(255,255,255,0.05)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-w-[110px] cursor-pointer items-center justify-center gap-[5px] rounded-md border border-input px-2.5 py-1 text-[14px] whitespace-nowrap text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus size={16} />
               New entry
@@ -174,7 +171,7 @@ export default function ApplicationTracker() {
       <div
         className={cn(
           'relative z-[20] flex-shrink-0 overflow-hidden',
-          mountedApp && 'border-l border-[rgba(255,255,255,0.07)]',
+          mountedApp && 'border-l border-border-subtle',
         )}
         style={{
           width: drawerOpen ? 650 : 0,

@@ -35,7 +35,7 @@ export function DrawerHeader({
         <button
           type="button"
           onClick={onClose}
-          className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-foreground"
+          className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           aria-label="Close drawer"
         >
           <ChevronsRight size={22} />
@@ -45,7 +45,7 @@ export function DrawerHeader({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-foreground"
+              className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               aria-label="More options"
             >
               <MoreHorizontal size={22} />
@@ -61,7 +61,7 @@ export function DrawerHeader({
       </div>
 
       {/* Company name + status */}
-      <div className="flex flex-shrink-0 flex-col gap-2 border-b border-[rgba(255,255,255,0.07)] px-16 pt-2 pb-4">
+      <div className="flex flex-shrink-0 flex-col gap-2 border-b border-border-subtle px-16 pt-2 pb-4">
         <div className="flex flex-col">
           <CompanyNameEditor
             value={app.company_name || null}

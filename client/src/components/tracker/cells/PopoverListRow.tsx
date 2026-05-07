@@ -17,7 +17,7 @@ export function PopoverListRow({
 }: PopoverListRowProps) {
   return (
     <div
-      className={`group flex items-center rounded transition-colors hover:bg-[rgba(255,255,255,0.06)] ${className}`}
+      className={`group flex items-center rounded transition-colors hover:bg-muted ${className}`}
     >
       {children}
       {onDelete && (
@@ -30,7 +30,7 @@ export function PopoverListRow({
           aria-label={deleteLabel}
           tabIndex={-1}
           disabled={deleteDisabled}
-          className="mr-1 flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded text-white/50 transition-all hover:bg-[rgba(255,255,255,0.05)] hover:text-destructive disabled:opacity-30"
+          className="mr-1 flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded text-text-faint transition-all hover:bg-surface-hover hover:text-destructive disabled:opacity-30"
         >
           <Trash2 size={15} />
         </button>

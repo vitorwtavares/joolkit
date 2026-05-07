@@ -90,7 +90,7 @@ export function TextCell({
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') startEdit()
           }}
-          className={`absolute inset-0 flex cursor-text items-center overflow-hidden px-3 text-[14px] transition-colors hover:bg-[rgba(255,255,255,0.04)] ${className}`}
+          className={`absolute inset-0 flex cursor-text items-center overflow-hidden px-3 text-[14px] transition-colors hover:bg-surface-hover-subtle ${className}`}
           style={{ fontWeight: bold ? 500 : undefined }}
         >
           {safeUrl && value ? (

@@ -18,13 +18,13 @@ export function DrawerMetaFields({ app, save }: DrawerMetaFieldsProps) {
   const visaColor = app.visa_support ? VISA_COLORS[app.visa_support] : undefined
 
   return (
-    <div className="flex-shrink-0 border-b border-[rgba(255,255,255,0.07)] px-16 py-4">
+    <div className="flex-shrink-0 border-b border-border-subtle px-16 py-4">
       <div className="grid grid-cols-2 gap-x-6 gap-y-2">
         <Field label="Job link">
           <TextCell
             value={app.job_url}
             url={app.job_url}
-            linkClassName="text-[#85B7EB] hover:text-[#85B7EB]/80"
+            linkClassName="text-info hover:text-info/80"
             onSave={(v) => save({ job_url: v })}
           />
         </Field>
@@ -32,7 +32,7 @@ export function DrawerMetaFields({ app, save }: DrawerMetaFieldsProps) {
           <TextCell
             value={app.careers_url}
             url={app.careers_url}
-            linkClassName="text-[#85B7EB] hover:text-[#85B7EB]/80"
+            linkClassName="text-info hover:text-info/80"
             onSave={(v) => save({ careers_url: v })}
           />
         </Field>

@@ -11,7 +11,7 @@ export function CellTrigger({ className, ref, ...props }: CellTriggerProps) {
       ref={ref}
       type="button"
       className={cn(
-        'absolute inset-0 flex cursor-pointer items-center px-3 text-left text-[14px] transition-colors hover:bg-[rgba(255,255,255,0.04)]',
+        'absolute inset-0 flex cursor-pointer items-center px-3 text-left text-[14px] transition-colors hover:bg-surface-hover-subtle',
         className,
       )}
       {...props}
