@@ -122,7 +122,7 @@ export function ResumeButton({
             resumeUrl ? handleDownload : () => fileInputRef.current?.click()
           }
           className={cn(
-            'relative flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
+            'relative flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-5 transition-colors disabled:pointer-events-none',
             showAsFilled
               ? 'border-border bg-secondary hover:bg-card'
               : 'border-dashed border-border/50 bg-surface-selected hover:bg-surface-selected-hover',

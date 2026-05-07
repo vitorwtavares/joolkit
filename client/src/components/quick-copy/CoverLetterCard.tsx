@@ -148,7 +148,7 @@ export function CoverLetterCard({
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-dashed border-border/50 bg-secondary px-4 py-3.5">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 max-[1200px]:flex-wrap">
         <div className="flex items-center gap-2.5">
           <div className="flex size-[30px] flex-shrink-0 items-center justify-center rounded-md bg-secondary">
             <FileText size={14} className="text-muted-foreground/40" />
@@ -163,17 +163,17 @@ export function CoverLetterCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6 max-[1200px]:mb-3 max-[1200px]:ml-auto max-[1200px]:flex-col max-[1200px]:items-end max-[1200px]:gap-2">
           <button
             onClick={() => setTutorialOpen(true)}
-            className="cursor-pointer text-[13px] text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+            className="cursor-pointer text-[13px] text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground max-[1200px]:order-2 max-[1200px]:text-right"
           >
             How to use tokens
           </button>
 
           <button
             onClick={handleOpenInEditor}
-            className="flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[13px] font-medium transition-opacity hover:opacity-90"
+            className="flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[13px] font-medium transition-opacity hover:opacity-90 max-[1200px]:order-1"
             style={{
               background: 'color-mix(in srgb, var(--brand) 72%, black)',
               color: 'var(--brand-foreground)',
@@ -186,9 +186,9 @@ export function CoverLetterCard({
       </div>
 
       {/* Body: slots (original grid) + tokens panel */}
-      <div className="flex gap-8">
+      <div className="flex gap-8 max-[1200px]:flex-wrap">
         {/* Slots: original 2-column grid, grows to fill space */}
-        <div className="grid flex-[65] grid-cols-2 items-stretch gap-8">
+        <div className="grid min-w-0 flex-[65] grid-cols-2 items-stretch gap-8 max-[1200px]:w-full max-[1200px]:flex-none">
           {(['formal', 'light'] as const).map((v) => {
             const t = v === 'formal' ? formal : light
             const ref = v === 'formal' ? formalInputRef : lightInputRef
@@ -225,7 +225,7 @@ export function CoverLetterCard({
                     t ? () => handleDownload(v) : () => ref.current?.click()
                   }
                   className={cn(
-                    'flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-3.5 transition-colors disabled:pointer-events-none',
+                    'flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-5 transition-colors disabled:pointer-events-none',
                     showAsFilled
                       ? 'border-border bg-secondary hover:bg-card'
                       : 'border-dashed border-border/50 bg-surface-selected hover:bg-surface-selected-hover',
@@ -309,7 +309,7 @@ export function CoverLetterCard({
         </div>
 
         {/* Tokens panel */}
-        <div className="flex flex-[35] flex-col gap-2 rounded-md border border-border bg-secondary p-3">
+        <div className="flex min-w-0 flex-[35] flex-col gap-2 rounded-md border border-border bg-secondary p-3 max-[1200px]:w-full max-[1200px]:flex-none">
           <div className="flex flex-col gap-1.5">
             <div className="font-mono text-[13px] text-muted-foreground">
               {TOKEN_ROLE}
