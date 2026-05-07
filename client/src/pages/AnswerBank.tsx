@@ -80,7 +80,7 @@ export default function AnswerBank() {
       />
 
       {isLoading ? (
-        <div className="flex max-w-[740px] flex-col gap-2">
+        <div className="flex w-full max-w-[850px] flex-col gap-2">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
@@ -89,7 +89,7 @@ export default function AnswerBank() {
           ))}
         </div>
       ) : (
-        <div className="flex max-w-[740px] flex-col gap-2">
+        <div className="flex w-full max-w-[850px] flex-col gap-2">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
