@@ -39,8 +39,21 @@
   --brand: #ff5757;
   --brand-foreground: #fff;
   --surface-raised: #2a2a28;
+  --surface-panel: #1a1a18;
+  --surface-selected: #3a3a37;
+  --surface-editor: #111110;
   --success: #7dd4a0;
   --success-soft: #052e16;
+  --danger: #f09595;
+  --danger-soft: rgba(220, 80, 80, 0.06);
+  --danger-soft-strong: rgba(220, 80, 80, 0.08);
+  --danger-border: rgba(220, 80, 80, 0.5);
+  --danger-border-soft: rgba(220, 80, 80, 0.3);
+  --danger-muted: rgba(240, 149, 149, 0.5);
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --canvas-shadow:
+    0px 0px 10px 4px rgba(0, 0, 0, 0.25), 0 0 0 0.5px rgba(255, 255, 255, 0.06);
 
   /* Palette — matches the 10-color Notion-style picker */
   --palette-default: #3d3b38;
@@ -92,8 +105,19 @@
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-surface-raised: var(--surface-raised);
+  --color-surface-panel: var(--surface-panel);
+  --color-surface-selected: var(--surface-selected);
+  --color-surface-editor: var(--surface-editor);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-soft-strong: var(--danger-soft-strong);
+  --color-danger-border: var(--danger-border);
+  --color-danger-border-soft: var(--danger-border-soft);
+  --color-danger-muted: var(--danger-muted);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
   --color-palette-default: var(--palette-default);
   --color-palette-gray: var(--palette-gray);
   --color-palette-brown: var(--palette-brown);

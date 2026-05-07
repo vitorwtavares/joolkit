@@ -287,10 +287,7 @@ export function CoverLetterEditor() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Header */}
-      <div
-        className="flex shrink-0 items-center px-[18px] py-3.5"
-        style={{ borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}
-      >
+      <div className="flex shrink-0 items-center border-b border-border-subtle px-[18px] py-3.5">
         <div className="flex min-w-40 flex-col gap-0.5">
           {templatesLoading ? (
             <Skeleton className="h-[14px] w-36" />
@@ -311,14 +308,8 @@ export function CoverLetterEditor() {
       <div className="flex flex-1 flex-row overflow-hidden">
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Toolbar */}
-          <div
-            className="flex shrink-0"
-            style={{ borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}
-          >
-            <div
-              className="flex flex-1 items-center"
-              style={{ borderRight: '0.5px solid rgba(255,255,255,0.07)' }}
-            >
+          <div className="flex shrink-0 border-b border-border-subtle">
+            <div className="flex flex-1 items-center border-r border-border-subtle">
               <EditorToolbar editor={editor} />
               {isDirty && (
                 <span className="mr-3 text-[14px] text-destructive/60">
@@ -337,13 +328,7 @@ export function CoverLetterEditor() {
 
           {/* Body */}
           <div className="flex flex-1 overflow-hidden">
-            <div
-              className="flex flex-1 flex-col overflow-hidden"
-              style={{
-                borderRight: '0.5px solid rgba(255,255,255,0.07)',
-                background: '#111110',
-              }}
-            >
+            <div className="flex flex-1 flex-col overflow-hidden border-r border-border-subtle bg-surface-editor">
               <EditorCanvas
                 isLoading={
                   templatesLoading ||

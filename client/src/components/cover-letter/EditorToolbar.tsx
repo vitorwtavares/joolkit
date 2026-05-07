@@ -67,7 +67,7 @@ function FontSizeInput({ editor, activeSize }: FontSizeInputProps) {
   }
 
   return (
-    <div className="relative ml-1 flex h-8 w-[52px] items-center rounded-[5px] border border-[rgba(255,255,255,0.08)] bg-[#272725] shadow-none focus-within:border-[rgba(255,255,255,0.18)]">
+    <div className="relative ml-1 flex h-8 w-[52px] items-center rounded-[5px] border border-border bg-secondary shadow-none focus-within:border-border-strong">
       <input
         className="w-full bg-transparent px-1.5 text-center text-xs text-foreground outline-none"
         value={inputVal}
@@ -86,7 +86,7 @@ function FontSizeInput({ editor, activeSize }: FontSizeInputProps) {
         }}
       />
       {open && (
-        <div className="absolute top-full left-0 z-50 mt-1 max-h-[200px] min-w-full overflow-y-auto rounded-md border border-[rgba(255,255,255,0.08)] bg-popover py-1 shadow-md">
+        <div className="absolute top-full left-0 z-50 mt-1 max-h-[200px] min-w-full overflow-y-auto rounded-md border border-border bg-popover py-1 shadow-md">
           {FONT_SIZE_PRESETS.map((s) => (
             <div
               key={s}
@@ -178,7 +178,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       >
         <SelectTrigger
           size="sm"
-          className="w-[104px] gap-1 rounded-[5px] border-[rgba(255,255,255,0.08)] bg-[#272725] px-1.5 text-xs text-foreground shadow-none dark:bg-[#272725] dark:hover:bg-[#272725]"
+          className="w-[104px] gap-1 rounded-[5px] border-border bg-secondary px-1.5 text-xs text-foreground shadow-none hover:bg-secondary dark:bg-secondary dark:hover:bg-secondary"
         >
           <SelectValue />
         </SelectTrigger>
@@ -193,7 +193,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
       <FontSizeInput editor={editor} activeSize={activeSize} />
 
-      <div className="mx-1.5 h-[18px] w-px bg-[rgba(255,255,255,0.08)]" />
+      <div className="mx-1.5 h-[18px] w-px bg-border" />
 
       <Toggle
         size="sm"
@@ -220,7 +220,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         <Underline className="size-3.5" />
       </Toggle>
 
-      <div className="mx-1.5 h-[18px] w-px bg-[rgba(255,255,255,0.08)]" />
+      <div className="mx-1.5 h-[18px] w-px bg-border" />
 
       <Toggle
         size="sm"
