@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router'
 import { useEditor, useEditorState } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import TextAlign from '@tiptap/extension-text-align'
-import UnderlineExt from '@tiptap/extension-underline'
 import FontFamily from '@tiptap/extension-font-family'
 import { Extension } from '@tiptap/core'
 import { Plugin } from '@tiptap/pm/state'
@@ -136,7 +135,6 @@ export function CoverLetterEditor() {
     extensions: [
       StarterKit,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      UnderlineExt,
       TextStyle,
       FontFamily,
       FontSize,

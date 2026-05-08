@@ -112,7 +112,7 @@ ${bodyHtml}
       res.setHeader('Content-Type', 'application/pdf')
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="cover-letter-${variation}.pdf"`,
+        'attachment; filename="cover-letter.pdf"',
       )
       res.send(Buffer.from(pdf))
     } catch (err) {
