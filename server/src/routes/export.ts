@@ -75,6 +75,9 @@ router.post(
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400;1,700&family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Raleway:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Roboto:ital,wght@0,400;0,500;0,700;1,400;1,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -100,7 +103,7 @@ ${bodyHtml}
     try {
       const browser = await getBrowser()
       page = await browser.newPage()
-      await page.setContent(html, { waitUntil: 'domcontentloaded' })
+      await page.setContent(html, { waitUntil: 'networkidle0' })
       const pdf = await page.pdf({
         format: 'A4',
         printBackground: true,
@@ -113,11 +116,6 @@ ${bodyHtml}
       )
       res.send(Buffer.from(pdf))
     } catch (err) {
-      console.error('PDF generation failed', {
-        variation,
-        userId: req.userId,
-        error: err instanceof Error ? err.message : String(err),
-      })
       res.status(500).json({ error: 'PDF generation failed' })
     } finally {
       await page?.close()
