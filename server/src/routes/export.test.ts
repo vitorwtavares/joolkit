@@ -52,13 +52,14 @@ function mockSupabase({
   role?: string | null
   company?: string | null
 } = {}) {
-  const templateEqVariation = vi.fn().mockResolvedValue({
+  const templateMaybeSingle = vi.fn().mockResolvedValue({
     data: content ? { content } : null,
     error: null,
   })
-  const templateEqUser = vi.fn().mockReturnValue({
-    eq: templateEqVariation,
+  const templateEqVariation = vi.fn().mockReturnValue({
+    maybeSingle: templateMaybeSingle,
   })
+  const templateEqUser = vi.fn().mockReturnValue({ eq: templateEqVariation })
   const templateSelect = vi.fn().mockReturnValue({
     eq: templateEqUser,
   })
@@ -84,9 +85,6 @@ function mockSupabase({
   })
 
   mockGetSupabase.mockReturnValue({ from: mockFrom } as never)
-  return {
-    templateEqVariation,
-  }
 }
 
 describe('POST /api/export/cover-letter/:variation', () => {
