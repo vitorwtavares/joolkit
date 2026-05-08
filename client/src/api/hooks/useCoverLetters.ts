@@ -84,7 +84,7 @@ export function useExportCoverLetterPDF() {
       const objectUrl = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = objectUrl
-      a.download = `cover-letter-${variation}.pdf`
+      a.download = 'cover-letter.pdf'
       a.click()
       setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000)
     },
