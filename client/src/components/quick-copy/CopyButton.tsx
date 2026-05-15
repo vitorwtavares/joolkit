@@ -13,6 +13,7 @@ interface CopyButtonProps {
   iconBg?: string
   emptyText: string
   splitName?: boolean
+  locked?: boolean
   onSave: (value: string) => Promise<void>
 }
 
@@ -23,6 +24,7 @@ export function CopyButton({
   iconBg,
   emptyText,
   splitName,
+  locked = false,
   onSave,
 }: CopyButtonProps) {
   const [editing, setEditing] = useState(false)
@@ -136,9 +138,14 @@ export function CopyButton({
       {copiedBubble}
       <button
         onClick={filled ? copy : startEdit}
+        disabled={!filled && locked}
         className={cn(
-          'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border bg-secondary px-3 py-3 text-left transition-colors hover:bg-secondary/70',
-          filled ? 'border-border' : 'border-dashed border-border/50',
+          'flex w-full items-center gap-2.5 rounded-lg border bg-secondary px-3 py-3 text-left transition-colors',
+          filled
+            ? 'cursor-pointer border-border hover:bg-secondary/70'
+            : locked
+              ? 'cursor-default border-dashed border-border/50'
+              : 'cursor-pointer border-dashed border-border/50 hover:bg-secondary/70',
         )}
       >
         <div
@@ -184,12 +191,14 @@ export function CopyButton({
           )}
         </div>
       </button>
-      <button
-        onClick={startEdit}
-        className="absolute top-1/2 -right-[11px] z-10 flex size-[24px] -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-secondary shadow-sm transition-colors hover:bg-surface-selected"
-      >
-        <Pencil size={13} className="text-muted-foreground" />
-      </button>
+      {!locked && (
+        <button
+          onClick={startEdit}
+          className="absolute top-1/2 -right-[11px] z-10 flex size-[24px] -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-secondary shadow-sm transition-colors hover:bg-surface-selected"
+        >
+          <Pencil size={13} className="text-muted-foreground" />
+        </button>
+      )}
     </div>
   )
 }
