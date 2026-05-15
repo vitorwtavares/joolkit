@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Globe, Link2, Mail, MapPin, Phone, User } from 'lucide-react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { toast } from 'sonner'
@@ -86,12 +87,15 @@ const linkFields: {
 
 export default function QuickCopy() {
   const { user } = useAuth()
-  const { data: profile, isLoading } = useProfile()
+  const { data: profile, isLoading, isFetching, dataUpdatedAt } = useProfile()
   const { mutate: updateProfile } = useUpdateProfile()
   const { data: templates = [] } = useCoverLetters()
   const { mutate: updateCoverLetterFile } = useUpdateCoverLetterFile()
   const { mutateAsync: deleteCoverLetterTemplate } =
     useDeleteCoverLetterTemplate()
+
+  const [sessionStart] = useState(() => Date.now())
+  const locked = isFetching && !!profile && dataUpdatedAt < sessionStart
 
   function handleProfileSave(
     field: keyof UpdateProfilePayload,
@@ -150,6 +154,7 @@ export default function QuickCopy() {
               icon={icon}
               emptyText={emptyText}
               splitName={splitName}
+              locked={locked}
               onSave={(value) => handleProfileSave(key, value)}
             />
           ))}
@@ -169,6 +174,7 @@ export default function QuickCopy() {
               icon={icon}
               iconBg={iconBg}
               emptyText={emptyText}
+              locked={locked}
               onSave={(value) => handleProfileSave(key, value)}
             />
           ))}
@@ -183,6 +189,7 @@ export default function QuickCopy() {
           <ResumeButton
             resumeUrl={profile.resume_url}
             userId={user.id}
+            locked={locked}
             onUploaded={(path) => handleProfileSave('resume_url', path)}
             onRemoved={() =>
               updateProfile(

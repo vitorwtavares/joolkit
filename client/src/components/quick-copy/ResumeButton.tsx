@@ -9,6 +9,7 @@ import { useDownloadBubble } from '@/hooks/useDownloadBubble'
 interface ResumeButtonProps {
   resumeUrl: string | null
   userId: string
+  locked?: boolean
   onUploaded: (path: string) => void
   onRemoved: () => void
 }
@@ -16,6 +17,7 @@ interface ResumeButtonProps {
 export function ResumeButton({
   resumeUrl,
   userId,
+  locked = false,
   onUploaded,
   onRemoved,
 }: ResumeButtonProps) {
@@ -117,7 +119,13 @@ export function ResumeButton({
         />
         {downloadBubble}
         <button
-          disabled={uploading || removing || falling || isOnCooldown}
+          disabled={
+            uploading ||
+            removing ||
+            falling ||
+            isOnCooldown ||
+            (locked && !resumeUrl)
+          }
           onClick={
             resumeUrl ? handleDownload : () => fileInputRef.current?.click()
           }
@@ -173,7 +181,7 @@ export function ResumeButton({
             {showAsFilled ? 'Click to download' : 'Click to upload'}
           </span>
         </button>
-        {showAsFilled && (
+        {showAsFilled && !locked && (
           <button
             disabled={removing || falling}
             onClick={async (e) => {
