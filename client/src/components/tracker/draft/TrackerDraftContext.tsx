@@ -123,22 +123,23 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
     return state
   }, [])
 
-  // runSave is held in a ref so it can re-enter itself (after a pending save)
-  // without a useCallback dep cycle.
+  // runSave is mirrored into a ref so the debounce timer (and the post-success
+  // re-entry through scheduleSave) can invoke it without forming a dep cycle
+  // with scheduleSave.
   const runSaveRef = useRef<(appId: string) => Promise<void>>(async () => {})
 
   const scheduleSave = useCallback((appId: string) => {
     const existing = debounceRef.current.get(appId)
     if (existing) clearTimeout(existing)
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       debounceRef.current.delete(appId)
       void runSaveRef.current(appId)
     }, SAVE_DEBOUNCE_MS)
-    debounceRef.current.set(appId, t)
+    debounceRef.current.set(appId, timer)
   }, [])
 
-  useEffect(() => {
-    runSaveRef.current = async (appId: string) => {
+  const runSave = useCallback(
+    async (appId: string) => {
       const draft = draftMapRef.current[appId]
       if (!draft || Object.keys(draft).length === 0) return
 
@@ -189,8 +190,13 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
           toast.error('Failed to save')
         }
       }
-    }
-  })
+    },
+    [ensureSaveState, scheduleSave, setDraftFor],
+  )
+
+  useEffect(() => {
+    runSaveRef.current = runSave
+  }, [runSave])
 
   const applyDraft = useCallback(
     (appId: string, patch: ApplicationDraftPatch) => {
