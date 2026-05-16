@@ -5,7 +5,6 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
   type ReactNode,
 } from 'react'
 import { useQueryClient, type QueryClient } from '@tanstack/react-query'
@@ -29,10 +28,11 @@ interface SaveState {
 }
 
 interface TrackerDraftContextValue {
-  draftMap: DraftMap
   applyDraft: (appId: string, patch: ApplicationDraftPatch) => void
   flushDraft: (appId: string) => void
   clearDraft: (appId: string) => void
+  getDraftFor: (appId: string) => ApplicationDraftPatch | undefined
+  subscribeToApp: (appId: string, listener: () => void) => () => void
 }
 
 const TrackerDraftContext = createContext<TrackerDraftContextValue | null>(null)
@@ -63,14 +63,10 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const { mutateAsync: update } = useUpdateApplication()
 
-  // The draft map is stored in a ref AND mirrored to state. The ref is the
-  // synchronous source of truth — updated immediately on apply so that the
-  // save coordinator (which runs synchronously after applyDraft) sees the
-  // latest values without waiting for React to commit. State is only used
-  // to trigger re-renders of consumers.
+  // Draft state lives in a ref instead of useState so an edit on one row does
+  // not re-render every other row through context. Subscribers fan out per app
+  // id via the listener map, so only the affected row is notified.
   const draftMapRef = useRef<DraftMap>({})
-  const [draftMap, setDraftMap] = useState<DraftMap>({})
-
   const updateRef = useRef(update)
   const queryClientRef = useRef<QueryClient>(queryClient)
   useEffect(() => {
@@ -80,10 +76,12 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
 
   const saveStatesRef = useRef(new Map<string, SaveState>())
   const debounceRef = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+  const listenersRef = useRef(new Map<string, Set<() => void>>())
 
-  const commitDraft = useCallback((next: DraftMap) => {
-    draftMapRef.current = next
-    setDraftMap(next)
+  const notifyApp = useCallback((appId: string) => {
+    const listeners = listenersRef.current.get(appId)
+    if (!listeners) return
+    for (const listener of listeners) listener()
   }, [])
 
   const setDraftFor = useCallback(
@@ -99,13 +97,14 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
         if (!current[appId]) return
         const next = { ...current }
         delete next[appId]
-        commitDraft(next)
-        return
+        draftMapRef.current = next
+      } else {
+        if (current[appId] === nextPatch) return
+        draftMapRef.current = { ...current, [appId]: nextPatch }
       }
-      if (current[appId] === nextPatch) return
-      commitDraft({ ...current, [appId]: nextPatch })
+      notifyApp(appId)
     },
-    [commitDraft],
+    [notifyApp],
   )
 
   const ensureSaveState = useCallback((appId: string): SaveState => {
@@ -224,17 +223,43 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
     [setDraftFor],
   )
 
+  const getDraftFor = useCallback(
+    (appId: string) => draftMapRef.current[appId],
+    [],
+  )
+
+  const subscribeToApp = useCallback((appId: string, listener: () => void) => {
+    let listeners = listenersRef.current.get(appId)
+    if (!listeners) {
+      listeners = new Set()
+      listenersRef.current.set(appId, listeners)
+    }
+    listeners.add(listener)
+    return () => {
+      const current = listenersRef.current.get(appId)
+      if (!current) return
+      current.delete(listener)
+      if (current.size === 0) listenersRef.current.delete(appId)
+    }
+  }, [])
+
   useEffect(() => {
     const timers = debounceRef.current
     return () => {
-      for (const t of timers.values()) clearTimeout(t)
+      for (const timer of timers.values()) clearTimeout(timer)
       timers.clear()
     }
   }, [])
 
   const value = useMemo<TrackerDraftContextValue>(
-    () => ({ draftMap, applyDraft, flushDraft, clearDraft }),
-    [draftMap, applyDraft, flushDraft, clearDraft],
+    () => ({
+      applyDraft,
+      flushDraft,
+      clearDraft,
+      getDraftFor,
+      subscribeToApp,
+    }),
+    [applyDraft, flushDraft, clearDraft, getDraftFor, subscribeToApp],
   )
 
   return (

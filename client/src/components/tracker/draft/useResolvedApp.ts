@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo, useSyncExternalStore } from 'react'
 import { useQueryClient, type QueryClient } from '@tanstack/react-query'
 import {
   useTrackerDraftContext,
@@ -44,9 +44,18 @@ function mergeAppWithPatch(
 }
 
 export function useResolvedApp(app: Application): Application {
-  const { draftMap } = useTrackerDraftContext()
+  const { getDraftFor, subscribeToApp } = useTrackerDraftContext()
   const queryClient = useQueryClient()
-  const draft = draftMap[app.id]
+
+  const subscribe = useCallback(
+    (listener: () => void) => subscribeToApp(app.id, listener),
+    [subscribeToApp, app.id],
+  )
+  const getSnapshot = useCallback(
+    () => getDraftFor(app.id),
+    [getDraftFor, app.id],
+  )
+  const draft = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 
   return useMemo(() => {
     if (!draft || Object.keys(draft).length === 0) return app
