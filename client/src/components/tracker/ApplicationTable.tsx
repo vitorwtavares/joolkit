@@ -45,10 +45,8 @@ export function ApplicationTable({
                 key={app.id}
                 app={app}
                 isSelected={app.id === selectedAppId}
-                onRowClick={() => onRowClick(app.id)}
-                onAfterDelete={
-                  app.id === selectedAppId ? onDeleteSelected : undefined
-                }
+                onRowClick={onRowClick}
+                onDeleteSelected={onDeleteSelected}
               />
             ),
           )}

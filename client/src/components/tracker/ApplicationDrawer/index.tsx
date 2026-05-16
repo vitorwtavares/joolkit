@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { useApplicationSave } from '@/api/hooks/useApplicationSave'
 import { useDeleteApplication } from '@/api/hooks/useApplications'
+import { useResolvedApp, useTrackerDraft } from '../draft'
 import { DrawerHeader } from './DrawerHeader'
 import { DrawerMetaFields } from './DrawerMetaFields'
 import { NotesEditor } from './NotesEditor'
@@ -15,17 +15,19 @@ interface ApplicationDrawerProps {
 }
 
 export function ApplicationDrawer({
-  app,
+  app: serverApp,
   onClose,
   onDelete,
 }: ApplicationDrawerProps) {
-  const save = useApplicationSave(app)
+  const app = useResolvedApp(serverApp)
+  const draft = useTrackerDraft(app.id)
   const { mutate: deleteApp, isPending: isDeleting } = useDeleteApplication()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   function handleDelete() {
     deleteApp(app.id, {
       onSuccess: () => {
+        draft.clear()
         setConfirmDelete(false)
         onDelete()
       },
@@ -41,14 +43,14 @@ export function ApplicationDrawer({
       <div className="flex h-full w-[650px] flex-shrink-0 flex-col overflow-hidden bg-card">
         <DrawerHeader
           app={app}
-          save={save}
+          draft={draft}
           onClose={onClose}
           onDeleteClick={() => setConfirmDelete(true)}
         />
 
         <div className="flex flex-1 flex-col overflow-y-auto">
-          <DrawerMetaFields app={app} save={save} />
-          <NotesEditor app={app} save={save} />
+          <DrawerMetaFields app={app} draft={draft} />
+          <NotesEditor app={app} save={draft.apply} />
         </div>
       </div>
 

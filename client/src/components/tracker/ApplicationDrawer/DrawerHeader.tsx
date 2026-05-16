@@ -11,18 +11,18 @@ import { JobNameEditor } from './JobNameEditor'
 import { getDaysInStage } from '@/utils/formatTimeInStage'
 import { timeInStageColor } from '../styles'
 import type { Application } from '@/api/hooks/useApplications'
-import type { CreateApplicationPayload } from '@/api/hooks/useApplications'
+import type { TrackerDraftHandle } from '../draft'
 
 interface DrawerHeaderProps {
   app: Application
-  save: (fields: CreateApplicationPayload) => void
+  draft: TrackerDraftHandle
   onClose: () => void
   onDeleteClick: () => void
 }
 
 export function DrawerHeader({
   app,
-  save,
+  draft,
   onClose,
   onDeleteClick,
 }: DrawerHeaderProps) {
@@ -65,17 +65,19 @@ export function DrawerHeader({
         <div className="flex flex-col">
           <CompanyNameEditor
             value={app.company_name || null}
-            onSave={(v) => save({ company_name: v ?? '' })}
+            onSave={(v) => draft.apply({ company_name: v ?? '' })}
+            onCommit={draft.flush}
           />
           <JobNameEditor
             value={app.job_name}
-            onSave={(v) => save({ job_name: v })}
+            onSave={(v) => draft.apply({ job_name: v })}
+            onCommit={draft.flush}
           />
         </div>
         <div className="flex items-center gap-3">
           <StatusCell
             value={app.status}
-            onSave={(v) => save({ status: v })}
+            onSave={(v) => draft.apply({ status: v })}
             inline
           />
           <span className={`text-[13px] ${timeInStageColor(days)}`}>

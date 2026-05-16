@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { Star, Trash2, PanelRightOpen, MoreHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -19,7 +19,7 @@ import { EmptyCell } from './cells/EmptyCell'
 import { LabelUrlButton } from './LabelUrlButton'
 import { DeleteApplicationDialog } from './DeleteApplicationDialog'
 import { useDeleteApplication } from '@/api/hooks/useApplications'
-import { useApplicationSave } from '@/api/hooks/useApplicationSave'
+import { useResolvedApp, useTrackerDraft } from './draft'
 import { formatTimeInStage, getDaysInStage } from '@/utils/formatTimeInStage'
 import { TD, FIRST_COL_PL, timeInStageColor } from './styles'
 import { WORK_STYLE_OPTIONS, VISA_OPTIONS, VISA_COLORS } from './enumOptions'
@@ -31,25 +31,32 @@ import type {
 interface ApplicationRowProps {
   app: Application
   isSelected: boolean
-  onRowClick: () => void
-  onAfterDelete?: () => void
+  onRowClick: (id: string) => void
+  onDeleteSelected?: () => void
 }
 
-export function ApplicationRow({
-  app,
+function ApplicationRowImpl({
+  app: serverApp,
   isSelected,
   onRowClick,
-  onAfterDelete,
+  onDeleteSelected,
 }: ApplicationRowProps) {
-  const save = useApplicationSave(app)
+  const app = useResolvedApp(serverApp)
+  const draft = useTrackerDraft(app.id)
+  const save = draft.apply
   const { mutate: deleteApp, isPending: isDeleting } = useDeleteApplication()
   const [confirmDelete, setConfirmDelete] = useState(false)
+
+  function openDrawer() {
+    onRowClick(app.id)
+  }
 
   function handleDelete() {
     deleteApp(app.id, {
       onSuccess: () => {
+        draft.clear()
         setConfirmDelete(false)
-        onAfterDelete?.()
+        if (isSelected) onDeleteSelected?.()
       },
       onError: () => {
         toast.error('Failed to delete')
@@ -81,7 +88,7 @@ export function ApplicationRow({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-44">
-              <DropdownMenuItem onClick={onRowClick}>
+              <DropdownMenuItem onClick={openDrawer}>
                 <PanelRightOpen size={14} />
                 Open details
               </DropdownMenuItem>
@@ -120,6 +127,7 @@ export function ApplicationRow({
             className="pl-9"
             maxLength={50}
             onSave={(v) => save({ company_name: v ?? '' })}
+            onCommit={draft.flush}
           />
           <LabelUrlButton
             url={app.careers_url}
@@ -129,7 +137,7 @@ export function ApplicationRow({
           />
           <button
             type="button"
-            onClick={onRowClick}
+            onClick={openDrawer}
             className="absolute top-1/2 right-2 flex -translate-y-1/2 cursor-pointer items-center rounded border border-border-overlay bg-secondary px-1.5 py-1.5 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:border-border-overlay-strong hover:text-foreground"
             aria-label="Open details"
           >
@@ -145,6 +153,7 @@ export function ApplicationRow({
             className="pl-9"
             maxLength={100}
             onSave={(v) => save({ job_name: v })}
+            onCommit={draft.flush}
           />
           <LabelUrlButton
             url={app.job_url}
@@ -174,7 +183,11 @@ export function ApplicationRow({
 
         {/* Salary */}
         <td className={`${TD} relative`} style={{ padding: 0 }}>
-          <TextCell value={app.salary} onSave={(v) => save({ salary: v })} />
+          <TextCell
+            value={app.salary}
+            onSave={(v) => save({ salary: v })}
+            onCommit={draft.flush}
+          />
         </td>
 
         {/* Work style */}
@@ -238,3 +251,5 @@ export function ApplicationRow({
     </>
   )
 }
+
+export const ApplicationRow = memo(ApplicationRowImpl)

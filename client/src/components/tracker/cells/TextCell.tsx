@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { EmptyCell } from './EmptyCell'
 import { sanitizeUrl } from '@/utils/sanitizeUrl'
 import { cn } from '@/lib/utils'
@@ -8,11 +8,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useOverflowTooltip } from '@/hooks/useOverflowTooltip'
-import { useDebouncedSave } from '@/hooks/useDebouncedSave'
 
 interface TextCellProps {
   value: string | null
   onSave: (value: string | null) => void
+  onCommit?: () => void
   url?: string | null
   bold?: boolean
   className?: string
@@ -23,6 +23,7 @@ interface TextCellProps {
 export function TextCell({
   value,
   onSave,
+  onCommit,
   url,
   bold,
   className = '',
@@ -31,82 +32,27 @@ export function TextCell({
 }: TextCellProps) {
   const safeUrl = url ? sanitizeUrl(url) : null
   const [editing, setEditing] = useState(false)
-  const [committedDisplayValue, setCommittedDisplayValue] = useState<
-    string | null | undefined
-  >(undefined)
-  const { draft, setDraft, lastSavedRef, cancelTimer, flushSave, schedule } =
-    useDebouncedSave(value, onSave)
   const innerRef = useRef<HTMLElement | null>(null)
-  const committedDisplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  )
   const { isOverflowing, check, reset } = useOverflowTooltip()
-  const displayValue =
-    committedDisplayValue !== undefined ? committedDisplayValue : value
 
-  function clearCommittedDisplay() {
-    if (committedDisplayTimerRef.current) {
-      clearTimeout(committedDisplayTimerRef.current)
-      committedDisplayTimerRef.current = null
-    }
-    setCommittedDisplayValue(undefined)
-  }
-
-  function holdCommittedDisplay(next: string | null) {
-    if (committedDisplayTimerRef.current) {
-      clearTimeout(committedDisplayTimerRef.current)
-    }
-    setCommittedDisplayValue(next)
-    committedDisplayTimerRef.current = setTimeout(() => {
-      committedDisplayTimerRef.current = null
-      setCommittedDisplayValue(undefined)
-    }, 300)
-  }
-
-  function startEdit() {
-    setDraft(displayValue ?? '')
-    lastSavedRef.current = displayValue
-    setEditing(true)
-  }
-
-  function confirmAndExit() {
-    cancelTimer()
-    const next = draft.trim() || null
-    if (next !== value) holdCommittedDisplay(next)
-    else clearCommittedDisplay()
-    flushSave(next)
+  function commitAndExit() {
+    const trimmed = value?.trim() ?? ''
+    if (trimmed !== (value ?? '')) onSave(trimmed || null)
+    onCommit?.()
     setEditing(false)
   }
-
-  useEffect(() => {
-    if (!editing) return
-    schedule(draft.trim() || null)
-    return cancelTimer
-  }, [cancelTimer, draft, editing, schedule])
-
-  useEffect(() => {
-    return () => {
-      if (committedDisplayTimerRef.current) {
-        clearTimeout(committedDisplayTimerRef.current)
-      }
-    }
-  }, [])
 
   if (editing) {
     return (
       <div className={`absolute inset-0 flex items-center px-3 ${className}`}>
         <input
           autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={confirmAndExit}
+          value={value ?? ''}
+          onChange={(e) => onSave(e.target.value || null)}
+          onBlur={commitAndExit}
           maxLength={maxLength}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') confirmAndExit()
-            if (e.key === 'Escape') {
-              cancelTimer()
-              setEditing(false)
-            }
+            if (e.key === 'Enter') e.currentTarget.blur()
           }}
           className="w-full bg-transparent text-[14px] text-foreground outline-none"
           style={{ fontWeight: bold ? 500 : undefined }}
@@ -120,18 +66,18 @@ export function TextCell({
       <TooltipTrigger asChild>
         <span
           tabIndex={0}
-          onClick={startEdit}
+          onClick={() => setEditing(true)}
           onMouseEnter={() => {
-            if (displayValue) check(innerRef.current)
+            if (value) check(innerRef.current)
           }}
           onMouseLeave={reset}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') startEdit()
+            if (e.key === 'Enter' || e.key === ' ') setEditing(true)
           }}
           className={`absolute inset-0 flex cursor-text items-center overflow-hidden px-3 text-[14px] transition-colors hover:bg-surface-hover-subtle ${className}`}
           style={{ fontWeight: bold ? 500 : undefined }}
         >
-          {safeUrl && displayValue ? (
+          {safeUrl && value ? (
             <a
               ref={(el) => {
                 innerRef.current = el
@@ -145,7 +91,7 @@ export function TextCell({
                 linkClassName,
               )}
             >
-              {displayValue}
+              {value}
             </a>
           ) : (
             <span
@@ -154,14 +100,14 @@ export function TextCell({
               }}
               className="truncate"
             >
-              {displayValue ?? <EmptyCell />}
+              {value ?? <EmptyCell />}
             </span>
           )}
         </span>
       </TooltipTrigger>
-      {isOverflowing && displayValue && (
+      {isOverflowing && value && (
         <TooltipContent side="top" className="max-w-[250px] pr-4">
-          <span className="min-w-0 break-words">{displayValue}</span>
+          <span className="min-w-0 break-words">{value}</span>
         </TooltipContent>
       )}
     </Tooltip>
