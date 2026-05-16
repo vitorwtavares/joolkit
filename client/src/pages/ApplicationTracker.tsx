@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useCallback, useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import { Filter, Columns3, Plus } from 'lucide-react'
 import { toast } from 'sonner'
@@ -88,21 +88,19 @@ function ApplicationTrackerInner() {
   }, [applications, mountedAppId])
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  function forceCloseDrawer() {
+  const forceCloseDrawer = useCallback(() => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
     setSelectedAppId(null)
     setDrawerOpen(false)
     setMountedAppId(null)
-  }
+  }, [])
 
-  function openDrawer(id: string) {
+  const openDrawer = useCallback((id: string) => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
     setSelectedAppId(id)
     setMountedAppId(id)
-    const app = applications.find((a) => a.id === id) ?? null
-    setMountedApp(app)
     requestAnimationFrame(() => setDrawerOpen(true))
-  }
+  }, [])
 
   function closeDrawer() {
     setSelectedAppId(null)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { Star, Trash2, PanelRightOpen, MoreHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -31,15 +31,15 @@ import type {
 interface ApplicationRowProps {
   app: Application
   isSelected: boolean
-  onRowClick: () => void
-  onAfterDelete?: () => void
+  onRowClick: (id: string) => void
+  onDeleteSelected?: () => void
 }
 
-export function ApplicationRow({
+function ApplicationRowImpl({
   app: serverApp,
   isSelected,
   onRowClick,
-  onAfterDelete,
+  onDeleteSelected,
 }: ApplicationRowProps) {
   const app = useResolvedApp(serverApp)
   const draft = useTrackerDraft(app.id)
@@ -47,12 +47,16 @@ export function ApplicationRow({
   const { mutate: deleteApp, isPending: isDeleting } = useDeleteApplication()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
+  function openDrawer() {
+    onRowClick(app.id)
+  }
+
   function handleDelete() {
     deleteApp(app.id, {
       onSuccess: () => {
         draft.clear()
         setConfirmDelete(false)
-        onAfterDelete?.()
+        if (isSelected) onDeleteSelected?.()
       },
       onError: () => {
         toast.error('Failed to delete')
@@ -84,7 +88,7 @@ export function ApplicationRow({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-44">
-              <DropdownMenuItem onClick={onRowClick}>
+              <DropdownMenuItem onClick={openDrawer}>
                 <PanelRightOpen size={14} />
                 Open details
               </DropdownMenuItem>
@@ -132,7 +136,7 @@ export function ApplicationRow({
           />
           <button
             type="button"
-            onClick={onRowClick}
+            onClick={openDrawer}
             className="absolute top-1/2 right-2 flex -translate-y-1/2 cursor-pointer items-center rounded border border-border-overlay bg-secondary px-1.5 py-1.5 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:border-border-overlay-strong hover:text-foreground"
             aria-label="Open details"
           >
@@ -241,3 +245,5 @@ export function ApplicationRow({
     </>
   )
 }
+
+export const ApplicationRow = memo(ApplicationRowImpl)
