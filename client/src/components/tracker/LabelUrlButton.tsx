@@ -83,6 +83,7 @@ export function LabelUrlButton({
         <div className="mb-1.5">
           <p className="mb-1 text-[12px] text-muted-foreground">{labelTitle}</p>
           <input
+            name="tracker-label-name"
             autoFocus
             value={labelDraft}
             onChange={(e) => setLabelDraft(e.target.value)}
@@ -99,6 +100,7 @@ export function LabelUrlButton({
           <p className="mb-1 text-[12px] text-muted-foreground">{urlTitle}</p>
           <div className="flex gap-1.5">
             <input
+              name="tracker-label-url"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {

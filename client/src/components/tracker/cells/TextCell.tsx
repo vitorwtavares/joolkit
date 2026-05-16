@@ -46,6 +46,7 @@ export function TextCell({
     return (
       <div className={`absolute inset-0 flex items-center px-3 ${className}`}>
         <input
+          name="tracker-text-cell"
           autoFocus
           value={value ?? ''}
           onChange={(e) => onSave(e.target.value || null)}
