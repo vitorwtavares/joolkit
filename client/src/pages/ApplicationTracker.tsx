@@ -41,8 +41,6 @@ function newEntryDefaults(view: ApplicationView): CreateApplicationPayload {
       return { status: 'rejected' }
     case 'favorites':
       return { status: 'prospect', is_favorite: true }
-    case 'all':
-    case 'prospects':
     default:
       return { status: 'prospect' }
   }

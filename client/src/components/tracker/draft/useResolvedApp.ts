@@ -58,7 +58,7 @@ export function useResolvedApp(app: Application): Application {
   const draft = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 
   return useMemo(() => {
-    if (!draft || Object.keys(draft).length === 0) return app
+    if (!draft) return app
     return mergeAppWithPatch(app, draft, queryClient)
   }, [app, draft, queryClient])
 }

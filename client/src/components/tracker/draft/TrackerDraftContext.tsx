@@ -29,7 +29,6 @@ interface SaveState {
 
 interface TrackerDraftContextValue {
   applyDraft: (appId: string, patch: ApplicationDraftPatch) => void
-  flushDraft: (appId: string) => void
   clearDraft: (appId: string) => void
   getDraftFor: (appId: string) => ApplicationDraftPatch | undefined
   subscribeToApp: (appId: string, listener: () => void) => () => void
@@ -201,15 +200,6 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
     [scheduleSave, setDraftFor],
   )
 
-  const flushDraft = useCallback((appId: string) => {
-    const existing = debounceRef.current.get(appId)
-    if (existing) {
-      clearTimeout(existing)
-      debounceRef.current.delete(appId)
-    }
-    void runSaveRef.current(appId)
-  }, [])
-
   const clearDraft = useCallback(
     (appId: string) => {
       const existing = debounceRef.current.get(appId)
@@ -254,12 +244,11 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
   const value = useMemo<TrackerDraftContextValue>(
     () => ({
       applyDraft,
-      flushDraft,
       clearDraft,
       getDraftFor,
       subscribeToApp,
     }),
-    [applyDraft, flushDraft, clearDraft, getDraftFor, subscribeToApp],
+    [applyDraft, clearDraft, getDraftFor, subscribeToApp],
   )
 
   return (
