@@ -79,8 +79,12 @@ export function CoverLetterCard({
         wasUploading === 'formal' ? formal?.file_url : light?.file_url
       if (uploaded) setIconPop(wasUploading)
     }
-  }, [uploading])
+  }, [uploading, formal?.file_url, light?.file_url])
 
+  // This effect intentionally waits for the parent's file_url to change before
+  // clearing the local removing/uploading flags. Including them as deps would
+  // re-fire on setRemoving(...) and immediately clear it, killing the spinner
+  // mid-action.
   useLayoutEffect(() => {
     if (removing) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -89,6 +93,7 @@ export function CoverLetterCard({
       setRemoving(null)
     }
     if (uploading) setUploading(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formal?.file_url, light?.file_url])
 
   async function handleUpload(
@@ -206,6 +211,8 @@ export function CoverLetterCard({
               <div key={v} className="group/slot relative h-full">
                 <input
                   ref={ref}
+                  id={`quick-copy-cover-letter-${v}-upload`}
+                  name={`quick-copy-cover-letter-${v}-upload`}
                   type="file"
                   accept=".pdf"
                   autoComplete="off"
@@ -315,6 +322,8 @@ export function CoverLetterCard({
               {TOKEN_ROLE}
             </div>
             <input
+              id="quick-copy-cover-letter-role"
+              name="quick-copy-cover-letter-role"
               value={role}
               onChange={(e) => {
                 setRole(e.target.value)
@@ -330,6 +339,8 @@ export function CoverLetterCard({
               {TOKEN_COMPANY}
             </div>
             <input
+              id="quick-copy-cover-letter-company"
+              name="quick-copy-cover-letter-company"
               value={company}
               onChange={(e) => {
                 setCompany(e.target.value)

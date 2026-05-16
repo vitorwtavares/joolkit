@@ -69,6 +69,8 @@ function FontSizeInput({ editor, activeSize }: FontSizeInputProps) {
   return (
     <div className="relative ml-1 flex h-8 w-[52px] items-center rounded-[5px] border border-border bg-secondary shadow-none focus-within:border-border-strong">
       <input
+        id="cover-letter-font-size"
+        name="cover-letter-font-size"
         className="w-full bg-transparent px-1.5 text-center text-sm text-foreground outline-none"
         value={inputVal}
         onChange={(e) => setInputVal(e.target.value)}

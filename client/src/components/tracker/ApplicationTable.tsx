@@ -9,6 +9,7 @@ interface ApplicationTableProps {
   isLoading: boolean
   selectedAppId: string | null
   onRowClick: (id: string) => void
+  onCloseDrawer: () => void
   onDeleteSelected?: () => void
 }
 
@@ -17,6 +18,7 @@ export function ApplicationTable({
   isLoading,
   selectedAppId,
   onRowClick,
+  onCloseDrawer,
   onDeleteSelected,
 }: ApplicationTableProps) {
   return (
@@ -45,10 +47,9 @@ export function ApplicationTable({
                 key={app.id}
                 app={app}
                 isSelected={app.id === selectedAppId}
-                onRowClick={() => onRowClick(app.id)}
-                onAfterDelete={
-                  app.id === selectedAppId ? onDeleteSelected : undefined
-                }
+                onRowClick={onRowClick}
+                onCloseDrawer={onCloseDrawer}
+                onDeleteSelected={onDeleteSelected}
               />
             ),
           )}

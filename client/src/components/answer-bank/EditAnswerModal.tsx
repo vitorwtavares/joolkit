@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -134,10 +139,16 @@ export function EditAnswerModal({
           <DialogTitle className="sr-only">
             {answer ? 'Edit answer' : 'New answer'}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Edit the question, default answer, and detailed answer for this
+            entry.
+          </DialogDescription>
 
           <div className="flex items-center gap-3 px-6 pt-5">
             <input
               ref={questionRef}
+              id="answer-question"
+              name="answer-question"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Type your question here..."
@@ -159,6 +170,8 @@ export function EditAnswerModal({
                 Default
               </span>
               <textarea
+                id="answer-short"
+                name="answer-short"
                 value={shortAnswer}
                 onChange={(e) => setShortAnswer(e.target.value)}
                 placeholder="Write your default answer..."
@@ -173,6 +186,8 @@ export function EditAnswerModal({
                 Detailed
               </span>
               <textarea
+                id="answer-long"
+                name="answer-long"
                 value={longAnswer}
                 onChange={(e) => setLongAnswer(e.target.value)}
                 placeholder="Write a more detailed version of your answer..."

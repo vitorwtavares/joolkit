@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useCallback, useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import { Filter, Columns3, Plus } from 'lucide-react'
 import { toast } from 'sonner'
@@ -7,9 +7,13 @@ import {
   useApplications,
   useCreateApplication,
 } from '@/api/hooks/useApplications'
-import type { ApplicationView } from '@/api/hooks/useApplications'
+import type {
+  ApplicationView,
+  CreateApplicationPayload,
+} from '@/api/hooks/useApplications'
 import { ApplicationTable } from '@/components/tracker/ApplicationTable'
 import { ApplicationDrawer } from '@/components/tracker/ApplicationDrawer'
+import { TrackerDraftProvider } from '@/components/tracker/draft'
 import { PageHeader } from '@/components/layout/PageHeader'
 
 const VIEWS: { label: string; value: ApplicationView }[] = [
@@ -23,7 +27,34 @@ const VIEWS: { label: string; value: ApplicationView }[] = [
   { label: 'Favorites', value: 'favorites' },
 ]
 
+function newEntryDefaults(view: ApplicationView): CreateApplicationPayload {
+  switch (view) {
+    case 'ready':
+      return { status: 'ready_to_apply' }
+    case 'applied':
+      return { status: 'applied' }
+    case 'in-progress':
+      return { status: 'pending_schedule' }
+    case 'no-openings':
+      return { status: 'no_openings' }
+    case 'rejected':
+      return { status: 'rejected' }
+    case 'favorites':
+      return { status: 'prospect', is_favorite: true }
+    default:
+      return { status: 'prospect' }
+  }
+}
+
 export default function ApplicationTracker() {
+  return (
+    <TrackerDraftProvider>
+      <ApplicationTrackerInner />
+    </TrackerDraftProvider>
+  )
+}
+
+function ApplicationTrackerInner() {
   const [searchParams, setSearchParams] = useSearchParams()
   const raw = searchParams.get('view') ?? 'all'
   const view = (
@@ -55,40 +86,35 @@ export default function ApplicationTracker() {
   }, [applications, mountedAppId])
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  function forceCloseDrawer() {
+  const forceCloseDrawer = useCallback(() => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
     setSelectedAppId(null)
     setDrawerOpen(false)
     setMountedAppId(null)
-  }
+  }, [])
 
-  function openDrawer(id: string) {
+  const openDrawer = useCallback((id: string) => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
     setSelectedAppId(id)
     setMountedAppId(id)
-    const app = applications.find((a) => a.id === id) ?? null
-    setMountedApp(app)
     requestAnimationFrame(() => setDrawerOpen(true))
-  }
+  }, [])
 
-  function closeDrawer() {
+  const closeDrawer = useCallback(() => {
     setSelectedAppId(null)
     setDrawerOpen(false)
     closeTimerRef.current = setTimeout(() => setMountedAppId(null), 150)
-  }
+  }, [])
 
   function setView(v: ApplicationView) {
     setSearchParams({ view: v }, { replace: true })
   }
 
   function handleNewEntry() {
-    createApplication.mutate(
-      { status: 'prospect' },
-      {
-        onSuccess: (app) => openDrawer(app.id),
-        onError: () => toast.error('Failed to create entry'),
-      },
-    )
+    createApplication.mutate(newEntryDefaults(view), {
+      onSuccess: (app) => openDrawer(app.id),
+      onError: () => toast.error('Failed to create entry'),
+    })
   }
 
   return (
@@ -162,6 +188,7 @@ export default function ApplicationTracker() {
             isLoading={isLoading}
             selectedAppId={selectedAppId}
             onRowClick={openDrawer}
+            onCloseDrawer={closeDrawer}
             onDeleteSelected={forceCloseDrawer}
           />
         </div>

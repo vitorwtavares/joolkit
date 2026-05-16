@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/layout/Layout'
@@ -10,8 +11,13 @@ import SignUp from './pages/SignUp'
 import NotFound from './pages/NotFound'
 import { Toaster } from './components/ui/sonner'
 import { TooltipProvider } from './components/ui/tooltip'
+import { warmupApi } from './utils/warmupApi'
 
 export default function App() {
+  useEffect(() => {
+    warmupApi()
+  }, [])
+
   return (
     <TooltipProvider>
       <BrowserRouter>

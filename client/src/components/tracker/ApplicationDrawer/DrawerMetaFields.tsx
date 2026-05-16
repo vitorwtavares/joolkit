@@ -7,15 +7,16 @@ import { EmptyCell } from '../cells/EmptyCell'
 import { Field } from './Field'
 import { WORK_STYLE_OPTIONS, VISA_OPTIONS, VISA_COLORS } from '../enumOptions'
 import type { Application } from '@/api/hooks/useApplications'
-import type { CreateApplicationPayload } from '@/api/hooks/useApplications'
+import type { TrackerDraftHandle } from '../draft'
 
 interface DrawerMetaFieldsProps {
   app: Application
-  save: (fields: CreateApplicationPayload) => void
+  draft: TrackerDraftHandle
 }
 
-export function DrawerMetaFields({ app, save }: DrawerMetaFieldsProps) {
+export function DrawerMetaFields({ app, draft }: DrawerMetaFieldsProps) {
   const visaColor = app.visa_support ? VISA_COLORS[app.visa_support] : undefined
+  const save = draft.apply
 
   return (
     <div className="flex-shrink-0 border-b border-border-subtle px-16 py-4">
@@ -26,6 +27,7 @@ export function DrawerMetaFields({ app, save }: DrawerMetaFieldsProps) {
             url={app.job_url}
             linkClassName="text-info hover:text-info/80"
             onSave={(v) => save({ job_url: v })}
+            onCommit={draft.flush}
           />
         </Field>
         <Field label="Careers page link">
@@ -34,6 +36,7 @@ export function DrawerMetaFields({ app, save }: DrawerMetaFieldsProps) {
             url={app.careers_url}
             linkClassName="text-info hover:text-info/80"
             onSave={(v) => save({ careers_url: v })}
+            onCommit={draft.flush}
           />
         </Field>
         <Field label="Location">
@@ -50,7 +53,11 @@ export function DrawerMetaFields({ app, save }: DrawerMetaFieldsProps) {
           />
         </Field>
         <Field label="Salary">
-          <TextCell value={app.salary} onSave={(v) => save({ salary: v })} />
+          <TextCell
+            value={app.salary}
+            onSave={(v) => save({ salary: v })}
+            onCommit={draft.flush}
+          />
         </Field>
         <Field label="Visa support">
           <EnumCell

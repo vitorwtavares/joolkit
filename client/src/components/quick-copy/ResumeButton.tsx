@@ -9,6 +9,7 @@ import { useDownloadBubble } from '@/hooks/useDownloadBubble'
 interface ResumeButtonProps {
   resumeUrl: string | null
   userId: string
+  locked?: boolean
   onUploaded: (path: string) => void
   onRemoved: () => void
 }
@@ -16,6 +17,7 @@ interface ResumeButtonProps {
 export function ResumeButton({
   resumeUrl,
   userId,
+  locked = false,
   onUploaded,
   onRemoved,
 }: ResumeButtonProps) {
@@ -35,8 +37,12 @@ export function ResumeButton({
     const wasUploading = prevUploadingRef.current
     prevUploadingRef.current = uploading
     if (!uploading && wasUploading && resumeUrl) setIconPop(true)
-  }, [uploading])
+  }, [uploading, resumeUrl])
 
+  // This effect intentionally waits for resumeUrl (the parent's source of
+  // truth) to change before clearing the local removing/uploading flags.
+  // Including them as deps would re-fire on setRemoving(true) and immediately
+  // clear it, killing the spinner mid-action.
   useLayoutEffect(() => {
     if (removing) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -44,6 +50,7 @@ export function ResumeButton({
       setRemoving(false)
     }
     if (uploading) setUploading(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeUrl])
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -109,6 +116,8 @@ export function ResumeButton({
       <div className="group/slot relative min-h-0 flex-1">
         <input
           ref={fileInputRef}
+          id="quick-copy-resume-upload"
+          name="quick-copy-resume-upload"
           type="file"
           accept=".pdf"
           autoComplete="off"
@@ -117,7 +126,13 @@ export function ResumeButton({
         />
         {downloadBubble}
         <button
-          disabled={uploading || removing || falling || isOnCooldown}
+          disabled={
+            uploading ||
+            removing ||
+            falling ||
+            isOnCooldown ||
+            (locked && !resumeUrl)
+          }
           onClick={
             resumeUrl ? handleDownload : () => fileInputRef.current?.click()
           }
@@ -173,7 +188,7 @@ export function ResumeButton({
             {showAsFilled ? 'Click to download' : 'Click to upload'}
           </span>
         </button>
-        {showAsFilled && (
+        {showAsFilled && !locked && (
           <button
             disabled={removing || falling}
             onClick={async (e) => {
