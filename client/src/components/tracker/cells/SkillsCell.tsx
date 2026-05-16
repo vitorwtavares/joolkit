@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { Plus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { EmptyCell } from './EmptyCell'
@@ -36,15 +36,6 @@ interface SkillsCellProps {
 }
 
 const SKILL_BG = 'var(--input-border-strong)'
-const SKILLS_SAVE_DEBOUNCE_MS = 450
-
-function sameSkillIds(left: string[], right: string[]) {
-  if (left.length !== right.length) return false
-
-  const sortedLeft = [...left].sort()
-  const sortedRight = [...right].sort()
-  return sortedLeft.every((id, index) => id === sortedRight[index])
-}
 
 export function SkillsCell({
   value,
@@ -54,35 +45,11 @@ export function SkillsCell({
   const [search, setSearch] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
   const addRef = useRef<HTMLButtonElement>(null)
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { data: allSkills = [] } = useSkills()
   const createSkill = useCreateSkill()
   const deleteSkill = useDeleteSkill()
-  const propIds = useMemo(() => value.map((s) => s.skill.id), [value])
-  const [draftIds, setDraftIds] = useState<string[] | null>(null)
-  const lastFlushedIdsRef = useRef<string[] | null>(null)
 
-  const selectedSkillIds = useMemo(() => {
-    if (!draftIds || sameSkillIds(draftIds, propIds)) return propIds
-    return draftIds
-  }, [draftIds, propIds])
-
-  useEffect(() => {
-    if (
-      draftIds &&
-      lastFlushedIdsRef.current &&
-      !sameSkillIds(propIds, lastFlushedIdsRef.current)
-    ) {
-      setDraftIds(null)
-      lastFlushedIdsRef.current = null
-    }
-  }, [draftIds, propIds])
-
-  useEffect(() => {
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    }
-  }, [])
+  const selectedSkillIds = useMemo(() => value.map((s) => s.skill.id), [value])
 
   const skillsById = useMemo(
     () => new Map(allSkills.map((skill) => [skill.id, skill])),
@@ -143,36 +110,11 @@ export function SkillsCell({
       resolveExtraScrollTarget: (i) => (i === addIdx ? addRef.current : null),
     })
 
-  function flushSave(nextIds: string[]) {
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current)
-      saveTimerRef.current = null
-    }
-
-    if (sameSkillIds(nextIds, propIds)) {
-      setDraftIds(null)
-      lastFlushedIdsRef.current = null
-      return
-    }
-
-    lastFlushedIdsRef.current = nextIds
-    onSave(nextIds)
-  }
-
-  function scheduleSave(nextIds: string[]) {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(() => {
-      flushSave(nextIds)
-    }, SKILLS_SAVE_DEBOUNCE_MS)
-  }
-
   function toggle(skillId: string) {
     const newIds = selectedIds.has(skillId)
       ? selectedSkillIds.filter((id) => id !== skillId)
       : [...selectedSkillIds, skillId]
-
-    setDraftIds(newIds)
-    scheduleSave(newIds)
+    onSave(newIds)
   }
 
   function handleCreate() {
@@ -180,9 +122,7 @@ export function SkillsCell({
     if (!name) return
     createSkill.mutate(name, {
       onSuccess: (skill) => {
-        const newIds = [...selectedSkillIds, skill.id]
-        setDraftIds(newIds)
-        flushSave(newIds)
+        onSave([...selectedSkillIds, skill.id])
         setSearch('')
         setHighlighted(-1)
       },
@@ -206,10 +146,7 @@ export function SkillsCell({
         open={open}
         onOpenChange={(v) => {
           handleOpenChange(v)
-          if (!v) {
-            setSearch('')
-            flushSave(selectedSkillIds)
-          }
+          if (!v) setSearch('')
         }}
       >
         <TooltipTrigger asChild>

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 
 export function useDebouncedSave(
   value: string | null,
@@ -14,23 +14,26 @@ export function useDebouncedSave(
     onSaveRef.current = onSave
   })
 
-  function cancelTimer() {
+  const cancelTimer = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current)
       timerRef.current = null
     }
-  }
+  }, [])
 
-  function flushSave(next: string | null) {
+  const flushSave = useCallback((next: string | null) => {
     if (next === lastSavedRef.current) return
     lastSavedRef.current = next
     onSaveRef.current(next)
-  }
+  }, [])
 
-  function schedule(next: string | null) {
-    cancelTimer()
-    timerRef.current = setTimeout(() => flushSave(next), debounceMs)
-  }
+  const schedule = useCallback(
+    (next: string | null) => {
+      cancelTimer()
+      timerRef.current = setTimeout(() => flushSave(next), debounceMs)
+    },
+    [cancelTimer, debounceMs, flushSave],
+  )
 
   return { draft, setDraft, lastSavedRef, cancelTimer, flushSave, schedule }
 }

@@ -25,13 +25,13 @@ export function CompanyNameEditor({ value, onSave }: CompanyNameEditorProps) {
     setDraft(value ?? '')
     lastSavedRef.current = value
     setEditing(true)
-  }, [value])
+  }, [value, cancelTimer, lastSavedRef, setDraft])
 
   useEffect(() => {
     if (!editing) return
     schedule(draft.trim() || null)
     return cancelTimer
-  }, [draft, editing])
+  }, [draft, editing, cancelTimer, schedule])
 
   useEffect(() => {
     if (!editing) return
