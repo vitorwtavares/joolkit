@@ -33,6 +33,7 @@ export function CopyButton({
   const inputRef = useRef<HTMLInputElement>(null)
   const { trigger: triggerCopied, bubble: copiedBubble } = useCopiedBubble()
   const filled = !!value?.trim()
+  const fieldId = `quick-copy-${label.toLowerCase().replace(/\s+/g, '-')}`
 
   const isDirty = draft !== (value ?? '')
 
@@ -100,6 +101,8 @@ export function CopyButton({
           </span>
           <input
             ref={inputRef}
+            id={fieldId}
+            name={fieldId}
             value={draft}
             autoComplete="off"
             onChange={(e) => setDraft(e.target.value)}

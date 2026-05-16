@@ -1,6 +1,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -20,12 +21,12 @@ export function TokenTutorialDialog({
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="text-base">How to use tokens</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3 text-sm leading-relaxed text-foreground/80">
-          <p>
+          <DialogDescription className="leading-relaxed">
             Tokens are placeholders you add directly to your cover letter PDF.
             When you download, noloop replaces them with the values you set.
-          </p>
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 text-sm leading-relaxed text-foreground/80">
           <p>Add these two tokens anywhere in your cover letter text:</p>
           <div className="flex flex-col gap-2 rounded-md bg-secondary p-3 text-[14px]">
             <div>

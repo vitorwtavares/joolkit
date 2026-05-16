@@ -116,6 +116,8 @@ export function ResumeButton({
       <div className="group/slot relative min-h-0 flex-1">
         <input
           ref={fileInputRef}
+          id="quick-copy-resume-upload"
+          name="quick-copy-resume-upload"
           type="file"
           accept=".pdf"
           autoComplete="off"

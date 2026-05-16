@@ -211,6 +211,8 @@ export function CoverLetterCard({
               <div key={v} className="group/slot relative h-full">
                 <input
                   ref={ref}
+                  id={`quick-copy-cover-letter-${v}-upload`}
+                  name={`quick-copy-cover-letter-${v}-upload`}
                   type="file"
                   accept=".pdf"
                   autoComplete="off"
@@ -320,6 +322,8 @@ export function CoverLetterCard({
               {TOKEN_ROLE}
             </div>
             <input
+              id="quick-copy-cover-letter-role"
+              name="quick-copy-cover-letter-role"
               value={role}
               onChange={(e) => {
                 setRole(e.target.value)
@@ -335,6 +339,8 @@ export function CoverLetterCard({
               {TOKEN_COMPANY}
             </div>
             <input
+              id="quick-copy-cover-letter-company"
+              name="quick-copy-cover-letter-company"
               value={company}
               onChange={(e) => {
                 setCompany(e.target.value)
