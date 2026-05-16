@@ -10,6 +10,7 @@ import {
 import type { ApplicationView } from '@/api/hooks/useApplications'
 import { ApplicationTable } from '@/components/tracker/ApplicationTable'
 import { ApplicationDrawer } from '@/components/tracker/ApplicationDrawer'
+import { TrackerDraftProvider } from '@/components/tracker/draft'
 import { PageHeader } from '@/components/layout/PageHeader'
 
 const VIEWS: { label: string; value: ApplicationView }[] = [
@@ -24,6 +25,14 @@ const VIEWS: { label: string; value: ApplicationView }[] = [
 ]
 
 export default function ApplicationTracker() {
+  return (
+    <TrackerDraftProvider>
+      <ApplicationTrackerInner />
+    </TrackerDraftProvider>
+  )
+}
+
+function ApplicationTrackerInner() {
   const [searchParams, setSearchParams] = useSearchParams()
   const raw = searchParams.get('view') ?? 'all'
   const view = (

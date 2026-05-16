@@ -19,7 +19,7 @@ import { EmptyCell } from './cells/EmptyCell'
 import { LabelUrlButton } from './LabelUrlButton'
 import { DeleteApplicationDialog } from './DeleteApplicationDialog'
 import { useDeleteApplication } from '@/api/hooks/useApplications'
-import { useApplicationSave } from '@/api/hooks/useApplicationSave'
+import { useResolvedApp, useTrackerDraft } from './draft'
 import { formatTimeInStage, getDaysInStage } from '@/utils/formatTimeInStage'
 import { TD, FIRST_COL_PL, timeInStageColor } from './styles'
 import { WORK_STYLE_OPTIONS, VISA_OPTIONS, VISA_COLORS } from './enumOptions'
@@ -36,18 +36,21 @@ interface ApplicationRowProps {
 }
 
 export function ApplicationRow({
-  app,
+  app: serverApp,
   isSelected,
   onRowClick,
   onAfterDelete,
 }: ApplicationRowProps) {
-  const save = useApplicationSave(app)
+  const app = useResolvedApp(serverApp)
+  const draft = useTrackerDraft(app.id)
+  const save = draft.apply
   const { mutate: deleteApp, isPending: isDeleting } = useDeleteApplication()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   function handleDelete() {
     deleteApp(app.id, {
       onSuccess: () => {
+        draft.clear()
         setConfirmDelete(false)
         onAfterDelete?.()
       },
