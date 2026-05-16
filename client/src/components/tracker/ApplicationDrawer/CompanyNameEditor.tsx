@@ -24,7 +24,6 @@ export function CompanyNameEditor({ value, onSave }: CompanyNameEditorProps) {
     cancelTimer()
     setDraft(value ?? '')
     lastSavedRef.current = value
-    setEditing(true)
   }, [value, cancelTimer, lastSavedRef, setDraft])
 
   useEffect(() => {
