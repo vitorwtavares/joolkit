@@ -157,6 +157,7 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <input
+            name="tracker-location-search"
             autoFocus
             value={search}
             onChange={(e) => {

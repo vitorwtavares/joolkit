@@ -13,6 +13,7 @@ export function JobNameEditor({ value, onSave, onCommit }: JobNameEditorProps) {
 
   return (
     <input
+      name="tracker-job-name"
       value={value ?? ''}
       onChange={(e) => onSave(e.target.value || null)}
       onBlur={commit}

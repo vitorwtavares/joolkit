@@ -173,6 +173,8 @@ export function EditorSidePanel({
                 {TOKEN_ROLE}
               </div>
               <input
+                id="cover-letter-role"
+                name="cover-letter-role"
                 value={role}
                 onChange={(e) => onRoleChange(e.target.value)}
                 onBlur={onTokenBlur}
@@ -192,6 +194,8 @@ export function EditorSidePanel({
                 {TOKEN_COMPANY}
               </div>
               <input
+                id="cover-letter-company"
+                name="cover-letter-company"
                 value={company}
                 onChange={(e) => onCompanyChange(e.target.value)}
                 onBlur={onTokenBlur}
@@ -270,6 +274,8 @@ export function EditorSidePanel({
 
             <input
               ref={uploadInputRef}
+              id="cover-letter-template-upload"
+              name="cover-letter-template-upload"
               type="file"
               accept=".pdf"
               autoComplete="off"

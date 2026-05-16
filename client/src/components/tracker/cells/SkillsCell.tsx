@@ -140,8 +140,11 @@ export function SkillsCell({
       ? selectedSkills.length - visibleCount
       : 0
 
+  const [tooltipOpen, setTooltipOpen] = useState(false)
+  const tooltipEnabled = overflowCount > 0 && !open
+
   return (
-    <Tooltip open={overflowCount > 0 && !open ? undefined : false}>
+    <Tooltip open={tooltipEnabled && tooltipOpen} onOpenChange={setTooltipOpen}>
       <Popover
         open={open}
         onOpenChange={(v) => {
@@ -256,6 +259,7 @@ export function SkillsCell({
           )}
 
           <input
+            name="tracker-skills-search"
             autoFocus
             value={search}
             onChange={(e) => {

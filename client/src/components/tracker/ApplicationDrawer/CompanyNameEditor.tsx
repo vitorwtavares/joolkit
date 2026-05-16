@@ -35,6 +35,7 @@ export function CompanyNameEditor({
   return (
     <div className="relative">
       <textarea
+        name="tracker-company-name"
         readOnly={!editing}
         value={draft}
         rows={1}

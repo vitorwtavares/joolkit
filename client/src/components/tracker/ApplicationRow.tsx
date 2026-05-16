@@ -1,5 +1,11 @@
 import { memo, useState } from 'react'
-import { Star, Trash2, PanelRightOpen, MoreHorizontal } from 'lucide-react'
+import {
+  Star,
+  Trash2,
+  PanelRightOpen,
+  PanelRightClose,
+  MoreHorizontal,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
@@ -32,6 +38,7 @@ interface ApplicationRowProps {
   app: Application
   isSelected: boolean
   onRowClick: (id: string) => void
+  onCloseDrawer: () => void
   onDeleteSelected?: () => void
 }
 
@@ -39,6 +46,7 @@ function ApplicationRowImpl({
   app: serverApp,
   isSelected,
   onRowClick,
+  onCloseDrawer,
   onDeleteSelected,
 }: ApplicationRowProps) {
   const app = useResolvedApp(serverApp)
@@ -88,9 +96,20 @@ function ApplicationRowImpl({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-44">
-              <DropdownMenuItem onClick={openDrawer}>
-                <PanelRightOpen size={14} />
-                Open details
+              <DropdownMenuItem
+                onClick={isSelected ? onCloseDrawer : openDrawer}
+              >
+                {isSelected ? (
+                  <>
+                    <PanelRightClose size={14} />
+                    Close details
+                  </>
+                ) : (
+                  <>
+                    <PanelRightOpen size={14} />
+                    Open details
+                  </>
+                )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -137,11 +156,18 @@ function ApplicationRowImpl({
           />
           <button
             type="button"
-            onClick={openDrawer}
-            className="absolute top-1/2 right-2 flex -translate-y-1/2 cursor-pointer items-center rounded border border-border-overlay bg-secondary px-1.5 py-1.5 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:border-border-overlay-strong hover:text-foreground"
-            aria-label="Open details"
+            onClick={isSelected ? onCloseDrawer : openDrawer}
+            className={cn(
+              'absolute top-1/2 right-2 flex -translate-y-1/2 cursor-pointer items-center rounded border border-border-overlay bg-secondary px-1.5 py-1.5 text-muted-foreground transition-all hover:border-border-overlay-strong hover:text-foreground',
+              isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+            )}
+            aria-label={isSelected ? 'Close details' : 'Open details'}
           >
-            <PanelRightOpen size={15} />
+            {isSelected ? (
+              <PanelRightClose size={15} />
+            ) : (
+              <PanelRightOpen size={15} />
+            )}
           </button>
         </td>
 

@@ -91,6 +91,7 @@ function LinkPopover({
       >
         <input
           ref={inputRef}
+          name="tracker-notes-link-url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => {
