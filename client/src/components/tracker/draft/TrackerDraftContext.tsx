@@ -173,10 +173,17 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
         return reduced
       }
 
+      // Prefer the cache's updated_at over our stored one — a background
+      // refetch (e.g. on window focus) may have written a newer value that we
+      // didn't observe, and sending a stale timestamp would trigger a false
+      // 409 conflict.
+      const cached = getCachedApplication(queryClientRef.current, appId)
+      const knownUpdatedAt = cached?.updated_at ?? state.knownUpdatedAt
+
       try {
         const data = await updateRef.current({
           id: appId,
-          known_updated_at: state.knownUpdatedAt,
+          known_updated_at: knownUpdatedAt,
           ...inFlight,
         })
         state.inFlight = null
