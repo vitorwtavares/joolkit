@@ -19,7 +19,7 @@ import {
 export type ApplicationDraftPatch = Partial<CreateApplicationPayload>
 type DraftMap = Record<string, ApplicationDraftPatch>
 
-const SAVE_DEBOUNCE_MS = 250
+const SAVE_DEBOUNCE_MS = 750
 
 interface SaveState {
   inFlight: ApplicationDraftPatch | null
@@ -29,6 +29,7 @@ interface SaveState {
 
 interface TrackerDraftContextValue {
   applyDraft: (appId: string, patch: ApplicationDraftPatch) => void
+  flushDraft: (appId: string) => void
   clearDraft: (appId: string) => void
   getDraftFor: (appId: string) => ApplicationDraftPatch | undefined
   subscribeToApp: (appId: string, listener: () => void) => () => void
@@ -153,6 +154,25 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
       state.inFlight = inFlight
       state.pending = false
 
+      // Drop draft entries whose value still matches what we just sent (server
+      // confirmed) and keep entries the user edited mid-flight. Used by both
+      // success and error paths — on error, we still want to forget the failed
+      // values so the cache refetch wins, while preserving in-progress typing.
+      const reduceDraftAgainstInFlight = (
+        prev: ApplicationDraftPatch | undefined,
+      ): ApplicationDraftPatch | null => {
+        if (!prev) return null
+        const reduced: ApplicationDraftPatch = {}
+        for (const [key, draftValue] of Object.entries(prev)) {
+          if (key in inFlight) {
+            const sentValue = (inFlight as Record<string, unknown>)[key]
+            if (valuesEqual(draftValue, sentValue)) continue
+          }
+          ;(reduced as Record<string, unknown>)[key] = draftValue
+        }
+        return reduced
+      }
+
       try {
         const data = await updateRef.current({
           id: appId,
@@ -162,18 +182,7 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
         state.inFlight = null
         state.knownUpdatedAt = data.updated_at
 
-        setDraftFor(appId, (prev) => {
-          if (!prev) return null
-          const reduced: ApplicationDraftPatch = {}
-          for (const [key, draftValue] of Object.entries(prev)) {
-            if (key in inFlight) {
-              const sentValue = (inFlight as Record<string, unknown>)[key]
-              if (valuesEqual(draftValue, sentValue)) continue
-            }
-            ;(reduced as Record<string, unknown>)[key] = draftValue
-          }
-          return reduced
-        })
+        setDraftFor(appId, reduceDraftAgainstInFlight)
 
         if (state.pending) {
           state.pending = false
@@ -182,7 +191,7 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         state.inFlight = null
         state.pending = false
-        setDraftFor(appId, () => null)
+        setDraftFor(appId, reduceDraftAgainstInFlight)
         queryClientRef.current.invalidateQueries({ queryKey: ['applications'] })
         if (err instanceof ApiError && err.status === 409) {
           toast.error('This record was updated elsewhere — reloading')
@@ -205,6 +214,15 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
     },
     [scheduleSave, setDraftFor],
   )
+
+  const flushDraft = useCallback((appId: string) => {
+    const existing = debounceRef.current.get(appId)
+    if (existing) {
+      clearTimeout(existing)
+      debounceRef.current.delete(appId)
+    }
+    void runSaveRef.current(appId)
+  }, [])
 
   const clearDraft = useCallback(
     (appId: string) => {
@@ -250,11 +268,12 @@ export function TrackerDraftProvider({ children }: { children: ReactNode }) {
   const value = useMemo<TrackerDraftContextValue>(
     () => ({
       applyDraft,
+      flushDraft,
       clearDraft,
       getDraftFor,
       subscribeToApp,
     }),
-    [applyDraft, clearDraft, getDraftFor, subscribeToApp],
+    [applyDraft, flushDraft, clearDraft, getDraftFor, subscribeToApp],
   )
 
   return (

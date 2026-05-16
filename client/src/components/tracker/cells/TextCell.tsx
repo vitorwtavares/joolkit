@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { EmptyCell } from './EmptyCell'
 import { sanitizeUrl } from '@/utils/sanitizeUrl'
 import { cn } from '@/lib/utils'
@@ -8,11 +8,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useOverflowTooltip } from '@/hooks/useOverflowTooltip'
-import { useDebouncedSave } from '@/hooks/useDebouncedSave'
 
 interface TextCellProps {
   value: string | null
   onSave: (value: string | null) => void
+  onCommit?: () => void
   url?: string | null
   bold?: boolean
   className?: string
@@ -23,6 +23,7 @@ interface TextCellProps {
 export function TextCell({
   value,
   onSave,
+  onCommit,
   url,
   bold,
   className = '',
@@ -31,44 +32,27 @@ export function TextCell({
 }: TextCellProps) {
   const safeUrl = url ? sanitizeUrl(url) : null
   const [editing, setEditing] = useState(false)
-  const { draft, setDraft, lastSavedRef, cancelTimer, flushSave, schedule } =
-    useDebouncedSave(value, onSave)
   const innerRef = useRef<HTMLElement | null>(null)
   const { isOverflowing, check, reset } = useOverflowTooltip()
 
-  function startEdit() {
-    setDraft(value ?? '')
-    lastSavedRef.current = value
-    setEditing(true)
-  }
-
-  function confirmAndExit() {
-    cancelTimer()
-    flushSave(draft.trim() || null)
+  function commitAndExit() {
+    const trimmed = value?.trim() ?? ''
+    if (trimmed !== (value ?? '')) onSave(trimmed || null)
+    onCommit?.()
     setEditing(false)
   }
-
-  useEffect(() => {
-    if (!editing) return
-    schedule(draft.trim() || null)
-    return cancelTimer
-  }, [cancelTimer, draft, editing, schedule])
 
   if (editing) {
     return (
       <div className={`absolute inset-0 flex items-center px-3 ${className}`}>
         <input
           autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={confirmAndExit}
+          value={value ?? ''}
+          onChange={(e) => onSave(e.target.value || null)}
+          onBlur={commitAndExit}
           maxLength={maxLength}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') confirmAndExit()
-            if (e.key === 'Escape') {
-              cancelTimer()
-              setEditing(false)
-            }
+            if (e.key === 'Enter') e.currentTarget.blur()
           }}
           className="w-full bg-transparent text-[14px] text-foreground outline-none"
           style={{ fontWeight: bold ? 500 : undefined }}
@@ -82,13 +66,13 @@ export function TextCell({
       <TooltipTrigger asChild>
         <span
           tabIndex={0}
-          onClick={startEdit}
+          onClick={() => setEditing(true)}
           onMouseEnter={() => {
             if (value) check(innerRef.current)
           }}
           onMouseLeave={reset}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') startEdit()
+            if (e.key === 'Enter' || e.key === ' ') setEditing(true)
           }}
           className={`absolute inset-0 flex cursor-text items-center overflow-hidden px-3 text-[14px] transition-colors hover:bg-surface-hover-subtle ${className}`}
           style={{ fontWeight: bold ? 500 : undefined }}

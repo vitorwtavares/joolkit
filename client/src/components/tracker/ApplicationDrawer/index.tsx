@@ -43,13 +43,13 @@ export function ApplicationDrawer({
       <div className="flex h-full w-[650px] flex-shrink-0 flex-col overflow-hidden bg-card">
         <DrawerHeader
           app={app}
-          save={draft.apply}
+          draft={draft}
           onClose={onClose}
           onDeleteClick={() => setConfirmDelete(true)}
         />
 
         <div className="flex flex-1 flex-col overflow-y-auto">
-          <DrawerMetaFields app={app} save={draft.apply} />
+          <DrawerMetaFields app={app} draft={draft} />
           <NotesEditor app={app} save={draft.apply} />
         </div>
       </div>

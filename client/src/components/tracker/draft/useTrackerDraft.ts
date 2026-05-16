@@ -6,16 +6,18 @@ import {
 
 export interface TrackerDraftHandle {
   apply: (patch: ApplicationDraftPatch) => void
+  flush: () => void
   clear: () => void
 }
 
 export function useTrackerDraft(appId: string): TrackerDraftHandle {
-  const { applyDraft, clearDraft } = useTrackerDraftContext()
+  const { applyDraft, flushDraft, clearDraft } = useTrackerDraftContext()
   return useMemo(
     () => ({
       apply: (patch: ApplicationDraftPatch) => applyDraft(appId, patch),
+      flush: () => flushDraft(appId),
       clear: () => clearDraft(appId),
     }),
-    [appId, applyDraft, clearDraft],
+    [appId, applyDraft, flushDraft, clearDraft],
   )
 }

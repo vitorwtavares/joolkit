@@ -127,6 +127,7 @@ function ApplicationRowImpl({
             className="pl-9"
             maxLength={50}
             onSave={(v) => save({ company_name: v ?? '' })}
+            onCommit={draft.flush}
           />
           <LabelUrlButton
             url={app.careers_url}
@@ -152,6 +153,7 @@ function ApplicationRowImpl({
             className="pl-9"
             maxLength={100}
             onSave={(v) => save({ job_name: v })}
+            onCommit={draft.flush}
           />
           <LabelUrlButton
             url={app.job_url}
@@ -181,7 +183,11 @@ function ApplicationRowImpl({
 
         {/* Salary */}
         <td className={`${TD} relative`} style={{ padding: 0 }}>
-          <TextCell value={app.salary} onSave={(v) => save({ salary: v })} />
+          <TextCell
+            value={app.salary}
+            onSave={(v) => save({ salary: v })}
+            onCommit={draft.flush}
+          />
         </td>
 
         {/* Work style */}
