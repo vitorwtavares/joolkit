@@ -100,11 +100,11 @@ function ApplicationTrackerInner() {
     requestAnimationFrame(() => setDrawerOpen(true))
   }, [])
 
-  function closeDrawer() {
+  const closeDrawer = useCallback(() => {
     setSelectedAppId(null)
     setDrawerOpen(false)
     closeTimerRef.current = setTimeout(() => setMountedAppId(null), 150)
-  }
+  }, [])
 
   function setView(v: ApplicationView) {
     setSearchParams({ view: v }, { replace: true })
@@ -188,6 +188,7 @@ function ApplicationTrackerInner() {
             isLoading={isLoading}
             selectedAppId={selectedAppId}
             onRowClick={openDrawer}
+            onCloseDrawer={closeDrawer}
             onDeleteSelected={forceCloseDrawer}
           />
         </div>
