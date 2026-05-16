@@ -7,7 +7,10 @@ import {
   useApplications,
   useCreateApplication,
 } from '@/api/hooks/useApplications'
-import type { ApplicationView } from '@/api/hooks/useApplications'
+import type {
+  ApplicationView,
+  CreateApplicationPayload,
+} from '@/api/hooks/useApplications'
 import { ApplicationTable } from '@/components/tracker/ApplicationTable'
 import { ApplicationDrawer } from '@/components/tracker/ApplicationDrawer'
 import { TrackerDraftProvider } from '@/components/tracker/draft'
@@ -23,6 +26,27 @@ const VIEWS: { label: string; value: ApplicationView }[] = [
   { label: 'Rejected', value: 'rejected' },
   { label: 'Favorites', value: 'favorites' },
 ]
+
+function newEntryDefaults(view: ApplicationView): CreateApplicationPayload {
+  switch (view) {
+    case 'ready':
+      return { status: 'ready_to_apply' }
+    case 'applied':
+      return { status: 'applied' }
+    case 'in-progress':
+      return { status: 'pending_schedule' }
+    case 'no-openings':
+      return { status: 'no_openings' }
+    case 'rejected':
+      return { status: 'rejected' }
+    case 'favorites':
+      return { status: 'prospect', is_favorite: true }
+    case 'all':
+    case 'prospects':
+    default:
+      return { status: 'prospect' }
+  }
+}
 
 export default function ApplicationTracker() {
   return (
@@ -91,13 +115,10 @@ function ApplicationTrackerInner() {
   }
 
   function handleNewEntry() {
-    createApplication.mutate(
-      { status: 'prospect' },
-      {
-        onSuccess: (app) => openDrawer(app.id),
-        onError: () => toast.error('Failed to create entry'),
-      },
-    )
+    createApplication.mutate(newEntryDefaults(view), {
+      onSuccess: (app) => openDrawer(app.id),
+      onError: () => toast.error('Failed to create entry'),
+    })
   }
 
   return (
