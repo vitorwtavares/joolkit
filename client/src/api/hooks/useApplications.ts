@@ -9,8 +9,8 @@ import { api } from '../api'
 import type { Skill } from './useSkills'
 import type { Location } from './useLocations'
 
-type SkillRef = Pick<Skill, 'id' | 'name'>
-type LocationRef = Pick<Location, 'id' | 'name'>
+export type SkillRef = Pick<Skill, 'id' | 'name'>
+export type LocationRef = Pick<Location, 'id' | 'name'>
 
 export type { Skill, Location }
 
@@ -105,34 +105,62 @@ export function getCachedApplication(
   return null
 }
 
+interface ExpandedReferences {
+  location?: LocationRef | null
+  skills?: { skill: SkillRef }[]
+}
+
+// Resolves the foreign-key fields on a payload (location_id, skill_ids) into
+// the embedded shapes the Application carries (location, skills) by reading
+// the relevant query caches. If `fallback` is given, its location/skills are
+// used when the cache lookup misses — useful when merging into a known app.
+export function expandApplicationReferences(
+  queryClient: QueryClient,
+  payload: CreateApplicationPayload,
+  fallback?: Application,
+): ExpandedReferences {
+  const result: ExpandedReferences = {}
+
+  if (payload.location_id !== undefined) {
+    if (payload.location_id === null) {
+      result.location = null
+    } else {
+      const locations = queryClient.getQueryData<Location[]>(['locations'])
+      const match = locations?.find((l) => l.id === payload.location_id)
+      result.location =
+        match ??
+        (fallback?.location_id === payload.location_id
+          ? fallback.location
+          : null)
+    }
+  }
+
+  if (payload.skill_ids !== undefined) {
+    const skills = queryClient.getQueryData<Skill[]>(['skills'])
+    const byId = skills ? new Map(skills.map((s) => [s.id, s])) : null
+    result.skills = payload.skill_ids.map((id) => ({
+      skill: byId?.get(id) ??
+        fallback?.skills.find((s) => s.skill.id === id)?.skill ?? {
+          id,
+          name: '…',
+        },
+    }))
+  }
+
+  return result
+}
+
 function buildApplicationPatch(
   queryClient: QueryClient,
   payload: CreateApplicationPayload,
 ): Partial<Application> {
-  const { skill_ids, location_id, ...simpleFields } = payload
-  const patch: Partial<Application> = { ...simpleFields }
-
-  if (simpleFields.status !== undefined) {
+  const patch: Partial<Application> = {
+    ...payload,
+    ...expandApplicationReferences(queryClient, payload),
+  }
+  if (payload.status !== undefined) {
     patch.last_moved_at = new Date().toISOString()
   }
-
-  if (location_id !== undefined) {
-    patch.location_id = location_id
-    if (location_id === null) {
-      patch.location = null
-    } else {
-      const locations = queryClient.getQueryData<Location[]>(['locations'])
-      patch.location = locations?.find((l) => l.id === location_id) ?? null
-    }
-  }
-
-  if (skill_ids !== undefined) {
-    const skills = queryClient.getQueryData<Skill[]>(['skills'])
-    patch.skills = skill_ids.map((sid) => ({
-      skill: skills?.find((s) => s.id === sid) ?? { id: sid, name: '…' },
-    }))
-  }
-
   return patch
 }
 
