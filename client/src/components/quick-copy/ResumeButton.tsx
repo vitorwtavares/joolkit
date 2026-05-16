@@ -37,8 +37,12 @@ export function ResumeButton({
     const wasUploading = prevUploadingRef.current
     prevUploadingRef.current = uploading
     if (!uploading && wasUploading && resumeUrl) setIconPop(true)
-  }, [uploading])
+  }, [uploading, resumeUrl])
 
+  // This effect intentionally waits for resumeUrl (the parent's source of
+  // truth) to change before clearing the local removing/uploading flags.
+  // Including them as deps would re-fire on setRemoving(true) and immediately
+  // clear it, killing the spinner mid-action.
   useLayoutEffect(() => {
     if (removing) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -46,6 +50,7 @@ export function ResumeButton({
       setRemoving(false)
     }
     if (uploading) setUploading(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeUrl])
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {

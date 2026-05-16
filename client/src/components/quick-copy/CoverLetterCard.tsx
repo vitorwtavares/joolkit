@@ -79,8 +79,12 @@ export function CoverLetterCard({
         wasUploading === 'formal' ? formal?.file_url : light?.file_url
       if (uploaded) setIconPop(wasUploading)
     }
-  }, [uploading])
+  }, [uploading, formal?.file_url, light?.file_url])
 
+  // This effect intentionally waits for the parent's file_url to change before
+  // clearing the local removing/uploading flags. Including them as deps would
+  // re-fire on setRemoving(...) and immediately clear it, killing the spinner
+  // mid-action.
   useLayoutEffect(() => {
     if (removing) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -89,6 +93,7 @@ export function CoverLetterCard({
       setRemoving(null)
     }
     if (uploading) setUploading(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formal?.file_url, light?.file_url])
 
   async function handleUpload(
