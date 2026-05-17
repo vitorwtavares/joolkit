@@ -5,21 +5,21 @@
 
 :root {
   --background: #191919;
-  --foreground: #e8e8e3;
-  --card: #202020;
-  --card-foreground: #e8e8e3;
-  --popover: #202020;
-  --popover-foreground: #e8e8e3;
-  --primary: #e8e8e3;
+  --foreground: #ededeb;
+  --card: #1d1d1d;
+  --card-foreground: #ededeb;
+  --popover: #1d1d1d;
+  --popover-foreground: #ededeb;
+  --primary: #ededeb;
   --primary-foreground: #191919;
-  --secondary: #282828;
-  --secondary-foreground: #e8e8e3;
-  --muted: #282828;
-  --muted-foreground: #a6a6a1;
-  --accent: #282828;
-  --accent-foreground: #e8e8e3;
+  --secondary: #242424;
+  --secondary-foreground: #ededeb;
+  --muted: #242424;
+  --muted-foreground: #b5b5b0;
+  --accent: #242424;
+  --accent-foreground: #ededeb;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: rgba(255, 255, 255, 0.1);
+  --border: rgba(255, 255, 255, 0.13);
   --input: rgba(255, 255, 255, 0.1);
   --ring: #8b8b85;
   --chart-1: oklch(0.87 0 0);
@@ -27,8 +27,8 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: #202020;
+  --radius: 0.75rem;
+  --sidebar: #161616;
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
@@ -38,8 +38,10 @@
   --sidebar-accent-foreground: var(--secondary-foreground);
   --sidebar-border: rgba(255, 255, 255, 0.11);
   --sidebar-ring: var(--ring);
-  --brand: #ff5757;
+  --brand: #4a8cf0;
   --brand-foreground: #fff;
+  --brand-soft: rgba(74, 140, 240, 0.16);
+  --brand-border: rgba(74, 140, 240, 0.45);
   --surface-panel: var(--card);
   --surface-raised: var(--secondary);
   --surface-selected: #313131;
@@ -70,7 +72,7 @@
   --link: #4a9eff;
   --link-foreground: #fff;
   --text-dim: rgba(255, 255, 255, 0.62);
-  --text-faint: #8b8b85;
+  --text-faint: #969690;
   --text-muted-soft: rgba(255, 255, 255, 0.32);
   --text-muted-softer: rgba(255, 255, 255, 0.42);
   --editor-foreground: #cacac5;
@@ -139,6 +141,8 @@
   --color-background: var(--background);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-border: var(--brand-border);
   --color-surface-raised: var(--surface-raised);
   --color-surface-panel: var(--surface-panel);
   --color-surface-selected: var(--surface-selected);
