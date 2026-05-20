@@ -134,7 +134,7 @@ export function EditAnswerModal({
             e.preventDefault()
             questionRef.current?.focus()
           }}
-          className="flex w-[1040px] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden border border-border/60 bg-card p-0 ring-0 sm:max-w-[1040px]"
+          className="flex max-h-[calc(100vh-2rem)] w-[1040px] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden border border-border/60 bg-card p-0 ring-0 sm:max-w-[min(1040px,calc(100vw-2rem))]"
         >
           <DialogTitle className="sr-only">
             {answer ? 'Edit answer' : 'New answer'}
@@ -144,7 +144,7 @@ export function EditAnswerModal({
             entry.
           </DialogDescription>
 
-          <div className="flex items-center gap-3 px-6 pt-5">
+          <div className="flex items-center gap-3 border-b border-border-subtle px-[22px] py-[18px]">
             <input
               ref={questionRef}
               id="answer-question"
@@ -152,7 +152,7 @@ export function EditAnswerModal({
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Type your question here..."
-              className="min-w-0 flex-1 bg-transparent text-[22px] font-medium tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50"
+              className="min-w-0 flex-1 bg-transparent text-[17px] font-semibold tracking-[-0.015em] text-foreground outline-none placeholder:text-muted-foreground/50"
             />
             <Button
               variant="ghost"
@@ -164,42 +164,46 @@ export function EditAnswerModal({
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 overflow-y-auto p-6 pt-4">
-            <div className="flex flex-col gap-2">
-              <span className="text-[11px] font-medium tracking-widest text-muted-foreground uppercase">
-                Default
-              </span>
+          <div className="grid min-h-0 flex-1 grid-cols-1 gap-px overflow-y-auto bg-border-subtle md:grid-cols-2">
+            <div className="flex flex-col gap-2.5 bg-card px-[22px] pt-[18px] pb-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium tracking-[0.07em] text-text-faint uppercase">
+                  Default
+                </span>
+                <span className="font-mono text-[11px] text-text-faint">
+                  {shortStats.chars} chars · {shortStats.words} words
+                </span>
+              </div>
               <textarea
                 id="answer-short"
                 name="answer-short"
                 value={shortAnswer}
                 onChange={(e) => setShortAnswer(e.target.value)}
                 placeholder="Write your default answer..."
-                className="h-[220px] resize-none rounded-lg border border-border bg-background px-3.5 py-3 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-border/80"
+                className="h-[240px] resize-none rounded-lg border border-border bg-background px-3.5 py-3 text-[13.5px] leading-relaxed text-foreground transition-[border-color,box-shadow] outline-none placeholder:text-muted-foreground/50 focus:border-brand-border focus:ring-3 focus:ring-brand-soft"
               />
-              <span className="text-right text-[12px] text-muted-foreground/50">
-                {shortStats.chars} chars · {shortStats.words} words
-              </span>
             </div>
-            <div className="flex flex-col gap-2">
-              <span className="text-[11px] font-medium tracking-widest text-muted-foreground uppercase">
-                Detailed
-              </span>
+            <div className="flex flex-col gap-2.5 bg-card px-[22px] pt-[18px] pb-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium tracking-[0.07em] text-text-faint uppercase">
+                  Detailed
+                </span>
+                <span className="font-mono text-[11px] text-text-faint">
+                  {longStats.chars} chars · {longStats.words} words
+                </span>
+              </div>
               <textarea
                 id="answer-long"
                 name="answer-long"
                 value={longAnswer}
                 onChange={(e) => setLongAnswer(e.target.value)}
                 placeholder="Write a more detailed version of your answer..."
-                className="h-[220px] resize-none rounded-lg border border-border bg-background px-3.5 py-3 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-border/80"
+                className="h-[240px] resize-none rounded-lg border border-border bg-background px-3.5 py-3 text-[13.5px] leading-relaxed text-foreground transition-[border-color,box-shadow] outline-none placeholder:text-muted-foreground/50 focus:border-brand-border focus:ring-3 focus:ring-brand-soft"
               />
-              <span className="text-right text-[12px] text-muted-foreground/50">
-                {longStats.chars} chars · {longStats.words} words
-              </span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-t border-border/40 px-6 py-3.5">
+          <div className="flex items-center justify-between border-t border-border-subtle px-[22px] py-3.5">
             <div className="flex items-center gap-3">
               {answer && (
                 <Button
