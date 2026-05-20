@@ -325,15 +325,38 @@
   cursor: pointer;
 }
 
+.token-resolved,
+.token-unresolved {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  margin: 0 2px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.92em;
+  font-weight: 500;
+  line-height: 1.35;
+  vertical-align: baseline;
+  cursor: pointer;
+  transition: filter 0.12s;
+}
+
+.token-resolved:hover,
+.token-unresolved:hover {
+  filter: brightness(1.08);
+}
+
 .token-resolved {
-  background: var(--success-soft-strong);
-  color: var(--success);
-  border-radius: 3px;
-  padding: 0 2px;
-  margin: 0 5px;
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  outline: 1.5px solid var(--success-border);
-  outline-offset: 1px;
+  background: rgba(95, 191, 129, 0.16);
+  color: #a6d9b4;
+  border-color: rgba(95, 191, 129, 0.42);
+}
+
+.token-unresolved {
+  background: rgba(239, 84, 84, 0.16);
+  color: #f1a3a3;
+  border-color: rgba(239, 84, 84, 0.42);
 }
 
 .token-hidden {
@@ -348,17 +371,6 @@
   font-size: inherit;
   color: transparent;
   user-select: none;
-}
-
-.token-unresolved {
-  background: var(--danger-soft-fill);
-  color: var(--danger);
-  border-radius: 3px;
-  padding: 0 2px;
-  margin: 0 5px;
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  outline: 1.5px solid var(--danger-border);
-  outline-offset: 1px;
 }
 
 /* ── Notes Editor ── */
