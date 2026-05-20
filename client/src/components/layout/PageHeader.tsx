@@ -1,6 +1,6 @@
 interface PageHeaderProps {
   title: string
-  subtitle: string
+  subtitle: React.ReactNode
   right?: React.ReactNode
   subtitleClassName?: string
 }
@@ -13,7 +13,7 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <>
-      <div className="mb-1 flex items-start justify-between">
+      <div className="mb-1 flex items-center justify-between">
         <h1 className="text-[36px] font-medium tracking-tight">{title}</h1>
         {right}
       </div>
