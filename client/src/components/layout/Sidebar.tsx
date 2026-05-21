@@ -50,12 +50,12 @@ export default function Sidebar() {
 
   return (
     <aside className="flex w-[224px] min-w-[224px] flex-col gap-0.5 border-r border-sidebar-border bg-sidebar px-3 py-5 text-sidebar-foreground">
-      <div className="mb-2 border-b border-sidebar-border px-2 pb-4 text-center">
+      <div className="mb-4 pt-1.5 pr-2 pb-1 pl-1">
         <img
           src={noloopLogo}
           alt="noloop"
           onClick={() => navigate('/')}
-          className="mx-auto h-9 cursor-pointer"
+          className="h-8 cursor-pointer"
         />
       </div>
 
