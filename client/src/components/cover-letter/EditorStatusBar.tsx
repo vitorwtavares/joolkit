@@ -6,12 +6,9 @@ interface EditorStatusBarProps {
 
 export function EditorStatusBar({ hasUnresolved }: EditorStatusBarProps) {
   return (
-    <div
-      className="flex shrink-0 items-center border-t border-border-subtle bg-surface-panel px-[18px] py-2.5"
-      style={{}}
-    >
+    <div className="flex shrink-0 items-center border-t border-border-subtle bg-surface-panel px-6 py-2.5">
       <div
-        className={`flex items-center gap-1.5 text-xs ${hasUnresolved ? 'text-danger' : 'text-muted-foreground'}`}
+        className={`flex items-center gap-1.5 text-xs ${hasUnresolved ? 'text-danger' : 'text-text-faint'}`}
       >
         {hasUnresolved ? (
           <>

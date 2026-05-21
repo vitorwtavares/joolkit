@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Link2, ExternalLink } from 'lucide-react'
+import { Link, ExternalLink } from 'lucide-react'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { sanitizeUrl } from '@/utils/sanitizeUrl'
 import { INPUT_BASE } from './styles'
 
@@ -16,6 +17,7 @@ interface LabelUrlButtonProps {
   onSaveLabel?: (label: string | null) => void
   labelTitle?: string
   urlTitle?: string
+  triggerClassName?: string
 }
 
 export function LabelUrlButton({
@@ -25,6 +27,7 @@ export function LabelUrlButton({
   onSaveLabel,
   labelTitle = 'Company name',
   urlTitle = 'Careers page link',
+  triggerClassName,
 }: LabelUrlButtonProps) {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState('')
@@ -60,19 +63,18 @@ export function LabelUrlButton({
         <button
           type="button"
           onClick={handleOpen}
-          className={`absolute top-1/2 left-2 z-10 -translate-y-1/2 cursor-pointer rounded p-0.5 text-link transition-all duration-150 ease-out hover:text-info ${
-            url ? 'opacity-100' : 'opacity-25 hover:opacity-100'
-          }`}
+          className={cn(
+            'absolute top-1/2 left-2 z-10 -translate-y-1/2 cursor-pointer rounded p-0.5 text-link transition-all duration-150 ease-out hover:text-info',
+            url ? 'opacity-100' : 'opacity-25 hover:opacity-100',
+            triggerClassName,
+          )}
           aria-label={
             url
               ? `Edit ${urlTitle.toLowerCase()}`
               : `Add ${urlTitle.toLowerCase()}`
           }
         >
-          <Link2
-            size={16}
-            className="transition-colors duration-150 ease-out"
-          />
+          <Link size={11} className="transition-colors duration-150 ease-out" />
         </button>
       </PopoverTrigger>
       <PopoverContent

@@ -6,6 +6,7 @@ import { useAuth } from '@/context/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { AuthShell } from '@/components/auth/AuthShell'
 
 export default function SignUp() {
   const { user, isLoading } = useAuth()
@@ -32,78 +33,80 @@ export default function SignUp() {
   }
 
   return (
-    <div className="relative min-h-screen bg-background px-4">
-      <div className="absolute top-6 left-1/2 -translate-x-1/2">
-        <img
-          src="/noloop_logo_text_horizontal_crop_white.png"
-          alt="noloop"
-          className="h-26"
-        />
-      </div>
-
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="w-full max-w-sm">
-          {done ? (
-            <div className="flex flex-col gap-1">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                Check your email
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                We sent a confirmation link to{' '}
-                <span className="text-foreground">{email}</span>.
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-1">
-                <h1 className="text-2xl font-semibold tracking-tight">
-                  Create an account
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Already have an account?{' '}
-                  <Link
-                    to="/sign-in"
-                    className="text-foreground underline underline-offset-4 transition-colors hover:text-foreground/80"
-                  >
-                    Sign in
-                  </Link>
-                </p>
-              </div>
-
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    required
-                    autoComplete="new-password"
-                    minLength={6}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting ? 'Creating account…' : 'Create account'}
-                </Button>
-              </form>
-            </div>
-          )}
+    <AuthShell>
+      {done ? (
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Check your email
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            We sent a confirmation link to{' '}
+            <span className="text-foreground">{email}</span>.
+          </p>
         </div>
-      </div>
-    </div>
+      ) : (
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Create an account
+          </h1>
+          <p className="mb-7 text-[13.5px] text-muted-foreground">
+            Already have an account?{' '}
+            <Link
+              to="/sign-in"
+              className="font-medium text-foreground underline underline-offset-[3px] transition-colors hover:text-brand"
+            >
+              Sign in
+            </Link>
+          </p>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="sign-up-email"
+                className="text-[13px] font-semibold text-foreground"
+              >
+                Email
+              </Label>
+              <Input
+                id="sign-up-email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-[42px] rounded-[10px] bg-card"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="sign-up-password"
+                className="text-[13px] font-semibold text-foreground"
+              >
+                Password
+              </Label>
+              <Input
+                id="sign-up-password"
+                type="password"
+                required
+                autoComplete="new-password"
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-[42px] rounded-[10px] bg-card"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="mt-3 h-11 w-full rounded-[10px] text-sm font-medium"
+              disabled={submitting}
+            >
+              {submitting ? 'Creating account...' : 'Create account'}
+            </Button>
+          </form>
+        </div>
+      )}
+    </AuthShell>
   )
 }

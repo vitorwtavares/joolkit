@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Pencil } from 'lucide-react'
+import { Check, Copy, Pencil, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { useCopiedBubble } from '@/hooks/useCopiedBubble'
@@ -86,17 +85,17 @@ export function CopyButton({
 
   if (editing) {
     return (
-      <div className="flex items-center gap-2.5 rounded-lg border border-border bg-secondary px-3 py-3">
+      <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-3.5">
         <div
           className={cn(
-            'flex size-[30px] flex-shrink-0 items-center justify-center rounded-md',
+            'flex size-[32px] flex-shrink-0 items-center justify-center rounded-md',
             iconBg ?? 'bg-secondary',
           )}
         >
           {icon}
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="mb-0.5 text-[12px] text-muted-foreground">
+          <span className="mb-1 text-[11px] font-medium tracking-[0.04em] text-text-faint uppercase">
             {label}
           </span>
           <input
@@ -113,54 +112,68 @@ export function CopyButton({
             className="bg-transparent text-[14px] text-foreground outline-none"
           />
         </div>
-        <div className="flex flex-shrink-0 items-center gap-1">
-          <Button
-            variant="ghost"
-            size="xs"
+        <div className="flex flex-shrink-0 items-center gap-1.5">
+          <button
+            type="button"
             onClick={save}
             disabled={!isDirty}
-            className="text-muted-foreground"
+            aria-label="Save"
+            className="inline-flex h-[26px] cursor-pointer items-center gap-1.5 rounded-md bg-success-soft-strong px-2 text-[11px] text-success transition-colors hover:bg-success/25 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-success-soft-strong"
           >
-            Save
-          </Button>
-          <Button
-            variant="ghost"
-            size="xs"
+            <Check size={11} />
+            <span className="hidden min-[1551px]:inline">Save</span>
+          </button>
+          <button
+            type="button"
             onClick={cancel}
-            className="text-muted-foreground"
+            aria-label="Cancel"
+            className="flex size-[26px] cursor-pointer items-center justify-center rounded-md bg-danger-soft-fill text-danger transition-colors hover:bg-danger/25"
           >
-            ✕
-          </Button>
+            <X size={13} />
+          </button>
         </div>
       </div>
     )
   }
 
+  const disabled = !filled && locked
+  const primaryAction = filled ? copy : startEdit
+
   return (
     <div className="group/btn relative">
       {copiedBubble}
-      <button
-        onClick={filled ? copy : startEdit}
-        disabled={!filled && locked}
+      <div
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        aria-disabled={disabled}
+        onClick={disabled ? undefined : primaryAction}
+        onKeyDown={(e) => {
+          if (disabled) return
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            primaryAction()
+          }
+        }}
         className={cn(
-          'flex w-full items-center gap-2.5 rounded-lg border bg-secondary px-3 py-3 text-left transition-colors',
+          'flex w-full items-center gap-3 rounded-lg border bg-card px-3 py-3.5 text-left transition-colors outline-none hover:border-border-strong hover:bg-secondary focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
           filled
-            ? 'cursor-pointer border-border hover:bg-secondary/70'
+            ? 'cursor-pointer border-border'
             : locked
-              ? 'cursor-default border-dashed border-border/50'
-              : 'cursor-pointer border-dashed border-border/50 hover:bg-secondary/70',
+              ? 'cursor-default border-border/60 bg-card/40'
+              : 'cursor-pointer border-border/60 bg-card/40',
         )}
       >
         <div
           className={cn(
-            'flex size-[30px] flex-shrink-0 items-center justify-center rounded-md',
+            'flex size-[32px] flex-shrink-0 items-center justify-center rounded-md transition-colors',
             iconBg ?? 'bg-secondary',
+            filled && 'group-hover/btn:text-brand',
           )}
         >
           {icon}
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="mb-0.5 text-[12px] text-muted-foreground">
+          <span className="mb-1 text-[11px] font-medium tracking-[0.04em] text-text-faint uppercase">
             {label}
           </span>
           {saving ? (
@@ -193,15 +206,31 @@ export function CopyButton({
             </span>
           )}
         </div>
-      </button>
-      {!locked && (
-        <button
-          onClick={startEdit}
-          className="absolute top-1/2 -right-[11px] z-10 flex size-[24px] -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-secondary shadow-sm transition-colors hover:bg-surface-selected"
-        >
-          <Pencil size={13} className="text-muted-foreground" />
-        </button>
-      )}
+        <div className="ml-auto flex flex-shrink-0 items-center gap-1.5 opacity-0 transition-opacity group-hover/btn:opacity-100">
+          {filled && (
+            <span
+              className="inline-flex h-[26px] items-center gap-1.5 rounded-md bg-brand-soft px-2 text-[11px] text-brand transition-colors hover:bg-brand/25"
+              aria-hidden
+            >
+              <Copy size={11} />
+              <span className="hidden min-[1551px]:inline">Copy</span>
+            </span>
+          )}
+          {!locked && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                startEdit()
+              }}
+              aria-label="Edit"
+              className="flex size-[26px] cursor-pointer items-center justify-center rounded-md bg-brand-soft text-brand transition-colors hover:bg-brand/25"
+            >
+              <Pencil size={13} />
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

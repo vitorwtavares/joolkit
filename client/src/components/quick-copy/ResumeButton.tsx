@@ -100,20 +100,22 @@ export function ResumeButton({
   const showAsFilled = !!resumeUrl || falling
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 rounded-lg border border-dashed border-border/50 bg-secondary px-4 py-3.5">
-      <div className="flex items-center gap-2.5">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card">
+      <header className="flex min-h-[80px] items-center gap-3 border-b border-border px-4">
         <div className="flex size-[30px] flex-shrink-0 items-center justify-center rounded-md bg-secondary">
-          <FileText size={14} className="text-muted-foreground/40" />
+          <FileText size={14} className="text-muted-foreground" />
         </div>
-        <div>
-          <div className="text-[12px] text-muted-foreground">Resume</div>
-          <div className="text-[14px] text-muted-foreground">
+        <div className="min-w-0">
+          <div className="text-[14px] font-semibold text-foreground">
+            Resume
+          </div>
+          <div className="text-[12px] whitespace-nowrap text-text-faint">
             Upload your resume
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="group/slot relative min-h-0 flex-1">
+      <div className="group/slot relative min-h-0 flex-1 p-3.5">
         <input
           ref={fileInputRef}
           id="quick-copy-resume-upload"
@@ -137,14 +139,14 @@ export function ResumeButton({
             resumeUrl ? handleDownload : () => fileInputRef.current?.click()
           }
           className={cn(
-            'relative flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-3 py-5 transition-colors disabled:pointer-events-none',
+            'relative flex h-full min-h-[132px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border px-3 py-5 transition-colors disabled:pointer-events-none',
             showAsFilled
-              ? 'border-border bg-secondary hover:bg-card'
-              : 'border-dashed border-border/50 bg-surface-selected hover:bg-surface-selected-hover',
+              ? 'border-border bg-secondary hover:border-brand hover:bg-surface-selected'
+              : 'border-dashed border-border-strong bg-secondary hover:border-brand hover:bg-surface-selected',
           )}
         >
           {removing && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-md bg-popover/90">
+            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-popover/90">
               <Loader2
                 size={16}
                 className="animate-spin text-muted-foreground"
@@ -153,12 +155,12 @@ export function ResumeButton({
           )}
           <div
             className={cn(
-              'flex size-7 items-center justify-center rounded-md',
+              'mb-1 flex size-[42px] items-center justify-center rounded-lg',
               falling
                 ? undefined
                 : showAsFilled
-                  ? 'bg-success-soft'
-                  : 'bg-background',
+                  ? 'bg-brand-soft text-brand'
+                  : 'bg-card text-text-faint',
               iconPop && 'animate-icon-pop',
               falling && 'animate-icon-fall',
             )}
@@ -168,23 +170,17 @@ export function ResumeButton({
             }}
           >
             {uploading ? (
-              <Loader2
-                size={13}
-                className="animate-spin text-muted-foreground/40"
-              />
+              <Loader2 size={18} className="animate-spin text-text-faint" />
             ) : showAsFilled ? (
-              <FileText
-                size={13}
-                className={falling ? undefined : 'text-success'}
-              />
+              <FileText size={20} />
             ) : (
-              <Upload size={13} className="text-muted-foreground/40" />
+              <Upload size={20} />
             )}
           </div>
-          <span className="text-[12px] font-medium text-muted-foreground">
+          <span className="max-w-full truncate text-[12.5px] font-medium text-foreground">
             {filename ?? 'Resume'}
           </span>
-          <span className="text-[12px] text-muted-foreground/40">
+          <span className="text-[11px] text-text-faint">
             {showAsFilled ? 'Click to download' : 'Click to upload'}
           </span>
         </button>
@@ -201,15 +197,13 @@ export function ResumeButton({
                 setRemoving(false)
               }
             }}
-            className="absolute -top-[11px] -right-[11px] z-10 flex size-[24px] cursor-pointer items-center justify-center rounded-full border border-border bg-secondary shadow-sm transition-colors hover:bg-surface-selected disabled:pointer-events-none"
+            aria-label="Remove resume"
+            className="absolute top-[22px] right-[22px] z-10 flex size-[26px] cursor-pointer items-center justify-center rounded-md bg-secondary text-muted-foreground opacity-0 transition-[opacity,background-color,color] group-hover/slot:opacity-100 hover:bg-danger-soft-fill hover:text-danger disabled:pointer-events-none"
           >
             {removing ? (
-              <Loader2
-                size={13}
-                className="animate-spin text-muted-foreground"
-              />
+              <Loader2 size={13} className="animate-spin" />
             ) : (
-              <Trash2 size={13} className="text-muted-foreground" />
+              <Trash2 size={13} />
             )}
           </button>
         )}

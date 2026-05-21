@@ -67,7 +67,7 @@ function FontSizeInput({ editor, activeSize }: FontSizeInputProps) {
   }
 
   return (
-    <div className="relative ml-1 flex h-8 w-[52px] items-center rounded-[5px] border border-border bg-secondary shadow-none focus-within:border-border-strong">
+    <div className="relative ml-1 flex h-8 w-[52px] items-center rounded-md border border-border-subtle bg-secondary shadow-none focus-within:border-brand-border">
       <input
         id="cover-letter-font-size"
         name="cover-letter-font-size"
@@ -165,6 +165,9 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     isJustify,
   } = state
 
+  const toolToggleClass =
+    'size-7 min-w-7 rounded-md text-muted-foreground aria-pressed:bg-surface-selected aria-pressed:text-foreground'
+
   return (
     <div className="flex flex-1 items-center gap-0.5 px-3.5 py-2">
       <Select
@@ -180,7 +183,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       >
         <SelectTrigger
           size="sm"
-          className="w-[112px] gap-1 rounded-[5px] border-border bg-secondary px-2 text-sm text-foreground shadow-none hover:bg-secondary dark:bg-secondary dark:hover:bg-secondary"
+          className="w-[112px] gap-1 rounded-md border-border-subtle bg-secondary px-2 text-sm text-foreground shadow-none hover:border-border hover:bg-secondary dark:bg-secondary dark:hover:bg-secondary"
         >
           <SelectValue />
         </SelectTrigger>
@@ -200,11 +203,11 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
       <FontSizeInput editor={editor} activeSize={activeSize} />
 
-      <div className="mx-1.5 h-[18px] w-px bg-border" />
+      <div className="mx-1.5 h-[18px] w-px bg-border-subtle" />
 
       <Toggle
         size="sm"
-        className="size-7 min-w-7 rounded-[5px]"
+        className={toolToggleClass}
         pressed={isBold}
         onPressedChange={() => editor.chain().focus().toggleBold().run()}
       >
@@ -212,7 +215,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       </Toggle>
       <Toggle
         size="sm"
-        className="size-7 min-w-7 rounded-[5px]"
+        className={toolToggleClass}
         pressed={isItalic}
         onPressedChange={() => editor.chain().focus().toggleItalic().run()}
       >
@@ -220,18 +223,18 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       </Toggle>
       <Toggle
         size="sm"
-        className="size-7 min-w-7 rounded-[5px]"
+        className={toolToggleClass}
         pressed={isUnderline}
         onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
       >
         <Underline className="size-3.5" />
       </Toggle>
 
-      <div className="mx-1.5 h-[18px] w-px bg-border" />
+      <div className="mx-1.5 h-[18px] w-px bg-border-subtle" />
 
       <Toggle
         size="sm"
-        className="size-7 min-w-7 rounded-[5px]"
+        className={toolToggleClass}
         pressed={isLeft}
         onPressedChange={() =>
           editor.chain().focus().setTextAlign('left').run()
@@ -241,7 +244,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       </Toggle>
       <Toggle
         size="sm"
-        className="size-7 min-w-7 rounded-[5px]"
+        className={toolToggleClass}
         pressed={isCenter}
         onPressedChange={() =>
           editor.chain().focus().setTextAlign('center').run()
@@ -251,7 +254,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       </Toggle>
       <Toggle
         size="sm"
-        className="size-7 min-w-7 rounded-[5px]"
+        className={toolToggleClass}
         pressed={isRight}
         onPressedChange={() =>
           editor.chain().focus().setTextAlign('right').run()
@@ -261,7 +264,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       </Toggle>
       <Toggle
         size="sm"
-        className="size-7 min-w-7 rounded-[5px]"
+        className={toolToggleClass}
         pressed={isJustify}
         onPressedChange={() =>
           editor.chain().focus().setTextAlign('justify').run()

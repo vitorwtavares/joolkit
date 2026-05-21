@@ -59,19 +59,19 @@ export function SegmentedToggle<T extends string>({
 
   const buttonBaseClassName =
     variant === 'compact'
-      ? 'relative z-10 cursor-pointer rounded-full px-2 py-1 text-center text-xs transition-colors outline-none focus-visible:outline-none'
-      : 'relative z-10 cursor-pointer rounded-full px-3.5 py-1 text-center text-xs transition-colors outline-none focus-visible:outline-none'
+      ? 'relative z-10 cursor-pointer rounded-md px-2 py-1 text-center text-[12.5px] transition-colors outline-none focus-visible:outline-none'
+      : 'relative z-10 cursor-pointer rounded-md px-3.5 py-1 text-center text-[12.5px] transition-colors outline-none focus-visible:outline-none'
 
   return (
     <div
       className={cn(
-        'relative inline-flex rounded-full border border-border bg-secondary p-[3px]',
+        'relative inline-flex rounded-lg border border-border-subtle bg-secondary p-[3px]',
         className,
       )}
     >
       <div
         aria-hidden="true"
-        className="absolute top-[3px] bottom-[3px] rounded-full bg-surface-selected-hover transition-[left,width] duration-200 ease-out"
+        className="absolute top-[3px] bottom-[3px] rounded-md bg-surface-selected shadow-[0_1px_0_rgba(0,0,0,0.18)] transition-[left,width] duration-200 ease-out"
         style={highlightStyle}
       />
       {options.map((option) => {
@@ -89,7 +89,7 @@ export function SegmentedToggle<T extends string>({
               buttonBaseClassName,
               isActive
                 ? 'font-medium text-foreground'
-                : 'text-muted-foreground',
+                : 'text-muted-foreground hover:text-foreground',
               buttonClassName,
             )}
           >

@@ -23,6 +23,7 @@ import { LocationCell } from './cells/LocationCell'
 import { SkillsCell } from './cells/SkillsCell'
 import { EmptyCell } from './cells/EmptyCell'
 import { LabelUrlButton } from './LabelUrlButton'
+import { CompanyAvatar } from './CompanyAvatar'
 import { DeleteApplicationDialog } from './DeleteApplicationDialog'
 import { useDeleteApplication } from '@/api/hooks/useApplications'
 import { useResolvedApp, useTrackerDraft } from './draft'
@@ -143,11 +144,14 @@ function ApplicationRowImpl({
             value={app.company_name || null}
             url={app.careers_url}
             bold
-            className="pl-9"
+            className="pl-[68px]"
             maxLength={50}
             onSave={(v) => save({ company_name: v ?? '' })}
             onCommit={draft.flush}
           />
+          <span className="pointer-events-none absolute top-1/2 left-9 -translate-y-1/2">
+            <CompanyAvatar name={app.company_name || null} />
+          </span>
           <LabelUrlButton
             url={app.careers_url}
             onSave={(url) => save({ careers_url: url })}
