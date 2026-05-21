@@ -6,6 +6,7 @@ import { useAuth } from '@/context/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { AuthShell } from '@/components/auth/AuthShell'
 
 export default function SignIn() {
   const { user, isLoading } = useAuth()
@@ -33,61 +34,65 @@ export default function SignIn() {
   }
 
   return (
-    <div className="relative min-h-screen bg-background px-4">
-      <div className="absolute top-6 left-1/2 -translate-x-1/2">
-        <img
-          src="/noloop_logo_text_horizontal_crop_white.png"
-          alt="noloop"
-          className="h-26"
-        />
-      </div>
+    <AuthShell>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
+        <p className="mb-7 text-[13.5px] text-muted-foreground">
+          Don't have an account?{' '}
+          <Link
+            to="/sign-up"
+            className="font-medium text-foreground underline underline-offset-[3px] transition-colors hover:text-brand"
+          >
+            Sign up
+          </Link>
+        </p>
 
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex w-full max-w-sm flex-col gap-6">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-            <p className="text-sm text-muted-foreground">
-              Don't have an account?{' '}
-              <Link
-                to="/sign-up"
-                className="text-foreground underline underline-offset-4 transition-colors hover:text-foreground/80"
-              >
-                Sign up
-              </Link>
-            </p>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label
+              htmlFor="sign-in-email"
+              className="text-[13px] font-semibold text-foreground"
+            >
+              Email
+            </Label>
+            <Input
+              id="sign-in-email"
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-[42px] rounded-[10px] bg-card"
+            />
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <Label
+              htmlFor="sign-in-password"
+              className="text-[13px] font-semibold text-foreground"
+            >
+              Password
+            </Label>
+            <Input
+              id="sign-in-password"
+              type="password"
+              required
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="h-[42px] rounded-[10px] bg-card"
+            />
+          </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? 'Signing in…' : 'Sign in'}
-            </Button>
-          </form>
-        </div>
+          <Button
+            type="submit"
+            className="mt-3 h-11 w-full rounded-[10px] text-sm font-medium"
+            disabled={submitting}
+          >
+            {submitting ? 'Signing in...' : 'Sign in'}
+          </Button>
+        </form>
       </div>
-    </div>
+    </AuthShell>
   )
 }
