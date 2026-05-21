@@ -212,7 +212,7 @@ export function useApplication(id: string) {
   })
 }
 
-function appMatchesView(app: Application, view: string): boolean {
+export function appMatchesView(app: Application, view: string): boolean {
   switch (view) {
     case 'all':
       return true
