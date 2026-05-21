@@ -146,7 +146,7 @@ export function EditorSidePanel({
     <div className="flex w-80 min-w-60 flex-col overflow-y-auto bg-surface-panel">
       {/* Tokens */}
       <div className="border-b border-border-subtle p-4 pb-[18px]">
-        <div className="mb-3 text-[11px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
+        <div className="mb-3.5 text-[11px] font-medium tracking-[0.08em] text-text-faint uppercase">
           Tokens
         </div>
 
@@ -166,12 +166,13 @@ export function EditorSidePanel({
           </>
         ) : (
           <>
-            <div className="mb-2.5">
-              <div
-                className={`mb-1 font-mono text-xs ${roleEmpty ? 'text-danger' : 'text-muted-foreground'}`}
+            <div className="mb-3 flex flex-col gap-1.5">
+              <label
+                htmlFor="cover-letter-role"
+                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${roleEmpty ? 'text-danger' : 'text-muted-foreground'}`}
               >
                 {TOKEN_ROLE}
-              </div>
+              </label>
               <input
                 id="cover-letter-role"
                 name="cover-letter-role"
@@ -179,20 +180,21 @@ export function EditorSidePanel({
                 onChange={(e) => onRoleChange(e.target.value)}
                 onBlur={onTokenBlur}
                 placeholder="e.g. Software Engineer"
-                className={`w-full rounded-md px-2.5 py-[7px] font-sans text-sm outline-none ${
+                className={`h-8 w-full rounded-md px-2.5 font-sans text-[13px] transition-[border-color,box-shadow] outline-none ${
                   roleEmpty
                     ? 'border border-danger-border bg-danger-soft text-danger placeholder:text-danger-muted'
-                    : 'border border-border bg-secondary text-foreground'
+                    : 'border border-border bg-card text-foreground focus:border-brand-border focus:ring-3 focus:ring-brand-soft'
                 }`}
               />
             </div>
 
-            <div>
-              <div
-                className={`mb-1 font-mono text-xs ${companyEmpty ? 'text-danger' : 'text-muted-foreground'}`}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="cover-letter-company"
+                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${companyEmpty ? 'text-danger' : 'text-muted-foreground'}`}
               >
                 {TOKEN_COMPANY}
-              </div>
+              </label>
               <input
                 id="cover-letter-company"
                 name="cover-letter-company"
@@ -200,17 +202,21 @@ export function EditorSidePanel({
                 onChange={(e) => onCompanyChange(e.target.value)}
                 onBlur={onTokenBlur}
                 placeholder="e.g. Xiaomi"
-                className={`w-full rounded-md px-2.5 py-[7px] font-sans text-sm outline-none ${
+                className={`h-8 w-full rounded-md px-2.5 font-sans text-[13px] transition-[border-color,box-shadow] outline-none ${
                   companyEmpty
                     ? 'border border-danger-border bg-danger-soft text-danger placeholder:text-danger-muted'
-                    : 'border border-border bg-secondary text-foreground'
+                    : 'border border-border bg-card text-foreground focus:border-brand-border focus:ring-3 focus:ring-brand-soft'
                 }`}
               />
             </div>
 
-            <div className="mt-2.5 flex items-center gap-1.5 text-xs leading-normal">
+            <div className="mt-3 flex items-center gap-2 text-[12px] leading-normal">
               <span
-                className={`size-1.5 shrink-0 rounded-full ${hasUnresolved ? 'bg-danger' : 'bg-success'}`}
+                className={`size-1.5 shrink-0 rounded-full ${
+                  hasUnresolved
+                    ? 'bg-danger shadow-[0_0_0_3px_var(--danger-soft-fill)]'
+                    : 'bg-success shadow-[0_0_0_3px_rgba(95,191,129,0.16)]'
+                }`}
               />
               <span
                 className={
@@ -223,7 +229,7 @@ export function EditorSidePanel({
               </span>
             </div>
             {hasUnresolved && (
-              <div className="mx-auto my-2 w-full">
+              <div className="mt-3 w-full">
                 <ErrorBanner role={role} company={company} />
               </div>
             )}
@@ -233,44 +239,54 @@ export function EditorSidePanel({
 
       {/* Version */}
       <div className="border-b border-border-subtle p-4 pb-[18px]">
-        <div className="mb-3 text-[11px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
+        <div className="mb-3.5 text-[11px] font-medium tracking-[0.08em] text-text-faint uppercase">
           Version
         </div>
 
         {isLoadingTemplates ? (
           <>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Editing</span>
-              <Skeleton className="h-[20px] w-18" />
-            </div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Uploaded</span>
-              <Skeleton className="h-[20px] w-32" />
-            </div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Last saved</span>
-              <Skeleton className="h-[20px] w-22" />
-            </div>
-            <Skeleton className="mt-1 h-[36px] w-full rounded-md" />
+            <dl className="mb-3 flex flex-col gap-1.5">
+              <div className="grid grid-cols-[92px_1fr] items-baseline gap-2.5 text-[12.5px]">
+                <dt className="text-text-faint">Editing</dt>
+                <dd className="m-0">
+                  <Skeleton className="h-[18px] w-18" />
+                </dd>
+              </div>
+              <div className="grid grid-cols-[92px_1fr] items-baseline gap-2.5 text-[12.5px]">
+                <dt className="text-text-faint">Uploaded</dt>
+                <dd className="m-0">
+                  <Skeleton className="h-[18px] w-32" />
+                </dd>
+              </div>
+              <div className="grid grid-cols-[92px_1fr] items-baseline gap-2.5 text-[12.5px]">
+                <dt className="text-text-faint">Last saved</dt>
+                <dd className="m-0">
+                  <Skeleton className="h-[18px] w-22" />
+                </dd>
+              </div>
+            </dl>
+            <Skeleton className="h-[34px] w-full rounded-md" />
           </>
         ) : (
           <>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Editing</span>
-              <span className="text-sm text-muted-foreground">{label}</span>
-            </div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Uploaded</span>
-              <span className="ml-2 truncate text-sm text-muted-foreground">
-                {extractFilename(template?.file_url ?? null)}
-              </span>
-            </div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Last saved</span>
-              <span className="text-sm text-muted-foreground">
-                {formatLastSaved(template?.updated_at)}
-              </span>
-            </div>
+            <dl className="mb-3 flex flex-col gap-1.5">
+              <div className="grid grid-cols-[92px_1fr] items-baseline gap-2.5 text-[12.5px]">
+                <dt className="text-text-faint">Editing</dt>
+                <dd className="m-0 font-medium text-foreground">{label}</dd>
+              </div>
+              <div className="grid grid-cols-[92px_1fr] items-baseline gap-2.5 text-[12.5px]">
+                <dt className="text-text-faint">Uploaded</dt>
+                <dd className="m-0 truncate font-medium text-foreground">
+                  {extractFilename(template?.file_url ?? null)}
+                </dd>
+              </div>
+              <div className="grid grid-cols-[92px_1fr] items-baseline gap-2.5 text-[12.5px]">
+                <dt className="text-text-faint">Last saved</dt>
+                <dd className="m-0 font-medium text-foreground">
+                  {formatLastSaved(template?.updated_at)}
+                </dd>
+              </div>
+            </dl>
 
             <input
               ref={uploadInputRef}
@@ -290,7 +306,7 @@ export function EditorSidePanel({
             <Button
               onClick={() => uploadInputRef.current?.click()}
               disabled={isUploading || isRestoring || isRemoving}
-              className="mb-2 w-full cursor-pointer"
+              className="mb-2 h-[34px] w-full cursor-pointer"
             >
               {isUploading ? (
                 <Loader2 className="size-3.5 animate-spin" />
@@ -300,10 +316,11 @@ export function EditorSidePanel({
               Upload file — {label}
             </Button>
 
-            <button
+            <Button
+              variant="outline"
               onClick={handleRemoveClick}
               disabled={isRemoving || isUploading || !template?.file_url}
-              className="mb-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border bg-transparent py-[7px] text-center text-sm text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="mb-2 h-[34px] w-full cursor-pointer"
             >
               {isRemoving ? (
                 <Loader2 className="size-3 animate-spin" />
@@ -311,14 +328,15 @@ export function EditorSidePanel({
                 <Trash2 className="size-3" />
               )}
               Remove file
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="outline"
               onClick={handleRestoreClick}
               disabled={
                 isRestoring || isUploading || isRemoving || !template?.file_url
               }
-              className="mt-1 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border bg-transparent py-[7px] text-center text-sm text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-[34px] w-full cursor-pointer"
             >
               {isRestoring ? (
                 <Loader2 className="size-3 animate-spin" />
@@ -326,22 +344,22 @@ export function EditorSidePanel({
                 <RotateCcw className="size-3" />
               )}
               Restore original file
-            </button>
+            </Button>
           </>
         )}
       </div>
 
       {/* Download */}
       <div className="p-4 pb-[18px]">
-        <div className="mb-3 text-[11px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
+        <div className="mb-3.5 text-[11px] font-medium tracking-[0.08em] text-text-faint uppercase">
           Download
         </div>
 
         {isLoadingDownload ? (
-          <Skeleton className="mb-2.5 h-[18px] w-48" />
+          <Skeleton className="mb-2 h-[18px] w-48" />
         ) : (
           <p
-            className={`mb-2.5 text-xs leading-normal ${hasUnresolved || isEditorEmpty ? 'text-danger' : 'text-muted-foreground'}`}
+            className={`mb-2 text-[12.5px] leading-normal ${hasUnresolved || isEditorEmpty ? 'text-danger' : 'text-muted-foreground'}`}
           >
             {isEditorEmpty
               ? 'Editor is empty. Add content to enable download.'
@@ -360,7 +378,7 @@ export function EditorSidePanel({
             isEditorEmpty ||
             isDownloading
           }
-          className="w-full cursor-pointer"
+          className="h-[34px] w-full cursor-pointer"
         >
           {isDownloading ? (
             <Loader2 className="size-3.5 animate-spin" />

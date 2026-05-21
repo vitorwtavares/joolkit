@@ -142,10 +142,10 @@ export default function QuickCopy() {
       />
 
       <section className="mb-10">
-        <h2 className="mb-2.5 text-[12px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
+        <h2 className="mb-3 text-[12px] font-medium tracking-[0.07em] text-text-faint uppercase">
           Personal info
         </h2>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-6">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3">
           {personalFields.map(({ key, label, icon, emptyText, splitName }) => (
             <CopyButton
               key={key}
@@ -162,10 +162,10 @@ export default function QuickCopy() {
       </section>
 
       <section className="mb-10">
-        <h2 className="mb-2.5 text-[12px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
+        <h2 className="mb-3 text-[12px] font-medium tracking-[0.07em] text-text-faint uppercase">
           Links
         </h2>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-6">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3">
           {linkFields.map(({ key, label, icon, iconBg, emptyText }) => (
             <CopyButton
               key={key}
@@ -182,10 +182,10 @@ export default function QuickCopy() {
       </section>
 
       <section>
-        <h2 className="mb-2.5 text-[12px] font-medium tracking-[0.07em] text-muted-foreground uppercase">
+        <h2 className="mb-3 text-[12px] font-medium tracking-[0.07em] text-text-faint uppercase">
           Files
         </h2>
-        <div className="grid grid-cols-1 gap-6 min-[1200px]:grid-cols-[minmax(220px,1fr)_minmax(0,3fr)]">
+        <div className="grid grid-cols-1 gap-3 min-[1250px]:grid-cols-[minmax(220px,1fr)_minmax(0,3fr)]">
           <ResumeButton
             resumeUrl={profile.resume_url}
             userId={user.id}
@@ -201,23 +201,21 @@ export default function QuickCopy() {
               )
             }
           />
-          <div>
-            <CoverLetterCard
-              templates={templates}
-              userId={user.id}
-              onFileUploaded={handleFileUploaded}
-              onFileRemoved={async (variation) => {
-                try {
-                  await deleteCoverLetterTemplate(variation)
-                  toast.success(
-                    `${variation.charAt(0).toUpperCase() + variation.slice(1)} template removed`,
-                  )
-                } catch {
-                  toast.error('Failed to remove template')
-                }
-              }}
-            />
-          </div>
+          <CoverLetterCard
+            templates={templates}
+            userId={user.id}
+            onFileUploaded={handleFileUploaded}
+            onFileRemoved={async (variation) => {
+              try {
+                await deleteCoverLetterTemplate(variation)
+                toast.success(
+                  `${variation.charAt(0).toUpperCase() + variation.slice(1)} template removed`,
+                )
+              } catch {
+                toast.error('Failed to remove template')
+              }
+            }}
+          />
         </div>
       </section>
     </div>

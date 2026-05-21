@@ -3,7 +3,7 @@ export const LAST_COL_PR = 'pr-8'
 
 export const COL_W = {
   star: '60px',
-  company: '170px',
+  company: '210px',
   jobName: '190px',
   status: '170px',
   location: '150px',
@@ -22,7 +22,7 @@ export const POPOVER_ITEM_CLASS =
   'flex h-[34px] w-full cursor-pointer items-center rounded px-2 text-left text-[14px] transition-colors hover:bg-muted'
 
 export const TH =
-  'px-3 py-[9px] text-left text-[14px] font-medium text-muted-foreground uppercase tracking-[0.04em] whitespace-nowrap bg-background sticky top-0 z-10'
+  'sticky top-0 z-30 bg-background px-3 py-[9px] text-left text-[14px] font-medium text-muted-foreground uppercase tracking-[0.04em] whitespace-nowrap'
 
 export const TD =
   'h-[44px] px-3 py-2 text-[14px] border-b border-border-faint align-middle whitespace-nowrap'

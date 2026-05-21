@@ -22,7 +22,7 @@ export function EditorCanvas({ isLoading, editor }: EditorCanvasProps) {
       onClick={() => editor?.commands.focus()}
     >
       <div
-        className="mx-auto rounded-[4px]"
+        className="mx-auto rounded-md border border-border-subtle"
         style={{
           width: '794px',
           height: '1123px',

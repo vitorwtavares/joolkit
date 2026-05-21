@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/tooltip'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import noloopLogo from '@/assets/logo/noloop-wordmark-light.svg'
 
 const navItems = [
   { to: '/quick-copy', label: 'Quick copy', icon: LayoutGrid, disabled: false },
@@ -48,13 +49,13 @@ export default function Sidebar() {
   const initial = email ? getInitials(email) : '?'
 
   return (
-    <aside className="flex w-[210px] min-w-[210px] flex-col gap-0.5 border-r border-sidebar-border bg-sidebar px-3 py-5 text-sidebar-foreground">
-      <div className="mb-2 border-b border-sidebar-border px-2 pb-4 text-center">
+    <aside className="flex w-[224px] min-w-[224px] flex-col gap-0.5 border-r border-sidebar-border bg-sidebar px-3 py-5 text-sidebar-foreground">
+      <div className="mb-4 pt-1.5 pr-2 pb-1 pl-1">
         <img
-          src="/noloop_logo_text_horizontal_crop_white.png"
+          src={noloopLogo}
           alt="noloop"
           onClick={() => navigate('/')}
-          className="mx-auto h-26 cursor-pointer"
+          className="h-8 cursor-pointer"
         />
       </div>
 
@@ -95,7 +96,9 @@ export default function Sidebar() {
               <>
                 <Icon
                   size={16}
-                  className={cn(isActive ? 'opacity-100' : 'opacity-55')}
+                  className={cn(
+                    isActive ? 'text-brand opacity-100' : 'opacity-55',
+                  )}
                 />
                 {label}
               </>
@@ -136,7 +139,7 @@ export default function Sidebar() {
           side="top"
           align="start"
           sideOffset={8}
-          className="w-[186px] gap-0 overflow-hidden rounded-xl border-sidebar-border bg-sidebar-popover p-0"
+          className="w-(--radix-popover-trigger-width) gap-0 overflow-hidden rounded-xl border-sidebar-border bg-sidebar-popover p-0"
         >
           <div className="px-3 py-3">
             <span className="block truncate text-xs leading-tight text-muted-foreground">
