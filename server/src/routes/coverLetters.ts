@@ -203,9 +203,8 @@ router.post('/:variation/restore', async (req: AuthRequest, res) => {
     const buffer = Buffer.from(await blob.arrayBuffer())
     content = await pdfToTiptap(buffer)
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
     console.error('Cover letter restore PDF parse failed', err)
-    res.status(500).json({ error: 'PDF parse failed', detail: message })
+    res.status(500).json({ error: 'PDF parse failed' })
     return
   }
 
