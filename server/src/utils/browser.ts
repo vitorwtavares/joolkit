@@ -1,4 +1,3 @@
-import chromium from '@sparticuz/chromium'
 import { existsSync } from 'fs'
 import puppeteer, { type Browser, type LaunchOptions } from 'puppeteer-core'
 
@@ -23,6 +22,7 @@ function getLocalExecutablePath(): string | undefined {
 
 async function getLaunchOptions(): Promise<LaunchOptions> {
   if (process.env.VERCEL) {
+    const { default: chromium } = await import('@sparticuz/chromium')
     const headless = 'shell'
     return {
       args: await puppeteer.defaultArgs({ args: chromium.args, headless }),
