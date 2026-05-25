@@ -198,8 +198,16 @@ router.post('/:variation/restore', async (req: AuthRequest, res) => {
     return
   }
 
-  const buffer = Buffer.from(await blob.arrayBuffer())
-  const content = await pdfToTiptap(buffer)
+  let content
+  try {
+    const buffer = Buffer.from(await blob.arrayBuffer())
+    content = await pdfToTiptap(buffer)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('Cover letter restore PDF parse failed', err)
+    res.status(500).json({ error: 'PDF parse failed', detail: message })
+    return
+  }
 
   const { data, error: saveError } = await supabase
     .from('cover_letter_templates')
