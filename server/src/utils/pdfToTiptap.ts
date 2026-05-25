@@ -3,8 +3,16 @@
 // pdfjs-dist v5 is ESM-only; use a lazy dynamic import() in this CommonJS project.
 let _pdfjsLib: any = null
 
+async function ensurePdfjsDomGlobals() {
+  if ('DOMMatrix' in globalThis) return
+
+  const { DOMMatrix, ImageData, Path2D } = await import('@napi-rs/canvas')
+  Object.assign(globalThis, { DOMMatrix, ImageData, Path2D })
+}
+
 async function getPdfjs() {
   if (!_pdfjsLib) {
+    await ensurePdfjsDomGlobals()
     _pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
   }
   return _pdfjsLib
