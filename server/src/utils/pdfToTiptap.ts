@@ -1,17 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { pathToFileURL } from 'url'
-
 // pdfjs-dist v5 is ESM-only; use a lazy dynamic import() in this CommonJS project.
-// workerSrc must be a file:// URL to the worker — empty string is no longer valid in v5.
 let _pdfjsLib: any = null
 
 async function getPdfjs() {
   if (!_pdfjsLib) {
     _pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
-    _pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(
-      require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs'),
-    ).href
   }
   return _pdfjsLib
 }
@@ -52,6 +46,8 @@ export async function pdfToTiptap(buffer: Buffer): Promise<TiptapDoc> {
       data: new Uint8Array(buffer),
       useSystemFonts: true,
       disableFontFace: true,
+      useWorkerFetch: false,
+      useWasm: false,
     }).promise
   } catch (err) {
     throw new Error(
