@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { pathToFileURL } from 'url'
+
 // pdfjs-dist v5 is ESM-only; use a lazy dynamic import() in this CommonJS project.
 let _pdfjsLib: any = null
 
@@ -14,6 +16,9 @@ async function getPdfjs() {
   if (!_pdfjsLib) {
     await ensurePdfjsDomGlobals()
     _pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
+    _pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(
+      require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs'),
+    ).href
   }
   return _pdfjsLib
 }
