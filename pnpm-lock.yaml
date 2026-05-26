@@ -213,9 +213,6 @@ importers:
       express:
         specifier: ^5.2.1
         version: 5.2.1
-      express-rate-limit:
-        specifier: ^8.5.0
-        version: 8.5.0(express@5.2.1)
       pdfjs-dist:
         specifier: ^5.7.284
         version: 5.7.284

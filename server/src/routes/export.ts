@@ -1,22 +1,21 @@
 import { Router } from 'express'
-import rateLimit from 'express-rate-limit'
 import { getBrowser } from '../utils/browser'
 import { getSupabase, AuthRequest } from '../middleware/auth'
+import { createRateLimitMiddleware } from '../middleware/rateLimit'
 import { tiptapToHtml, TiptapDoc, Tokens } from '../utils/tiptapToHtml'
 
 const router = Router()
 
-const pdfLimiter = rateLimit({
+const pdfLimiter = createRateLimitMiddleware({
+  keyPrefix: 'pdf-export',
   windowMs: 60 * 60 * 1000,
   limit: 10,
+  message: 'PDF export limit reached. Try again in an hour.',
   keyGenerator: (req) => {
     const userId = (req as AuthRequest).userId
     if (!userId) throw new Error('pdfLimiter reached before authMiddleware')
     return userId
   },
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'PDF export limit reached. Try again in an hour.' },
 })
 
 // POST /api/export/cover-letter/:variation

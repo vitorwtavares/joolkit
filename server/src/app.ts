@@ -1,7 +1,7 @@
 import express from 'express'
 import cors from 'cors'
-import rateLimit from 'express-rate-limit'
 import { authMiddleware } from './middleware/auth'
+import { createRateLimitMiddleware } from './middleware/rateLimit'
 import healthRouter from './routes/health'
 import profileRouter from './routes/profile'
 import coverLettersRouter from './routes/coverLetters'
@@ -19,11 +19,12 @@ app.set('trust proxy', 1)
 app.use(cors())
 app.use(express.json())
 
-const generalLimiter = rateLimit({
+const generalLimiter = createRateLimitMiddleware({
+  keyPrefix: 'general',
   windowMs: 15 * 60 * 1000,
   limit: 200,
-  standardHeaders: true,
-  legacyHeaders: false,
+  message: 'Too many requests. Try again later.',
+  keyGenerator: (req) => req.ip ?? 'unknown',
 })
 
 app.use('/api/health', healthRouter)
