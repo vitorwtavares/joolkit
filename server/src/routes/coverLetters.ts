@@ -85,11 +85,21 @@ router.put('/:variation/file', async (req: AuthRequest, res) => {
       .from('cover-letters')
       .download(file_url)
 
-    if (!downloadError && blob) {
-      const buffer = Buffer.from(await blob.arrayBuffer())
-      content = await pdfToTiptap(buffer)
+    if (downloadError || !blob) {
+      console.error(
+        'Cover letter file download failed',
+        downloadError ?? 'no blob returned',
+      )
+    } else {
+      try {
+        const buffer = Buffer.from(await blob.arrayBuffer())
+        content = await pdfToTiptap(buffer)
+      } catch (err) {
+        console.error('Cover letter PDF parse failed', err)
+      }
     }
-  } catch {
+  } catch (err) {
+    console.error('Cover letter import failed', err)
     // Parsing failure is non-fatal — the file is still saved, content stays null
   }
 
@@ -188,8 +198,15 @@ router.post('/:variation/restore', async (req: AuthRequest, res) => {
     return
   }
 
-  const buffer = Buffer.from(await blob.arrayBuffer())
-  const content = await pdfToTiptap(buffer)
+  let content
+  try {
+    const buffer = Buffer.from(await blob.arrayBuffer())
+    content = await pdfToTiptap(buffer)
+  } catch (err) {
+    console.error('Cover letter restore PDF parse failed', err)
+    res.status(500).json({ error: 'PDF parse failed' })
+    return
+  }
 
   const { data, error: saveError } = await supabase
     .from('cover_letter_templates')
