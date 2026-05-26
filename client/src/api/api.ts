@@ -1,7 +1,12 @@
 import { supabase } from './supabase'
 
-const BASE_URL = import.meta.env.VITE_API_URL
-if (!BASE_URL) throw new Error('Missing required env var: VITE_API_URL')
+export function getApiBaseUrl(): string {
+  return import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? ''
+}
+
+export function getApiUrl(path: string): string {
+  return `${getApiBaseUrl()}${path}`
+}
 
 async function getAuthHeaders(): Promise<HeadersInit> {
   const { data } = await supabase.auth.getSession()
@@ -21,7 +26,7 @@ export class ApiError extends Error {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const authHeaders = await getAuthHeaders()
   const hasBody = options.body !== undefined
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(getApiUrl(path), {
     ...options,
     headers: {
       ...(hasBody && { 'Content-Type': 'application/json' }),
@@ -47,7 +52,7 @@ async function requestBlob(
   options: RequestInit = {},
 ): Promise<Blob> {
   const authHeaders = await getAuthHeaders()
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(getApiUrl(path), {
     ...options,
     headers: { ...authHeaders, ...options.headers },
   })

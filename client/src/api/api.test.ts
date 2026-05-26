@@ -10,7 +10,7 @@ vi.mock('./supabase', () => ({
 }))
 
 import { supabase } from './supabase'
-import { api } from './api'
+import { api, getApiUrl } from './api'
 
 const mockGetSession = vi.mocked(supabase.auth.getSession)
 
@@ -44,6 +44,16 @@ describe('api request function', () => {
     const headers = stubFetch()
     await api.get('/api/test')
     expect(headers[0]['Authorization']).toBeUndefined()
+  })
+
+  it('uses same-origin API paths when VITE_API_URL is empty', () => {
+    vi.stubEnv('VITE_API_URL', '')
+    expect(getApiUrl('/api/test')).toBe('/api/test')
+  })
+
+  it('strips trailing slash from VITE_API_URL', () => {
+    vi.stubEnv('VITE_API_URL', 'https://api.example.com/')
+    expect(getApiUrl('/api/test')).toBe('https://api.example.com/api/test')
   })
 
   it('injects Authorization header when a session exists', async () => {

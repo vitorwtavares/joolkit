@@ -36,5 +36,5 @@ It brings the repetitive parts of applying into one place: quick personal info c
 ## Stack
 
 - **Frontend:** React, Vite, Tailwind CSS, shadcn/ui, Tiptap, TanStack Query
-- **Backend:** Node.js, Express, Supabase, Puppeteer
-- **Infra:** Vercel, Render, Supabase
+- **Backend:** Node.js, Express, Supabase, Puppeteer Core
+- **Infra:** Vercel, Supabase

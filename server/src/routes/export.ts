@@ -103,7 +103,8 @@ ${bodyHtml}
     try {
       const browser = await getBrowser()
       page = await browser.newPage()
-      await page.setContent(html, { waitUntil: 'networkidle0' })
+      await page.setContent(html, { waitUntil: 'load' })
+      await page.evaluate(() => document.fonts.ready)
       const pdf = await page.pdf({
         format: 'A4',
         printBackground: true,
@@ -116,6 +117,7 @@ ${bodyHtml}
       )
       res.send(Buffer.from(pdf))
     } catch (err) {
+      console.error('PDF generation failed', err)
       res.status(500).json({ error: 'PDF generation failed' })
     } finally {
       await page?.close()
