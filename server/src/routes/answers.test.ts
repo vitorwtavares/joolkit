@@ -158,7 +158,7 @@ describe('PUT /api/answers/reorder', () => {
     const cases = [
       { orderedIds: 'nope' },
       { orderedIds: [] },
-      { orderedIds: Array.from({ length: 9 }, (_, i) => `id${i}`) },
+      { orderedIds: Array.from({ length: 13 }, (_, i) => `id${i}`) },
       { orderedIds: ['a', ''] },
     ]
     for (const body of cases) {
