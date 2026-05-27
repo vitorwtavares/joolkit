@@ -30,11 +30,16 @@ import { VariationToggle } from './VariationToggle'
 import { EditorCanvas } from './EditorCanvas'
 import { EditorStatusBar } from './EditorStatusBar'
 
-// Page is 1123px tall with 80px top/bottom padding — content must stay within that.
-const MAX_CONTENT_HEIGHT = 1123 - 80 * 2
+const PAGE_CONTENT_HEIGHT = 1123 - 80 * 2
+const MAX_PAGES = 3
+const MAX_CONTENT_HEIGHT = PAGE_CONTENT_HEIGHT * MAX_PAGES
 
-const PageHeightLimit = Extension.create({
+const PageHeightLimit = Extension.create<{ onPasteRejected?: () => void }>({
   name: 'pageHeightLimit',
+
+  addOptions() {
+    return { onPasteRejected: undefined }
+  },
 
   addKeyboardShortcuts() {
     const blocked = () => {
@@ -49,22 +54,28 @@ const PageHeightLimit = Extension.create({
 
   addProseMirrorPlugins() {
     const editor = this.editor
+    const opts = this.options
     return [
       new Plugin({
         props: {
           handlePaste: (view) => {
             const el = view.dom as HTMLElement
             if (el.scrollHeight >= MAX_CONTENT_HEIGHT) {
-              toast.error('Page is full — remove some content before pasting')
+              toast.error(
+                'Content limit reached — remove some content before pasting',
+              )
               return true
             }
-            // Allow paste, then check after the DOM updates
+            const scrollContainer = el.closest('.editor-canvas')
+            const scrollTop = scrollContainer?.scrollTop ?? 0
             requestAnimationFrame(() => {
               if ((view.dom as HTMLElement).scrollHeight > MAX_CONTENT_HEIGHT) {
                 editor.commands.undo()
+                if (scrollContainer) scrollContainer.scrollTop = scrollTop
                 toast.error(
                   'Pasted content exceeds the page limit and was removed',
                 )
+                opts.onPasteRejected?.()
               }
             })
             return false
@@ -139,7 +150,9 @@ export function CoverLetterEditor() {
       FontFamily,
       FontSize,
       ParagraphFontFamily,
-      PageHeightLimit,
+      PageHeightLimit.configure({
+        onPasteRejected: () => setIsDirty(false),
+      }),
       TokenHighlight,
     ],
     onUpdate: () => setIsDirty(true),
@@ -246,7 +259,10 @@ export function CoverLetterEditor() {
             `${variation.charAt(0).toUpperCase() + variation.slice(1)} template uploaded`,
           )
         },
-        onError: () => toast.error('Failed to save file'),
+        onError: (err) => {
+          const msg = err instanceof Error ? err.message : 'Failed to save file'
+          toast.error(msg)
+        },
         onSettled: () => setIsUploading(false),
       },
     )
