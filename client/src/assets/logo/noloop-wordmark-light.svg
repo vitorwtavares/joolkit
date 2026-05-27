@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 102 32" width="102" height="32" fill="none">
-  <title>noloop · wordmark (light text, for dark backgrounds)</title>
-  <g>
-    <circle cx="16" cy="16" r="11" stroke="#4a8cf0" stroke-width="3"></circle>
-    <circle cx="22.5" cy="9" r="2.2" fill="#4a8cf0"></circle>
-  </g>
-  <text x="36.5" y="22" font-family="Geist, &#39;Geist Variable&#39;, Inter, system-ui, sans-serif" font-size="20" font-weight="600" fill="#ededeb" letter-spacing="-0.02em">noloop</text>
-</svg>

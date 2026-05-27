@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 44" width="52" height="44" fill="none">
+  <title>joolkit · stacked</title>
+  <defs></defs>
+  <g>
+    <path d="M20 7 V4.5 C20 2.8 21.3 1.5 23 1.5 L29 1.5 C30.7 1.5 32 2.8 32 4.5 V7" stroke="#4a8cf0" stroke-width="3" stroke-linecap="round" fill="none"></path>
+    <rect x="14" y="7" width="24" height="13.5" rx="2.5" stroke="#4a8cf0" stroke-width="3" fill="none"></rect>
+  </g>
+  <text x="26" y="40" text-anchor="middle" font-family="Geist, &#39;Geist Variable&#39;, Inter, system-ui, sans-serif" font-size="18" font-weight="600" fill="#161616" letter-spacing="-0.02em">joolkit</text>
+</svg>
