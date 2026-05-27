@@ -1,4 +1,4 @@
-# noloop
+# joolkit
 
 <p align="center">
   A desktop-first workspace for job applications that cuts repetition without writing for you.
@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/tiptap-editor-111827?style=flat-square" alt="Tiptap" />
 </p>
 
-`noloop` is built for people who still want to write their own applications, but are tired of retyping the same details, juggling files, and keeping status updates in scattered tabs.
+`joolkit` is built for people who still want to write their own applications, but are tired of retyping the same details, juggling files, and keeping status updates in scattered tabs.
 
 It brings the repetitive parts of applying into one place: quick personal info copy, cover letter variations with token replacement, reusable answers, and a lightweight application tracker.
 

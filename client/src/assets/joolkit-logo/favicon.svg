@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
-  <title>joolkit · mark</title>
+  <title>joolkit · favicon</title>
+  <rect width="32" height="32" rx="6" fill="#161616"></rect>
   <path d="M10 12.5 V10 C10 8.3 11.3 7 13 7 L19 7 C20.7 7 22 8.3 22 10 V12.5" stroke="#4a8cf0" stroke-width="3" stroke-linecap="round" fill="none"></path>
   <rect x="4" y="12.5" width="24" height="13.5" rx="2.5" stroke="#4a8cf0" stroke-width="3" fill="none"></rect>
 </svg>
