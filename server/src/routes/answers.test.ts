@@ -143,7 +143,7 @@ describe('POST /api/answers', () => {
   })
 
   it('rejects with 400 when MAX_ANSWERS is reached', async () => {
-    const count = selectEqCountHandler({ count: 8, error: null })
+    const count = selectEqCountHandler({ count: 12, error: null })
     mockFromSequence([count])
 
     const res = await request(buildApp())
@@ -151,7 +151,7 @@ describe('POST /api/answers', () => {
       .send({ short_answer: 'S' })
 
     expect(res.status).toBe(400)
-    expect(res.body).toEqual({ error: 'Maximum of 8 answers reached' })
+    expect(res.body).toEqual({ error: 'Maximum of 12 answers reached' })
   })
 })
 
