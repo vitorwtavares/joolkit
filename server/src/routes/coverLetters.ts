@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import { getSupabase, AuthRequest } from '../middleware/auth'
-import { pdfToTiptap } from '../utils/pdfToTiptap'
+import { pdfToTiptap, PageLimitError } from '../utils/pdfToTiptap'
+
+const MAX_PAGES = 3
 
 const router = Router()
 
@@ -93,8 +95,14 @@ router.put('/:variation/file', async (req: AuthRequest, res) => {
     } else {
       try {
         const buffer = Buffer.from(await blob.arrayBuffer())
-        content = await pdfToTiptap(buffer)
+        content = await pdfToTiptap(buffer, { maxPages: MAX_PAGES })
       } catch (err) {
+        if (err instanceof PageLimitError) {
+          res
+            .status(400)
+            .json({ error: `PDF exceeds the ${MAX_PAGES}-page limit` })
+          return
+        }
         console.error('Cover letter PDF parse failed', err)
       }
     }
