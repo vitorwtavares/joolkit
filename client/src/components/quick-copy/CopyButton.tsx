@@ -182,7 +182,7 @@ export function CopyButton({
             <span className="flex gap-1 text-[14px] text-foreground">
               <span
                 onClick={(e) => copyPart(value.slice(0, value.indexOf(' ')), e)}
-                className="-mx-0.5 rounded px-0.5 transition-colors hover:bg-secondary"
+                className="-mx-0.5 cursor-pointer rounded px-0.5 py-0.5 transition-colors hover:bg-brand-soft hover:text-brand"
               >
                 {value.slice(0, value.indexOf(' '))}
               </span>
@@ -190,7 +190,7 @@ export function CopyButton({
                 onClick={(e) =>
                   copyPart(value.slice(value.indexOf(' ') + 1), e)
                 }
-                className="-mx-0.5 rounded px-0.5 transition-colors hover:bg-secondary"
+                className="-mx-0.5 cursor-pointer rounded px-0.5 py-0.5 transition-colors hover:bg-brand-soft hover:text-brand"
               >
                 {value.slice(value.indexOf(' ') + 1)}
               </span>
