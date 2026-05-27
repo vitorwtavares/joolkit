@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getSupabase, AuthRequest } from '../middleware/auth'
+import { getSupabase } from '../middleware/auth'
 import { pdfToTiptap, PageLimitError } from '../utils/pdfToTiptap'
 
 const MAX_PAGES = 3
@@ -7,7 +7,7 @@ const MAX_PAGES = 3
 const router = Router()
 
 // GET /api/cover-letters
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', async (req, res) => {
   const { data, error } = await getSupabase()
     .from('cover_letter_templates')
     .select('*')
@@ -22,7 +22,7 @@ router.get('/', async (req: AuthRequest, res) => {
 })
 
 // GET /api/cover-letters/tokens
-router.get('/tokens', async (req: AuthRequest, res) => {
+router.get('/tokens', async (req, res) => {
   const { data, error } = await getSupabase()
     .from('cover_letter_tokens')
     .select('*')
@@ -38,7 +38,7 @@ router.get('/tokens', async (req: AuthRequest, res) => {
 })
 
 // PUT /api/cover-letters/tokens
-router.put('/tokens', async (req: AuthRequest, res) => {
+router.put('/tokens', async (req, res) => {
   const role = typeof req.body.role === 'string' ? req.body.role : null
   const company = typeof req.body.company === 'string' ? req.body.company : null
 
@@ -65,7 +65,7 @@ router.put('/tokens', async (req: AuthRequest, res) => {
 })
 
 // PUT /api/cover-letters/:variation/file
-router.put('/:variation/file', async (req: AuthRequest, res) => {
+router.put('/:variation/file', async (req, res) => {
   const { variation } = req.params
   if (variation !== 'formal' && variation !== 'light') {
     res.status(400).json({ error: 'variation must be formal or light' })
@@ -135,7 +135,7 @@ router.put('/:variation/file', async (req: AuthRequest, res) => {
 })
 
 // PUT /api/cover-letters/:variation
-router.put('/:variation', async (req: AuthRequest, res) => {
+router.put('/:variation', async (req, res) => {
   const { variation } = req.params
   if (variation !== 'formal' && variation !== 'light') {
     res.status(400).json({ error: 'variation must be formal or light' })
@@ -171,7 +171,7 @@ router.put('/:variation', async (req: AuthRequest, res) => {
 })
 
 // POST /api/cover-letters/:variation/restore
-router.post('/:variation/restore', async (req: AuthRequest, res) => {
+router.post('/:variation/restore', async (req, res) => {
   const { variation } = req.params
   if (variation !== 'formal' && variation !== 'light') {
     res.status(400).json({ error: 'variation must be formal or light' })
@@ -233,7 +233,7 @@ router.post('/:variation/restore', async (req: AuthRequest, res) => {
 })
 
 // DELETE /api/cover-letters/:variation
-router.delete('/:variation', async (req: AuthRequest, res) => {
+router.delete('/:variation', async (req, res) => {
   const { variation } = req.params
   if (variation !== 'formal' && variation !== 'light') {
     res.status(400).json({ error: 'variation must be formal or light' })

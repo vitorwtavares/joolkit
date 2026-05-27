@@ -1,9 +1,9 @@
 import { Router } from 'express'
-import { getSupabase, AuthRequest } from '../middleware/auth'
+import { getSupabase } from '../middleware/auth'
 
 const router = Router()
 
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', async (req, res) => {
   const { data, error } = await getSupabase()
     .from('tracker_view_settings')
     .select('*')
@@ -23,7 +23,7 @@ const VALID_VIEWS = [
   'favorites',
 ]
 
-router.put('/:view', async (req: AuthRequest, res) => {
+router.put('/:view', async (req, res) => {
   const { view } = req.params
   if (!VALID_VIEWS.includes(view as string))
     return res.status(400).json({ error: `Invalid view: ${view}` })

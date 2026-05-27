@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getSupabase, AuthRequest } from '../middleware/auth'
+import { getSupabase } from '../middleware/auth'
 
 const router = Router()
 
@@ -72,7 +72,7 @@ async function setApplicationSkills(
   return { status: 500, message: error.message }
 }
 
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', async (req, res) => {
   const view = typeof req.query.view === 'string' ? req.query.view : 'all'
   if (!ALLOWED_VIEWS.has(view))
     return res.status(400).json({ error: `Invalid view: ${view}` })
@@ -98,7 +98,7 @@ router.get('/', async (req: AuthRequest, res) => {
   return res.json(data)
 })
 
-router.get('/:id', async (req: AuthRequest, res) => {
+router.get('/:id', async (req, res) => {
   const { data, error } = await getSupabase()
     .from('applications')
     .select(JOINED_SELECT)
@@ -111,7 +111,7 @@ router.get('/:id', async (req: AuthRequest, res) => {
   return res.json(data)
 })
 
-router.post('/', async (req: AuthRequest, res) => {
+router.post('/', async (req, res) => {
   const {
     company_name,
     job_name,
@@ -181,7 +181,7 @@ router.post('/', async (req: AuthRequest, res) => {
   return res.status(201).json(data)
 })
 
-router.put('/:id', async (req: AuthRequest, res) => {
+router.put('/:id', async (req, res) => {
   const {
     known_updated_at,
     company_name,
@@ -266,7 +266,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
   return res.json(data)
 })
 
-router.delete('/:id', async (req: AuthRequest, res) => {
+router.delete('/:id', async (req, res) => {
   const { data: deleted, error } = await getSupabase()
     .from('applications')
     .delete()

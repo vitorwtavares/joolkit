@@ -1,9 +1,9 @@
 import { Router } from 'express'
-import { getSupabase, AuthRequest } from '../middleware/auth'
+import { getSupabase } from '../middleware/auth'
 
 const router = Router()
 
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', async (req, res) => {
   const { data, error } = await getSupabase()
     .from('profiles')
     .select('*')
@@ -18,7 +18,7 @@ router.get('/', async (req: AuthRequest, res) => {
   res.json(data)
 })
 
-router.put('/', async (req: AuthRequest, res) => {
+router.put('/', async (req, res) => {
   const allowedFields = [
     'name',
     'email',
