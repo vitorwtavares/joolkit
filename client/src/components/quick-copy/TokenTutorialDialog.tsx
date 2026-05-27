@@ -23,7 +23,7 @@ export function TokenTutorialDialog({
           <DialogTitle className="text-base">How to use tokens</DialogTitle>
           <DialogDescription className="leading-relaxed">
             Tokens are placeholders you add directly to your cover letter PDF.
-            When you download, noloop replaces them with the values you set.
+            When you download, joolkit replaces them with the values you set.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm leading-relaxed text-foreground/80">

@@ -11,7 +11,7 @@ import './index.css'
 import App from './App'
 
 const CACHE_MAX_AGE = 24 * 60 * 60 * 1000
-const CACHE_BUSTER = 'noloop-v1'
+const CACHE_BUSTER = 'joolkit-v1'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,7 +21,7 @@ const queryClient = new QueryClient({
 
 const persister = createAsyncStoragePersister({
   storage: window.localStorage,
-  key: 'noloop:query-cache',
+  key: 'joolkit:query-cache',
 })
 
 // Pre-hydrate before React mounts so cached data is available on first render.
