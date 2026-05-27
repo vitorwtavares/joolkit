@@ -25,7 +25,7 @@ export function EditorCanvas({ isLoading, editor }: EditorCanvasProps) {
         className="mx-auto rounded-md border border-border-subtle"
         style={{
           width: '794px',
-          height: '1123px',
+          minHeight: '1123px',
           background: 'var(--card)',
           boxShadow: 'var(--canvas-shadow)',
         }}

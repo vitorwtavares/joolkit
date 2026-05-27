@@ -11,7 +11,6 @@ vi.mock('@supabase/supabase-js', () => ({
 }))
 
 import { authMiddleware, initSupabase } from './auth'
-import type { AuthRequest } from './auth'
 
 initSupabase()
 
@@ -19,7 +18,7 @@ function buildApp() {
   const app = express()
   app.use(express.json())
   app.use(authMiddleware)
-  app.get('/test', (req: AuthRequest, res) => {
+  app.get('/test', (req, res) => {
     res.json({ userId: req.userId })
   })
   return app

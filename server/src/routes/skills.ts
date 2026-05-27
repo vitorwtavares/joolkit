@@ -1,9 +1,9 @@
 import { Router } from 'express'
-import { getSupabase, AuthRequest } from '../middleware/auth'
+import { getSupabase } from '../middleware/auth'
 
 const router = Router()
 
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', async (req, res) => {
   const { data, error } = await getSupabase()
     .from('skills')
     .select('*')
@@ -14,7 +14,7 @@ router.get('/', async (req: AuthRequest, res) => {
   return res.json(data)
 })
 
-router.post('/', async (req: AuthRequest, res) => {
+router.post('/', async (req, res) => {
   const { name } = req.body
   if (!name?.trim()) return res.status(400).json({ error: 'name is required' })
 
@@ -28,7 +28,7 @@ router.post('/', async (req: AuthRequest, res) => {
   return res.status(201).json(data)
 })
 
-router.put('/:id', async (req: AuthRequest, res) => {
+router.put('/:id', async (req, res) => {
   const { name } = req.body
   if (!name?.trim()) return res.status(400).json({ error: 'name is required' })
 
@@ -45,7 +45,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
   return res.json(data)
 })
 
-router.delete('/:id', async (req: AuthRequest, res) => {
+router.delete('/:id', async (req, res) => {
   const { data: deleted, error } = await getSupabase()
     .from('skills')
     .delete()

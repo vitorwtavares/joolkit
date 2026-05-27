@@ -49,9 +49,23 @@ interface FontMeta {
   fontFamily: string | null
 }
 
+export class PageLimitError extends Error {
+  pages: number
+  maxPages: number
+  constructor(pages: number, maxPages: number) {
+    super(`PDF has ${pages} pages but the limit is ${maxPages}`)
+    this.name = 'PageLimitError'
+    this.pages = pages
+    this.maxPages = maxPages
+  }
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export async function pdfToTiptap(buffer: Buffer): Promise<TiptapDoc> {
+export async function pdfToTiptap(
+  buffer: Buffer,
+  opts?: { maxPages?: number },
+): Promise<TiptapDoc> {
   const pdfjsLib = await getPdfjs()
   let pdf: any
   try {
@@ -66,6 +80,11 @@ export async function pdfToTiptap(buffer: Buffer): Promise<TiptapDoc> {
     throw new Error(
       `Failed to load PDF: ${err instanceof Error ? err.message : String(err)}`,
     )
+  }
+
+  if (opts?.maxPages && pdf.numPages > opts.maxPages) {
+    await pdf.destroy()
+    throw new PageLimitError(pdf.numPages, opts.maxPages)
   }
 
   try {

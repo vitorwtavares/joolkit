@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -111,14 +111,17 @@ export function EditAnswerModal({
     }
   }
 
+  const [deleting, setDeleting] = useState(false)
+
   async function handleDelete() {
     if (!answer) return
-    setSaving(true)
+    setDeleting(true)
     try {
       await deleteAnswer.mutateAsync(answer.id)
+      setConfirmDelete(false)
       onClose()
     } finally {
-      setSaving(false)
+      setDeleting(false)
     }
   }
 
@@ -252,7 +255,12 @@ export function EditAnswerModal({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+      <AlertDialog
+        open={confirmDelete}
+        onOpenChange={(v) => {
+          if (!deleting) setConfirmDelete(v)
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this answer?</AlertDialogTitle>
@@ -262,8 +270,16 @@ export function EditAnswerModal({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={handleDelete}>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleting}
+              onClick={(e) => {
+                e.preventDefault()
+                handleDelete()
+              }}
+            >
+              {deleting && <Loader2 className="animate-spin" />}
               Delete answer
             </AlertDialogAction>
           </AlertDialogFooter>

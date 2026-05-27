@@ -1,15 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import request from 'supertest'
 import express from 'express'
-import type { AuthRequest } from '../middleware/auth'
-
 vi.mock('../middleware/auth', async (importOriginal) => {
   const original = await importOriginal<typeof import('../middleware/auth')>()
   return {
     ...original,
     getSupabase: vi.fn(),
     authMiddleware: (
-      req: AuthRequest,
+      req: express.Request,
       _res: express.Response,
       next: express.NextFunction,
     ) => {
@@ -143,7 +141,7 @@ describe('POST /api/answers', () => {
   })
 
   it('rejects with 400 when MAX_ANSWERS is reached', async () => {
-    const count = selectEqCountHandler({ count: 8, error: null })
+    const count = selectEqCountHandler({ count: 12, error: null })
     mockFromSequence([count])
 
     const res = await request(buildApp())
@@ -151,7 +149,7 @@ describe('POST /api/answers', () => {
       .send({ short_answer: 'S' })
 
     expect(res.status).toBe(400)
-    expect(res.body).toEqual({ error: 'Maximum of 8 answers reached' })
+    expect(res.body).toEqual({ error: 'Maximum of 12 answers reached' })
   })
 })
 
@@ -160,7 +158,7 @@ describe('PUT /api/answers/reorder', () => {
     const cases = [
       { orderedIds: 'nope' },
       { orderedIds: [] },
-      { orderedIds: Array.from({ length: 9 }, (_, i) => `id${i}`) },
+      { orderedIds: Array.from({ length: 13 }, (_, i) => `id${i}`) },
       { orderedIds: ['a', ''] },
     ]
     for (const body of cases) {
