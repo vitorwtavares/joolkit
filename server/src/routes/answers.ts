@@ -1,11 +1,11 @@
 import { Router } from 'express'
-import { getSupabase, AuthRequest } from '../middleware/auth'
+import { getSupabase } from '../middleware/auth'
 
 const router = Router()
 
-const MAX_ANSWERS = 8
+const MAX_ANSWERS = 12
 
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', async (req, res) => {
   const { data, error } = await getSupabase()
     .from('answers')
     .select('*')
@@ -16,7 +16,7 @@ router.get('/', async (req: AuthRequest, res) => {
   return res.json(data)
 })
 
-router.post('/', async (req: AuthRequest, res) => {
+router.post('/', async (req, res) => {
   const { count, error: countError } = await getSupabase()
     .from('answers')
     .select('*', { count: 'exact', head: true })
@@ -47,7 +47,7 @@ router.post('/', async (req: AuthRequest, res) => {
   return res.status(201).json(data)
 })
 
-router.put('/reorder', async (req: AuthRequest, res) => {
+router.put('/reorder', async (req, res) => {
   const { orderedIds } = req.body
 
   if (
@@ -97,7 +97,7 @@ router.put('/reorder', async (req: AuthRequest, res) => {
   return res.json(data)
 })
 
-router.put('/:id', async (req: AuthRequest, res) => {
+router.put('/:id', async (req, res) => {
   const { question, short_answer, long_answer, preferred_variant } = req.body
   const update: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
@@ -121,7 +121,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
   return res.json(data)
 })
 
-router.delete('/:id', async (req: AuthRequest, res) => {
+router.delete('/:id', async (req, res) => {
   const { data: deleted, error: deleteError } = await getSupabase()
     .from('answers')
     .delete()

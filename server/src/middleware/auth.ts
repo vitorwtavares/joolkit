@@ -1,5 +1,13 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { Request, Response, NextFunction } from 'express'
+import type { Request, Response, NextFunction } from 'express'
+
+declare global {
+  namespace Express {
+    interface Request {
+      userId?: string
+    }
+  }
+}
 
 let supabase: SupabaseClient | undefined
 
@@ -22,12 +30,8 @@ export function getSupabase(): SupabaseClient {
   return supabase
 }
 
-export interface AuthRequest extends Request {
-  userId?: string
-}
-
 export async function authMiddleware(
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) {

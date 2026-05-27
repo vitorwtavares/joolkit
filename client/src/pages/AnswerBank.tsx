@@ -10,7 +10,7 @@ import { EditAnswerModal } from '@/components/answer-bank/EditAnswerModal'
 import type { Answer } from '@/api/hooks/useAnswers'
 
 const SKELETON_COUNT = 6
-const MAX_ANSWERS = 8
+const MAX_ANSWERS = 12
 
 export default function AnswerBank() {
   const { data: answers = [], isLoading } = useAnswers()

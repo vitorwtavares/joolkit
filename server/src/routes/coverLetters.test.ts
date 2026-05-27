@@ -1,15 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import request from 'supertest'
 import express from 'express'
-import type { AuthRequest } from '../middleware/auth'
-
 vi.mock('../middleware/auth', async (importOriginal) => {
   const original = await importOriginal<typeof import('../middleware/auth')>()
   return {
     ...original,
     getSupabase: vi.fn(),
     authMiddleware: (
-      req: AuthRequest,
+      req: express.Request,
       _res: express.Response,
       next: express.NextFunction,
     ) => {

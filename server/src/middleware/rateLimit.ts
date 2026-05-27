@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction, RequestHandler } from 'express'
+import type { Request, RequestHandler } from 'express'
 import { getSupabase } from './auth'
 
 interface RateLimitOptions {
@@ -26,7 +26,7 @@ export function createRateLimitMiddleware({
   message,
   keyGenerator,
 }: RateLimitOptions): RequestHandler {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return (async (req, res, next) => {
     const key = `${keyPrefix}:${keyGenerator(req)}`
 
     const { data, error } = await getSupabase()
@@ -55,5 +55,5 @@ export function createRateLimitMiddleware({
     }
 
     next()
-  }
+  }) as RequestHandler
 }
