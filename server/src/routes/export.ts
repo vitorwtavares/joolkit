@@ -78,13 +78,13 @@ router.post(
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400;1,700&family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Raleway:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Roboto:ital,wght@0,400;0,500;0,700;1,400;1,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet">
   <style>
+    @page { margin: 2.5cm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: Helvetica, Arial, sans-serif;
       font-size: 12pt;
       line-height: 1.15;
       color: #000;
-      padding: 2.5cm 2.5cm;
     }
     p { margin: 0; }
     h1, h2, h3, h4, h5, h6 { margin: 0; }
