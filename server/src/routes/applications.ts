@@ -6,28 +6,33 @@ const router = Router()
 const JOINED_SELECT =
   '*, location:locations(id, name), skills:application_skills(skill:skills(id, name))'
 
-const VIEW_FILTERS: Record<
-  string,
-  { values?: string[]; isFavorite?: boolean }
-> = {
-  prospects: { values: ['prospect'] },
-  ready: { values: ['ready_to_apply'] },
-  applied: { values: ['applied'] },
-  'in-progress': {
-    values: [
-      'pending_schedule',
-      'interview_scheduled',
-      'awaiting_response',
-      'technical_test',
-      'offer_received',
-    ],
-  },
-  'no-openings': { values: ['no_openings'] },
-  rejected: { values: ['rejected', 'rejected_ghosted'] },
-  favorites: { isFavorite: true },
+type FilterConfig = {
+  field: 'status' | 'is_favorite'
+  operator: 'is' | 'is_not' | 'includes'
+  values: (string | boolean)[]
 }
 
-const ALLOWED_VIEWS = new Set(['all', ...Object.keys(VIEW_FILTERS)])
+// Parse the `?filter=` query param (a JSON-encoded view filter_config) into a
+// validated FilterConfig, or null when absent. Returns `'invalid'` when present
+// but malformed so the caller can answer 400.
+function parseFilter(raw: unknown): FilterConfig | null | 'invalid' {
+  if (typeof raw !== 'string' || raw.length === 0) return null
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return 'invalid'
+  }
+
+  const f = parsed as Partial<FilterConfig>
+  const fieldOk = f.field === 'status' || f.field === 'is_favorite'
+  const opOk =
+    f.operator === 'is' || f.operator === 'is_not' || f.operator === 'includes'
+  if (!fieldOk || !opOk || !Array.isArray(f.values)) return 'invalid'
+
+  return f as FilterConfig
+}
 
 async function fetchApplicationWithJoins(id: string, userId: string) {
   return await getSupabase()
@@ -73,11 +78,9 @@ async function setApplicationSkills(
 }
 
 router.get('/', async (req, res) => {
-  const view = typeof req.query.view === 'string' ? req.query.view : 'all'
-  if (!ALLOWED_VIEWS.has(view))
-    return res.status(400).json({ error: `Invalid view: ${view}` })
-
-  const filter = VIEW_FILTERS[view]
+  const filter = parseFilter(req.query.filter)
+  if (filter === 'invalid')
+    return res.status(400).json({ error: 'Invalid filter' })
 
   let query = getSupabase()
     .from('applications')
@@ -86,10 +89,18 @@ router.get('/', async (req, res) => {
     .order('created_at', { ascending: false })
 
   if (filter) {
-    if (filter.isFavorite) {
-      query = query.eq('is_favorite', true)
-    } else if (filter.values) {
-      query = query.in('status', filter.values)
+    if (filter.field === 'is_favorite') {
+      const truthy = filter.values[0] === true || filter.values[0] === 'true'
+      query = query.eq('is_favorite', truthy)
+    } else if (filter.operator === 'is_not') {
+      query = query.not(
+        'status',
+        'in',
+        `(${(filter.values as string[]).join(',')})`,
+      )
+    } else {
+      // 'is' and 'includes' both narrow to membership in the value set.
+      query = query.in('status', filter.values as string[])
     }
   }
 
