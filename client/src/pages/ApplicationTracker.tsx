@@ -12,31 +12,18 @@ import {
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
-  appMatchesView,
+  appMatchesFilter,
   useApplications,
   useCreateApplication,
 } from '@/api/hooks/useApplications'
-import type {
-  ApplicationView,
-  CreateApplicationPayload,
-} from '@/api/hooks/useApplications'
+import type { CreateApplicationPayload } from '@/api/hooks/useApplications'
+import { useTrackerViews, type TrackerView } from '@/api/hooks/useTrackerViews'
 import { ApplicationTable } from '@/components/tracker/ApplicationTable'
 import { ApplicationDrawer } from '@/components/tracker/ApplicationDrawer'
 import { TrackerDraftProvider } from '@/components/tracker/draft'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
-const VIEWS: { label: string; value: ApplicationView }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Prospects', value: 'prospects' },
-  { label: 'Ready to apply', value: 'ready' },
-  { label: 'Applied', value: 'applied' },
-  { label: 'In progress', value: 'in-progress' },
-  { label: 'No openings', value: 'no-openings' },
-  { label: 'Rejected', value: 'rejected' },
-  { label: 'Favorites', value: 'favorites' },
-]
 
 // Fade for the tabs scroll area. The right edge fades over a 48px region
 // (visible at 80px from the edge → transparent at 32px from the edge), with
@@ -57,23 +44,22 @@ function getTabsMaskImage(
   return `linear-gradient(to right, ${stops.join(', ')})`
 }
 
-function newEntryDefaults(view: ApplicationView): CreateApplicationPayload {
-  switch (view) {
-    case 'ready':
-      return { status: 'ready_to_apply' }
-    case 'applied':
-      return { status: 'applied' }
-    case 'in-progress':
-      return { status: 'pending_schedule' }
-    case 'no-openings':
-      return { status: 'no_openings' }
-    case 'rejected':
-      return { status: 'rejected' }
-    case 'favorites':
-      return { status: 'prospect', is_favorite: true }
-    default:
-      return { status: 'prospect' }
+// Derives the starting field values for a new entry so it lands in the
+// currently active view. For a status filter we seed the first matching status;
+// for the Favorites view we flag the row favorite; "All" (no filter) defaults
+// to prospect.
+function newEntryDefaults(
+  view: TrackerView | undefined,
+): CreateApplicationPayload {
+  const filter = view?.filter_config
+  if (!filter) return { status: 'prospect' }
+  if (filter.field === 'is_favorite') {
+    return { status: 'prospect', is_favorite: true }
   }
+  if (filter.operator !== 'is_not' && filter.values.length > 0) {
+    return { status: filter.values[0] as CreateApplicationPayload['status'] }
+  }
+  return { status: 'prospect' }
 }
 
 export default function ApplicationTracker() {
@@ -86,10 +72,16 @@ export default function ApplicationTracker() {
 
 function ApplicationTrackerInner() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const raw = searchParams.get('view') ?? 'all'
-  const view = (
-    VIEWS.some((v) => v.value === raw) ? raw : 'all'
-  ) as ApplicationView
+  const { data: views = [], isLoading: viewsLoading } = useTrackerViews()
+
+  // The permanent "All" view (filter_config null) is the fallback tab and the
+  // source of the full dataset used for tab counts.
+  const allView = useMemo(
+    () => views.find((v) => v.is_permanent) ?? views[0],
+    [views],
+  )
+  const requestedViewId = searchParams.get('view')
+  const activeView = views.find((v) => v.id === requestedViewId) ?? allView
 
   const [search, setSearch] = useState('')
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null)
@@ -100,12 +92,14 @@ function ApplicationTrackerInner() {
   const [tabsOverflowLeft, setTabsOverflowLeft] = useState(false)
   const [tabsOverflowRight, setTabsOverflowRight] = useState(false)
 
-  // Server applies the view filter (and, in P7+, stored filter configs from
-  // `tracker_views`) — keep this query as the source of truth for what gets
-  // rendered. Don't refactor this into a client-side filter on the `'all'`
-  // dataset: that would diverge from server-applied filters, defeat per-view
-  // filter persistence, and break the day we paginate.
-  const { data: applications = [], isLoading } = useApplications(view)
+  // The server applies the active view's stored filter_config — keep this query
+  // as the source of truth for what gets rendered. Don't refactor this into a
+  // client-side filter on the `all` dataset: that would diverge from
+  // server-applied filters, defeat per-view filter persistence, and break the
+  // day we paginate.
+  const { data: applications = [], isLoading: appsLoading } =
+    useApplications(activeView)
+  const isLoading = viewsLoading || appsLoading
 
   // Search is a transient, client-side narrowing of the current view by
   // company name only — not persisted (no view config, no URL param). It runs
@@ -119,21 +113,21 @@ function ApplicationTrackerInner() {
     )
   }, [applications, trimmedSearch])
 
-  // Tab counts are derived separately. For now we piggy-back on a full `'all'`
-  // fetch (cached, shared with the display query when view === 'all').
+  // Tab counts are derived separately. For now we piggy-back on a full `all`
+  // fetch (cached, shared with the display query when the All view is active).
   // TODO: replace with a dedicated `GET /api/applications/counts` endpoint
   // when we paginate — otherwise this fetch grows unbounded with the dataset.
-  const { data: allApplications = [] } = useApplications('all')
+  const { data: allApplications = [] } = useApplications(allView)
 
   const viewCounts = useMemo(() => {
-    const out = {} as Record<ApplicationView, number>
-    for (const v of VIEWS) {
-      out[v.value] = allApplications.filter((app) =>
-        appMatchesView(app, v.value),
+    const out: Record<string, number> = {}
+    for (const v of views) {
+      out[v.id] = allApplications.filter((app) =>
+        appMatchesFilter(app, v.filter_config),
       ).length
     }
     return out
-  }, [allApplications])
+  }, [views, allApplications])
 
   const createApplication = useCreateApplication()
 
@@ -225,12 +219,12 @@ function ApplicationTrackerInner() {
     closeTimerRef.current = setTimeout(() => setMountedAppId(null), 150)
   }, [])
 
-  function setView(v: ApplicationView) {
-    setSearchParams({ view: v }, { replace: true })
+  function setView(id: string) {
+    setSearchParams({ view: id }, { replace: true })
   }
 
   function handleNewEntry() {
-    createApplication.mutate(newEntryDefaults(view), {
+    createApplication.mutate(newEntryDefaults(activeView), {
       onSuccess: (app) => openDrawer(app.id),
       onError: () => toast.error('Failed to create entry'),
     })
@@ -263,15 +257,15 @@ function ApplicationTrackerInner() {
                 ),
               }}
             >
-              {VIEWS.map(({ label, value }) => {
-                const isActive = view === value
-                const count = viewCounts[value]
+              {views.map((v) => {
+                const isActive = activeView?.id === v.id
+                const count = viewCounts[v.id] ?? 0
                 return (
                   <button
-                    key={value}
+                    key={v.id}
                     role="tab"
                     aria-selected={isActive}
-                    onClick={() => setView(value)}
+                    onClick={() => setView(v.id)}
                     className={cn(
                       'flex cursor-pointer items-center gap-1.5 border-b-2 px-3.5 py-2 text-[14px] font-medium whitespace-nowrap transition-colors',
                       'mb-[-0.5px]',
@@ -280,7 +274,7 @@ function ApplicationTrackerInner() {
                         : 'border-transparent text-muted-foreground hover:text-foreground',
                     )}
                   >
-                    {label}
+                    {v.name}
                     <span
                       className={cn(
                         'rounded-full px-1.5 py-px font-mono text-[11px]',

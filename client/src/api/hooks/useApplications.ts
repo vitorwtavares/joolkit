@@ -8,6 +8,11 @@ import {
 import { api } from '../api'
 import type { Skill } from './useSkills'
 import type { Location } from './useLocations'
+import {
+  TRACKER_VIEWS_KEY,
+  type FilterConfig,
+  type TrackerView,
+} from './useTrackerViews'
 
 export type SkillRef = Pick<Skill, 'id' | 'name'>
 export type LocationRef = Pick<Location, 'id' | 'name'>
@@ -50,16 +55,6 @@ export type ApplicationStatus =
   | 'rejected'
   | 'rejected_ghosted'
   | 'signed'
-
-export type ApplicationView =
-  | 'all'
-  | 'prospects'
-  | 'ready'
-  | 'applied'
-  | 'in-progress'
-  | 'no-openings'
-  | 'rejected'
-  | 'favorites'
 
 export type CreateApplicationPayload = {
   company_name?: string
@@ -170,16 +165,17 @@ export function patchApplicationInCache(
   payload: CreateApplicationPayload,
 ) {
   const patch = buildApplicationPatch(queryClient, payload)
+  const filters = viewFiltersById(queryClient)
 
   for (const [key, data] of queryClient.getQueriesData<Application[]>({
     queryKey: ['applications'],
   })) {
     if (!Array.isArray(data)) continue
-    const view = String(key[1] ?? 'all')
+    const filter = filters.get(String(key[1])) ?? null
     const idx = data.findIndex((a) => a.id === id)
     if (idx === -1) continue
     const patched: Application = { ...data[idx], ...patch }
-    if (appMatchesView(patched, view)) {
+    if (appMatchesFilter(patched, filter)) {
       const next = [...data]
       next[idx] = patched
       queryClient.setQueryData<Application[]>(key, next)
@@ -197,11 +193,32 @@ export function patchApplicationInCache(
   )
 }
 
-export function useApplications(view: ApplicationView = 'all') {
+function applicationsUrl(filter: FilterConfig | null): string {
+  if (!filter) return '/api/applications'
+  return `/api/applications?filter=${encodeURIComponent(JSON.stringify(filter))}`
+}
+
+// Each view's rows are cached under its id. The server applies the view's
+// stored filter_config; the same config drives client-side cross-view sync
+// during optimistic updates (see viewFiltersById / appMatchesFilter).
+export function useApplications(
+  view: Pick<TrackerView, 'id' | 'filter_config'> | undefined,
+) {
   return useQuery({
-    queryKey: ['applications', view],
-    queryFn: () => api.get<Application[]>(`/api/applications?view=${view}`),
+    queryKey: ['applications', view?.id],
+    queryFn: () => api.get<Application[]>(applicationsUrl(view!.filter_config)),
+    enabled: !!view,
   })
+}
+
+// Maps each cached view id to its filter_config, read from the tracker-views
+// cache. Used by the optimistic-update helpers to decide, for every cached
+// view, whether a changed row still belongs in it.
+function viewFiltersById(
+  queryClient: QueryClient,
+): Map<string, FilterConfig | null> {
+  const views = queryClient.getQueryData<TrackerView[]>(TRACKER_VIEWS_KEY) ?? []
+  return new Map(views.map((v) => [v.id, v.filter_config]))
 }
 
 export function useApplication(id: string) {
@@ -212,33 +229,20 @@ export function useApplication(id: string) {
   })
 }
 
-export function appMatchesView(app: Application, view: string): boolean {
-  switch (view) {
-    case 'all':
-      return true
-    case 'prospects':
-      return app.status === 'prospect'
-    case 'ready':
-      return app.status === 'ready_to_apply'
-    case 'applied':
-      return app.status === 'applied'
-    case 'in-progress':
-      return [
-        'pending_schedule',
-        'interview_scheduled',
-        'awaiting_response',
-        'technical_test',
-        'offer_received',
-      ].includes(app.status)
-    case 'no-openings':
-      return app.status === 'no_openings'
-    case 'rejected':
-      return app.status === 'rejected' || app.status === 'rejected_ghosted'
-    case 'favorites':
-      return app.is_favorite
-    default:
-      return false
+// Evaluates a view's stored filter_config against an application. A null
+// filter (the permanent "All" view) matches everything.
+export function appMatchesFilter(
+  app: Application,
+  filter: FilterConfig | null,
+): boolean {
+  if (!filter) return true
+  if (filter.field === 'is_favorite') {
+    return app.is_favorite === (filter.values[0] === true)
   }
+  const values = filter.values as string[]
+  if (filter.operator === 'is_not') return !values.includes(app.status)
+  // 'is' and 'includes' both test membership in the value set.
+  return values.includes(app.status)
 }
 
 function insertByCreatedAt(
@@ -259,13 +263,14 @@ function syncRowAcrossViews(
   prevId?: string,
 ) {
   const lookupId = prevId ?? app.id
+  const filters = viewFiltersById(queryClient)
   for (const [key, data] of queryClient.getQueriesData<Application[]>({
     queryKey: ['applications'],
   })) {
     if (!Array.isArray(data)) continue
-    const view = String(key[1] ?? 'all')
+    const filter = filters.get(String(key[1])) ?? null
     const idx = data.findIndex((a) => a.id === lookupId)
-    const matches = appMatchesView(app, view)
+    const matches = appMatchesFilter(app, filter)
     if (idx === -1) {
       if (matches) {
         queryClient.setQueryData<Application[]>(
@@ -329,12 +334,13 @@ export function useCreateApplication() {
         })),
       }
 
+      const filters = viewFiltersById(queryClient)
       for (const [key, data] of queryClient.getQueriesData<Application[]>({
         queryKey: ['applications'],
       })) {
         if (!Array.isArray(data)) continue
-        const view = String(key[1] ?? 'all')
-        if (appMatchesView(optimisticApp, view)) {
+        const filter = filters.get(String(key[1])) ?? null
+        if (appMatchesFilter(optimisticApp, filter)) {
           queryClient.setQueryData<Application[]>(key, [optimisticApp, ...data])
         }
       }
