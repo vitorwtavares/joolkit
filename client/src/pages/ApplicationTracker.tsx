@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { Filter, Columns3, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  Filter,
+  Columns3,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
@@ -17,6 +25,7 @@ import { ApplicationDrawer } from '@/components/tracker/ApplicationDrawer'
 import { TrackerDraftProvider } from '@/components/tracker/draft'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const VIEWS: { label: string; value: ApplicationView }[] = [
   { label: 'All', value: 'all' },
@@ -82,6 +91,7 @@ function ApplicationTrackerInner() {
     VIEWS.some((v) => v.value === raw) ? raw : 'all'
   ) as ApplicationView
 
+  const [search, setSearch] = useState('')
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [mountedAppId, setMountedAppId] = useState<string | null>(null)
@@ -96,6 +106,18 @@ function ApplicationTrackerInner() {
   // dataset: that would diverge from server-applied filters, defeat per-view
   // filter persistence, and break the day we paginate.
   const { data: applications = [], isLoading } = useApplications(view)
+
+  // Search is a transient, client-side narrowing of the current view by
+  // company name only — not persisted (no view config, no URL param). It runs
+  // on top of the server-applied view filter rather than replacing it.
+  const trimmedSearch = search.trim()
+  const visibleApplications = useMemo(() => {
+    const q = trimmedSearch.toLowerCase()
+    if (!q) return applications
+    return applications.filter((app) =>
+      app.company_name.toLowerCase().includes(q),
+    )
+  }, [applications, trimmedSearch])
 
   // Tab counts are derived separately. For now we piggy-back on a full `'all'`
   // fetch (cached, shared with the display query when view === 'all').
@@ -309,6 +331,30 @@ function ApplicationTrackerInner() {
                 'border-l border-border-subtle max-[800px]:border-l-0',
             )}
           >
+            <div className="relative max-[800px]:flex-1">
+              <Search
+                size={14}
+                className="pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search company"
+                aria-label="Search by company name"
+                className="h-8 w-[180px] ps-8 pe-7 max-[800px]:w-full"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  aria-label="Clear search"
+                  className="absolute end-1.5 top-1/2 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -344,12 +390,15 @@ function ApplicationTrackerInner() {
         {/* Table */}
         <div className="flex-1 overflow-auto">
           <ApplicationTable
-            applications={applications}
+            applications={visibleApplications}
             isLoading={isLoading}
             selectedAppId={selectedAppId}
             onRowClick={openDrawer}
             onCloseDrawer={closeDrawer}
             onDeleteSelected={forceCloseDrawer}
+            emptyMessage={
+              trimmedSearch ? 'No companies match your search.' : undefined
+            }
           />
         </div>
       </div>

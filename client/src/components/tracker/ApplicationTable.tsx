@@ -11,6 +11,7 @@ interface ApplicationTableProps {
   onRowClick: (id: string) => void
   onCloseDrawer: () => void
   onDeleteSelected?: () => void
+  emptyMessage?: string
 }
 
 export function ApplicationTable({
@@ -20,6 +21,7 @@ export function ApplicationTable({
   onRowClick,
   onCloseDrawer,
   onDeleteSelected,
+  emptyMessage = 'No applications yet.',
 }: ApplicationTableProps) {
   return (
     <table className="w-full border-collapse">
@@ -34,7 +36,7 @@ export function ApplicationTable({
               colSpan={Object.keys(COL_W).length}
               className="py-16 text-center text-[16px] text-muted-foreground"
             >
-              No applications yet.
+              {emptyMessage}
             </td>
           </tr>
         )}
