@@ -62,11 +62,28 @@ export function useCreateTrackerView() {
   })
 }
 
+// Optimistic: the patched fields (name, sort_config, filter_config,
+// hidden_columns) drive the UI directly — applying them to the cache before the
+// request resolves keeps controls like sort feeling instant. Rolls back on
+// error, then reconciles with the server's row on success.
 export function useUpdateTrackerView() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, ...patch }: UpdateTrackerViewPayload) =>
       api.put<TrackerView>(`/api/tracker/views/${id}`, patch),
+    onMutate: async ({ id, ...patch }) => {
+      await queryClient.cancelQueries({ queryKey: TRACKER_VIEWS_KEY })
+      const previous =
+        queryClient.getQueryData<TrackerView[]>(TRACKER_VIEWS_KEY)
+      queryClient.setQueryData<TrackerView[]>(TRACKER_VIEWS_KEY, (old) =>
+        old?.map((v) => (v.id === id ? { ...v, ...patch } : v)),
+      )
+      return { previous }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous)
+        queryClient.setQueryData(TRACKER_VIEWS_KEY, ctx.previous)
+    },
     onSuccess: (view) => {
       queryClient.setQueryData<TrackerView[]>(
         TRACKER_VIEWS_KEY,
