@@ -23,10 +23,13 @@ import {
   useDeleteTrackerView,
   useTrackerViews,
   useUpdateTrackerView,
+  type SortConfig,
   type TrackerView,
 } from '@/api/hooks/useTrackerViews'
 import { ApplicationTable } from '@/components/tracker/ApplicationTable'
 import { ApplicationDrawer } from '@/components/tracker/ApplicationDrawer'
+import { SortControl } from '@/components/tracker/SortControl'
+import { sortApplications } from '@/components/tracker/applicationSort'
 import { ViewTab } from '@/components/tracker/ViewTab'
 import { ViewFormDialog } from '@/components/tracker/ViewFormDialog'
 import { DeleteViewDialog } from '@/components/tracker/DeleteViewDialog'
@@ -111,17 +114,18 @@ function ApplicationTrackerInner() {
     useApplications(activeView)
   const isLoading = viewsLoading || appsLoading
 
-  // Search is a transient, client-side narrowing of the current view by
-  // company name only — not persisted (no view config, no URL param). It runs
-  // on top of the server-applied view filter rather than replacing it.
+  // Display pipeline on top of the server-filtered rows: transient company-name
+  // search (not persisted), then the view's persisted sort. Sort runs
+  // client-side so it's instant and keeps optimistic rows correctly positioned.
   const trimmedSearch = search.trim()
+  const sortConfig = activeView?.sort_config ?? null
   const visibleApplications = useMemo(() => {
     const q = trimmedSearch.toLowerCase()
-    if (!q) return applications
-    return applications.filter((app) =>
-      app.company_name.toLowerCase().includes(q),
-    )
-  }, [applications, trimmedSearch])
+    const searched = q
+      ? applications.filter((app) => app.company_name.toLowerCase().includes(q))
+      : applications
+    return sortApplications(searched, sortConfig)
+  }, [applications, trimmedSearch, sortConfig])
 
   // Tab counts are derived separately. For now we piggy-back on a full `all`
   // fetch (cached, shared with the display query when the All view is active).
@@ -251,6 +255,14 @@ function ApplicationTrackerInner() {
           error instanceof ApiError ? error.message : 'Failed to create entry',
         ),
     })
+  }
+
+  function handleSortChange(next: SortConfig | null) {
+    if (!activeView) return
+    updateView.mutate(
+      { id: activeView.id, sort_config: next },
+      { onError: () => toast.error('Failed to update sort') },
+    )
   }
 
   function handleSubmitView(name: string) {
@@ -397,6 +409,7 @@ function ApplicationTrackerInner() {
                 </button>
               )}
             </div>
+            <SortControl value={sortConfig} onChange={handleSortChange} />
             <Button
               variant="outline"
               size="sm"
