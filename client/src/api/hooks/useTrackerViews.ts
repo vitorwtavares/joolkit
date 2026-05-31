@@ -28,6 +28,7 @@ export interface TrackerView {
 }
 
 export const TRACKER_VIEWS_KEY = ['tracker-views'] as const
+const TRACKER_VIEW_UPDATE_KEY = ['tracker-views', 'update'] as const
 
 // Fetches the user's saved views (ordered by position). The server seeds the
 // default set on first load, so this never resolves to an empty list.
@@ -64,13 +65,15 @@ export function useCreateTrackerView() {
   })
 }
 
-// Optimistic: the patched fields (name, sort_config, filter_config,
-// hidden_columns) drive the UI directly — applying them to the cache before the
-// request resolves keeps controls like sort feeling instant. Rolls back on
-// error, then reconciles with the server's row on success.
+// Optimistic update with burst-safe reconciliation. Rapid edits (e.g. toggling
+// columns quickly) fire overlapping updates whose responses can resolve out of
+// order, so we never write a response back per-mutation — that would let a stale
+// one clobber newer state. Instead we trust the optimistic cache and invalidate
+// once, after the last in-flight update settles.
 export function useUpdateTrackerView() {
   const queryClient = useQueryClient()
   return useMutation({
+    mutationKey: TRACKER_VIEW_UPDATE_KEY,
     mutationFn: ({ id, ...patch }: UpdateTrackerViewPayload) =>
       api.put<TrackerView>(`/api/tracker/views/${id}`, patch),
     onMutate: async ({ id, ...patch }) => {
@@ -83,14 +86,17 @@ export function useUpdateTrackerView() {
       return { previous }
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.previous)
+      if (
+        ctx?.previous &&
+        queryClient.isMutating({ mutationKey: TRACKER_VIEW_UPDATE_KEY }) === 1
+      )
         queryClient.setQueryData(TRACKER_VIEWS_KEY, ctx.previous)
     },
-    onSuccess: (view) => {
-      queryClient.setQueryData<TrackerView[]>(
-        TRACKER_VIEWS_KEY,
-        (old) => old?.map((v) => (v.id === view.id ? view : v)) ?? [view],
+    onSettled: () => {
+      if (
+        queryClient.isMutating({ mutationKey: TRACKER_VIEW_UPDATE_KEY }) === 1
       )
+        queryClient.invalidateQueries({ queryKey: TRACKER_VIEWS_KEY })
     },
   })
 }
