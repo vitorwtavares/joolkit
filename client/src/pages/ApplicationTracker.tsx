@@ -17,9 +17,18 @@ import {
   useCreateApplication,
 } from '@/api/hooks/useApplications'
 import type { CreateApplicationPayload } from '@/api/hooks/useApplications'
-import { useTrackerViews, type TrackerView } from '@/api/hooks/useTrackerViews'
+import {
+  useCreateTrackerView,
+  useDeleteTrackerView,
+  useTrackerViews,
+  useUpdateTrackerView,
+  type TrackerView,
+} from '@/api/hooks/useTrackerViews'
 import { ApplicationTable } from '@/components/tracker/ApplicationTable'
 import { ApplicationDrawer } from '@/components/tracker/ApplicationDrawer'
+import { ViewTab } from '@/components/tracker/ViewTab'
+import { ViewFormDialog } from '@/components/tracker/ViewFormDialog'
+import { DeleteViewDialog } from '@/components/tracker/DeleteViewDialog'
 import { TrackerDraftProvider } from '@/components/tracker/draft'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
@@ -130,6 +139,16 @@ function ApplicationTrackerInner() {
   }, [views, allApplications])
 
   const createApplication = useCreateApplication()
+  const createView = useCreateTrackerView()
+  const updateView = useUpdateTrackerView()
+  const deleteView = useDeleteTrackerView()
+
+  // View management dialogs. `viewForm` drives the create/rename dialog;
+  // `deleteTarget` drives the delete confirmation.
+  const [viewForm, setViewForm] = useState<
+    { mode: 'create' } | { mode: 'rename'; view: TrackerView } | null
+  >(null)
+  const [deleteTarget, setDeleteTarget] = useState<TrackerView | null>(null)
 
   useEffect(() => {
     const el = tabsScrollRef.current
@@ -230,6 +249,43 @@ function ApplicationTrackerInner() {
     })
   }
 
+  function handleSubmitView(name: string) {
+    if (!viewForm) return
+    if (viewForm.mode === 'create') {
+      createView.mutate(
+        { name },
+        {
+          onSuccess: (view) => {
+            setViewForm(null)
+            setView(view.id)
+          },
+          onError: () => toast.error('Failed to create view'),
+        },
+      )
+    } else {
+      updateView.mutate(
+        { id: viewForm.view.id, name },
+        {
+          onSuccess: () => setViewForm(null),
+          onError: () => toast.error('Failed to rename view'),
+        },
+      )
+    }
+  }
+
+  function handleConfirmDelete() {
+    if (!deleteTarget) return
+    const target = deleteTarget
+    deleteView.mutate(target.id, {
+      onSuccess: () => {
+        setDeleteTarget(null)
+        // Fall back to the permanent "All" view if the active view was deleted.
+        if (activeView?.id === target.id && allView) setView(allView.id)
+      },
+      onError: () => toast.error('Failed to delete view'),
+    })
+  }
+
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* Left column: header + tabs + table */}
@@ -257,37 +313,25 @@ function ApplicationTrackerInner() {
                 ),
               }}
             >
-              {views.map((v) => {
-                const isActive = activeView?.id === v.id
-                const count = viewCounts[v.id] ?? 0
-                return (
-                  <button
-                    key={v.id}
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => setView(v.id)}
-                    className={cn(
-                      'flex cursor-pointer items-center gap-1.5 border-b-2 px-3.5 py-2 text-[14px] font-medium whitespace-nowrap transition-colors',
-                      'mb-[-0.5px]',
-                      isActive
-                        ? 'border-brand text-foreground'
-                        : 'border-transparent text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    {v.name}
-                    <span
-                      className={cn(
-                        'rounded-full px-1.5 py-px font-mono text-[11px]',
-                        isActive
-                          ? 'bg-brand-soft text-brand'
-                          : 'bg-secondary text-text-faint',
-                      )}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                )
-              })}
+              {views.map((v) => (
+                <ViewTab
+                  key={v.id}
+                  view={v}
+                  isActive={activeView?.id === v.id}
+                  count={viewCounts[v.id] ?? 0}
+                  onSelect={() => setView(v.id)}
+                  onRename={() => setViewForm({ mode: 'rename', view: v })}
+                  onDelete={() => setDeleteTarget(v)}
+                />
+              ))}
+              <button
+                type="button"
+                onClick={() => setViewForm({ mode: 'create' })}
+                aria-label="New view"
+                className="ms-0.5 mb-[-0.5px] flex size-7 flex-shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                <Plus size={16} />
+              </button>
             </div>
 
             {/* Chevrons — appear only when there are more tabs to scroll to in
@@ -417,6 +461,31 @@ function ApplicationTrackerInner() {
           />
         )}
       </div>
+
+      <ViewFormDialog
+        open={viewForm !== null}
+        onOpenChange={(open) => {
+          if (!open) setViewForm(null)
+        }}
+        mode={viewForm?.mode ?? 'create'}
+        initialName={viewForm?.mode === 'rename' ? viewForm.view.name : ''}
+        isSubmitting={
+          viewForm?.mode === 'rename'
+            ? updateView.isPending
+            : createView.isPending
+        }
+        onSubmit={handleSubmitView}
+      />
+
+      <DeleteViewDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
+        }}
+        viewName={deleteTarget?.name ?? null}
+        isDeleting={deleteView.isPending}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   )
 }
