@@ -6,6 +6,11 @@ const router = Router()
 const JOINED_SELECT =
   '*, location:locations(id, name), skills:application_skills(skill:skills(id, name))'
 
+// Hard ceiling on applications per user. A flat safeguard that keeps datasets
+// within the bounds the client table and per-user queries are designed for; not
+// a billing tier (that limit, when it lands, replaces this constant).
+const MAX_APPLICATIONS = 500
+
 type FilterConfig = {
   field: 'status' | 'is_favorite'
   operator: 'is' | 'is_not' | 'includes'
@@ -139,6 +144,17 @@ router.post('/', async (req, res) => {
     notes,
     skill_ids,
   } = req.body
+
+  const { count, error: countError } = await getSupabase()
+    .from('applications')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', req.userId!)
+
+  if (countError) return res.status(500).json({ error: countError.message })
+  if ((count ?? 0) >= MAX_APPLICATIONS)
+    return res
+      .status(400)
+      .json({ error: `Maximum of ${MAX_APPLICATIONS} applications reached` })
 
   if (location_id) {
     const locationError = await validateLocationOwnership(
