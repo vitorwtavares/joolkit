@@ -18,6 +18,9 @@ interface ViewFormDialogProps {
   onOpenChange: (open: boolean) => void
   mode: 'create' | 'rename'
   initialName?: string
+  // Overrides the default body copy — used when the dialog is opened to capture
+  // a filter the user tried to apply to the permanent "All" view.
+  description?: string
   isSubmitting: boolean
   onSubmit: (name: string) => void
 }
@@ -30,6 +33,7 @@ export function ViewFormDialog({
   onOpenChange,
   mode,
   initialName = '',
+  description,
   isSubmitting,
   onSubmit,
 }: ViewFormDialogProps) {
@@ -44,6 +48,7 @@ export function ViewFormDialog({
         <ViewForm
           mode={mode}
           initialName={initialName}
+          description={description}
           isSubmitting={isSubmitting}
           onSubmit={onSubmit}
         />
@@ -55,9 +60,13 @@ export function ViewFormDialog({
 function ViewForm({
   mode,
   initialName,
+  description,
   isSubmitting,
   onSubmit,
-}: Pick<ViewFormDialogProps, 'mode' | 'isSubmitting' | 'onSubmit'> & {
+}: Pick<
+  ViewFormDialogProps,
+  'mode' | 'description' | 'isSubmitting' | 'onSubmit'
+> & {
   initialName: string
 }) {
   const [name, setName] = useState(initialName)
@@ -77,9 +86,10 @@ function ViewForm({
       <DialogHeader>
         <DialogTitle>{isCreate ? 'New view' : 'Rename view'}</DialogTitle>
         <DialogDescription>
-          {isCreate
-            ? 'Create a saved view of your applications.'
-            : 'Give this view a new name.'}
+          {description ??
+            (isCreate
+              ? 'Create a saved view of your applications.'
+              : 'Give this view a new name.')}
         </DialogDescription>
       </DialogHeader>
       <div className="grid gap-2">

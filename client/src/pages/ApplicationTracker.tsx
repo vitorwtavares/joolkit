@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import {
-  Filter,
   Columns3,
   Plus,
   ChevronLeft,
@@ -23,12 +22,14 @@ import {
   useDeleteTrackerView,
   useTrackerViews,
   useUpdateTrackerView,
+  type FilterConfig,
   type SortConfig,
   type TrackerView,
 } from '@/api/hooks/useTrackerViews'
 import { ApplicationTable } from '@/components/tracker/ApplicationTable'
 import { ApplicationDrawer } from '@/components/tracker/ApplicationDrawer'
 import { SortControl } from '@/components/tracker/SortControl'
+import { FilterControl } from '@/components/tracker/FilterControl'
 import { sortApplications } from '@/components/tracker/applicationSort'
 import { ViewTab } from '@/components/tracker/ViewTab'
 import { ViewFormDialog } from '@/components/tracker/ViewFormDialog'
@@ -87,8 +88,8 @@ function ApplicationTrackerInner() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { data: views = [], isLoading: viewsLoading } = useTrackerViews()
 
-  // The permanent "All" view (filter_config null) is the fallback tab and the
-  // source of the full dataset used for tab counts.
+  // The permanent "All" view (filter_config null) is the fallback tab when no
+  // view is selected.
   const allView = useMemo(
     () => views.find((v) => v.is_permanent) ?? views[0],
     [views],
@@ -105,43 +106,41 @@ function ApplicationTrackerInner() {
   const [tabsOverflowLeft, setTabsOverflowLeft] = useState(false)
   const [tabsOverflowRight, setTabsOverflowRight] = useState(false)
 
-  // The server applies the active view's stored filter_config — keep this query
-  // as the source of truth for what gets rendered. Don't refactor this into a
-  // client-side filter on the `all` dataset: that would diverge from
-  // server-applied filters, defeat per-view filter persistence, and break the
-  // day we paginate.
-  const { data: applications = [], isLoading: appsLoading } =
-    useApplications(activeView)
+  // One shared fetch of the full dataset feeds every view. Filter, sort, and
+  // search are all applied client-side below — consistent and instant, and it
+  // keeps optimistically created/edited rows correctly placed without a refetch.
+  const { data: applications = [], isLoading: appsLoading } = useApplications()
   const isLoading = viewsLoading || appsLoading
 
-  // Display pipeline on top of the server-filtered rows: transient company-name
-  // search (not persisted), then the view's persisted sort. Sort runs
-  // client-side so it's instant and keeps optimistic rows correctly positioned.
   const trimmedSearch = search.trim()
+  const filterConfig = activeView?.filter_config ?? null
   const sortConfig = activeView?.sort_config ?? null
   const visibleApplications = useMemo(() => {
+    const filtered = applications.filter((app) =>
+      appMatchesFilter(app, filterConfig),
+    )
     const q = trimmedSearch.toLowerCase()
     const searched = q
-      ? applications.filter((app) => app.company_name.toLowerCase().includes(q))
-      : applications
+      ? filtered.filter((app) => app.company_name.toLowerCase().includes(q))
+      : filtered
     return sortApplications(searched, sortConfig)
-  }, [applications, trimmedSearch, sortConfig])
+  }, [applications, filterConfig, trimmedSearch, sortConfig])
 
-  // Tab counts are derived separately. For now we piggy-back on a full `all`
-  // fetch (cached, shared with the display query when the All view is active).
-  // TODO: replace with a dedicated `GET /api/applications/counts` endpoint
-  // when we paginate — otherwise this fetch grows unbounded with the dataset.
-  const { data: allApplications = [] } = useApplications(allView)
+  const emptyMessage = trimmedSearch
+    ? 'No companies match your search.'
+    : filterConfig && applications.length > 0
+      ? 'No applications match this view.'
+      : undefined
 
   const viewCounts = useMemo(() => {
     const out: Record<string, number> = {}
     for (const v of views) {
-      out[v.id] = allApplications.filter((app) =>
+      out[v.id] = applications.filter((app) =>
         appMatchesFilter(app, v.filter_config),
       ).length
     }
     return out
-  }, [views, allApplications])
+  }, [views, applications])
 
   const createApplication = useCreateApplication()
   const createView = useCreateTrackerView()
@@ -151,7 +150,9 @@ function ApplicationTrackerInner() {
   // View management dialogs. `viewForm` drives the create/rename dialog;
   // `deleteTarget` drives the delete confirmation.
   const [viewForm, setViewForm] = useState<
-    { mode: 'create' } | { mode: 'rename'; view: TrackerView } | null
+    | { mode: 'create'; filterConfig?: FilterConfig }
+    | { mode: 'rename'; view: TrackerView }
+    | null
   >(null)
   const [deleteTarget, setDeleteTarget] = useState<TrackerView | null>(null)
 
@@ -265,11 +266,25 @@ function ApplicationTrackerInner() {
     )
   }
 
+  function handleApplyFilter(next: FilterConfig | null) {
+    if (!activeView) return
+    // The permanent "All" view can't hold a filter — prompt the user to save
+    // the filter as a new view instead. Clearing (null) on "All" is a no-op.
+    if (activeView.is_permanent) {
+      if (next) setViewForm({ mode: 'create', filterConfig: next })
+      return
+    }
+    updateView.mutate(
+      { id: activeView.id, filter_config: next },
+      { onError: () => toast.error('Failed to update filter') },
+    )
+  }
+
   function handleSubmitView(name: string) {
     if (!viewForm) return
     if (viewForm.mode === 'create') {
       createView.mutate(
-        { name },
+        { name, filter_config: viewForm.filterConfig ?? null },
         {
           onSuccess: (view) => {
             setViewForm(null)
@@ -410,16 +425,10 @@ function ApplicationTrackerInner() {
               )}
             </div>
             <SortControl value={sortConfig} onChange={handleSortChange} />
-            <Button
-              variant="outline"
-              size="sm"
-              disabled
-              aria-label="Filter"
-              className="max-[1599px]:size-8 max-[1599px]:px-0"
-            >
-              <Filter size={14} />
-              <span className="hidden min-[1600px]:inline">Filter</span>
-            </Button>
+            <FilterControl
+              value={activeView?.filter_config ?? null}
+              onApply={handleApplyFilter}
+            />
             <Button
               variant="outline"
               size="sm"
@@ -451,9 +460,7 @@ function ApplicationTrackerInner() {
             onRowClick={openDrawer}
             onCloseDrawer={closeDrawer}
             onDeleteSelected={forceCloseDrawer}
-            emptyMessage={
-              trimmedSearch ? 'No companies match your search.' : undefined
-            }
+            emptyMessage={emptyMessage}
           />
         </div>
       </div>
@@ -486,6 +493,11 @@ function ApplicationTrackerInner() {
         }}
         mode={viewForm?.mode ?? 'create'}
         initialName={viewForm?.mode === 'rename' ? viewForm.view.name : ''}
+        description={
+          viewForm?.mode === 'create' && viewForm.filterConfig
+            ? 'The "All" view can\'t be filtered. Save this filter as a new view instead.'
+            : undefined
+        }
         isSubmitting={
           viewForm?.mode === 'rename'
             ? updateView.isPending

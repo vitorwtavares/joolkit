@@ -3,7 +3,9 @@ import { api } from '../api'
 
 export interface FilterConfig {
   field: 'status' | 'is_favorite'
-  operator: 'is' | 'is_not' | 'includes'
+  // Both operators are multi-select: 'is' = matches any of the values,
+  // 'is_not' = matches none of them. Surfaced as "Includes" / "Excludes".
+  operator: 'is' | 'is_not'
   values: (string | boolean)[]
 }
 
@@ -102,8 +104,6 @@ export function useDeleteTrackerView() {
       queryClient.setQueryData<TrackerView[]>(TRACKER_VIEWS_KEY, (old) =>
         old?.filter((v) => v.id !== id),
       )
-      // Drop the deleted view's applications cache so it doesn't linger.
-      queryClient.removeQueries({ queryKey: ['applications', id] })
     },
   })
 }

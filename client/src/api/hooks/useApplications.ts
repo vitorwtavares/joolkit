@@ -2,17 +2,12 @@ import {
   useQuery,
   useMutation,
   useQueryClient,
-  type QueryKey,
   type QueryClient,
 } from '@tanstack/react-query'
 import { api } from '../api'
 import type { Skill } from './useSkills'
 import type { Location } from './useLocations'
-import {
-  TRACKER_VIEWS_KEY,
-  type FilterConfig,
-  type TrackerView,
-} from './useTrackerViews'
+import type { FilterConfig } from './useTrackerViews'
 
 export type SkillRef = Pick<Skill, 'id' | 'name'>
 export type LocationRef = Pick<Location, 'id' | 'name'>
@@ -78,6 +73,12 @@ export type UpdateApplicationPayload = {
   known_updated_at: string
 } & CreateApplicationPayload
 
+// The whole tracker reads from one shared cache: the full list of the user's
+// applications (newest first, matching the server's order). Views, filtering,
+// sorting, and search are all derived from it client-side on the tracker page —
+// there is no per-view server query.
+export const APPLICATIONS_LIST_KEY = ['applications', 'list'] as const
+
 export function getCachedApplication(
   queryClient: QueryClient,
   id: string,
@@ -89,15 +90,8 @@ export function getCachedApplication(
   ])
   if (detail) return detail
 
-  for (const [, data] of queryClient.getQueriesData<Application[]>({
-    queryKey: ['applications'],
-  })) {
-    if (!Array.isArray(data)) continue
-    const app = data.find((row) => row.id === id)
-    if (app) return app
-  }
-
-  return null
+  const list = queryClient.getQueryData<Application[]>(APPLICATIONS_LIST_KEY)
+  return list?.find((row) => row.id === id) ?? null
 }
 
 interface ExpandedReferences {
@@ -165,67 +159,20 @@ export function patchApplicationInCache(
   payload: CreateApplicationPayload,
 ) {
   const patch = buildApplicationPatch(queryClient, payload)
-  const filters = viewFiltersById(queryClient)
 
-  for (const [key, data] of queryClient.getQueriesData<Application[]>({
-    queryKey: ['applications'],
-  })) {
-    if (!Array.isArray(data)) continue
-    const filter = filters.get(String(key[1])) ?? null
-    const idx = data.findIndex((a) => a.id === id)
-    if (idx === -1) continue
-    const patched: Application = { ...data[idx], ...patch }
-    if (appMatchesFilter(patched, filter)) {
-      const next = [...data]
-      next[idx] = patched
-      queryClient.setQueryData<Application[]>(key, next)
-    } else {
-      queryClient.setQueryData<Application[]>(
-        key,
-        data.filter((a) => a.id !== id),
-      )
-    }
-  }
-
+  queryClient.setQueryData<Application[]>(APPLICATIONS_LIST_KEY, (old) =>
+    old?.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+  )
   queryClient.setQueryData<Application>(
     ['applications', 'detail', id],
     (old) => (old ? { ...old, ...patch } : old),
   )
 }
 
-function applicationsUrl(filter: FilterConfig | null): string {
-  if (!filter) return '/api/applications'
-  return `/api/applications?filter=${encodeURIComponent(JSON.stringify(filter))}`
-}
-
-// Each view's rows are cached under its id. The server applies the view's
-// stored filter_config; the same config drives client-side cross-view sync
-// during optimistic updates (see viewFiltersById / appMatchesFilter).
-export function useApplications(
-  view: Pick<TrackerView, 'id' | 'filter_config'> | undefined,
-) {
+export function useApplications() {
   return useQuery({
-    queryKey: ['applications', view?.id],
-    queryFn: () => api.get<Application[]>(applicationsUrl(view!.filter_config)),
-    enabled: !!view,
-  })
-}
-
-// Maps each cached view id to its filter_config, read from the tracker-views
-// cache. Used by the optimistic-update helpers to decide, for every cached
-// view, whether a changed row still belongs in it.
-function viewFiltersById(
-  queryClient: QueryClient,
-): Map<string, FilterConfig | null> {
-  const views = queryClient.getQueryData<TrackerView[]>(TRACKER_VIEWS_KEY) ?? []
-  return new Map(views.map((v) => [v.id, v.filter_config]))
-}
-
-export function useApplication(id: string) {
-  return useQuery({
-    queryKey: ['applications', 'detail', id],
-    queryFn: () => api.get<Application>(`/api/applications/${id}`),
-    enabled: !!id,
+    queryKey: APPLICATIONS_LIST_KEY,
+    queryFn: () => api.get<Application[]>('/api/applications'),
   })
 }
 
@@ -240,55 +187,17 @@ export function appMatchesFilter(
     return app.is_favorite === (filter.values[0] === true)
   }
   const values = filter.values as string[]
+  // 'is' = status is any of the values; 'is_not' = none of them.
   if (filter.operator === 'is_not') return !values.includes(app.status)
-  // 'is' and 'includes' both test membership in the value set.
   return values.includes(app.status)
 }
 
-function insertByCreatedAt(
-  list: Application[],
-  app: Application,
-): Application[] {
-  const result = [...list]
-  const newAt = new Date(app.created_at).getTime()
-  const idx = result.findIndex((a) => new Date(a.created_at).getTime() <= newAt)
-  if (idx === -1) result.push(app)
-  else result.splice(idx, 0, app)
-  return result
-}
-
-function syncRowAcrossViews(
-  queryClient: ReturnType<typeof useQueryClient>,
-  app: Application,
-  prevId?: string,
-) {
-  const lookupId = prevId ?? app.id
-  const filters = viewFiltersById(queryClient)
-  for (const [key, data] of queryClient.getQueriesData<Application[]>({
-    queryKey: ['applications'],
-  })) {
-    if (!Array.isArray(data)) continue
-    const filter = filters.get(String(key[1])) ?? null
-    const idx = data.findIndex((a) => a.id === lookupId)
-    const matches = appMatchesFilter(app, filter)
-    if (idx === -1) {
-      if (matches) {
-        queryClient.setQueryData<Application[]>(
-          key,
-          insertByCreatedAt(data, app),
-        )
-      }
-    } else if (matches) {
-      const next = [...data]
-      next[idx] = app
-      queryClient.setQueryData<Application[]>(key, next)
-    } else {
-      queryClient.setQueryData<Application[]>(
-        key,
-        data.filter((a) => a.id !== lookupId),
-      )
-    }
-  }
+export function useApplication(id: string) {
+  return useQuery({
+    queryKey: ['applications', 'detail', id],
+    queryFn: () => api.get<Application>(`/api/applications/${id}`),
+    enabled: !!id,
+  })
 }
 
 export function useCreateApplication() {
@@ -298,9 +207,9 @@ export function useCreateApplication() {
       api.post<Application>('/api/applications', payload),
     onMutate: async (payload) => {
       await queryClient.cancelQueries({ queryKey: ['applications'] })
-      const snapshot = queryClient.getQueriesData<Application[] | Application>({
-        queryKey: ['applications'],
-      })
+      const previous = queryClient.getQueryData<Application[]>(
+        APPLICATIONS_LIST_KEY,
+      )
 
       const tempId = `temp-${crypto.randomUUID()}`
       const now = new Date().toISOString()
@@ -334,26 +243,21 @@ export function useCreateApplication() {
         })),
       }
 
-      const filters = viewFiltersById(queryClient)
-      for (const [key, data] of queryClient.getQueriesData<Application[]>({
-        queryKey: ['applications'],
-      })) {
-        if (!Array.isArray(data)) continue
-        const filter = filters.get(String(key[1])) ?? null
-        if (appMatchesFilter(optimisticApp, filter)) {
-          queryClient.setQueryData<Application[]>(key, [optimisticApp, ...data])
-        }
-      }
+      queryClient.setQueryData<Application[]>(APPLICATIONS_LIST_KEY, (old) =>
+        old ? [optimisticApp, ...old] : [optimisticApp],
+      )
 
-      return { snapshot, tempId }
+      return { previous, tempId }
     },
     onError: (_err, _vars, ctx) => {
-      ctx?.snapshot.forEach(([key, data]: [QueryKey, unknown]) =>
-        queryClient.setQueryData(key, data),
-      )
+      queryClient.setQueryData(APPLICATIONS_LIST_KEY, ctx?.previous)
     },
     onSuccess: (newApp, _vars, ctx) => {
-      syncRowAcrossViews(queryClient, newApp, ctx?.tempId)
+      queryClient.setQueryData<Application[]>(
+        APPLICATIONS_LIST_KEY,
+        (old) =>
+          old?.map((a) => (a.id === ctx?.tempId ? newApp : a)) ?? [newApp],
+      )
       queryClient.setQueryData(['applications', 'detail', newApp.id], newApp)
     },
   })
@@ -366,20 +270,30 @@ export function useUpdateApplication() {
       api.put<Application>(`/api/applications/${id}`, payload),
     onMutate: async ({ id, ...payload }) => {
       await queryClient.cancelQueries({ queryKey: ['applications'] })
-      const snapshot = queryClient.getQueriesData<Application[] | Application>({
-        queryKey: ['applications'],
-      })
+      const previous = queryClient.getQueryData<Application[]>(
+        APPLICATIONS_LIST_KEY,
+      )
+      const previousDetail = queryClient.getQueryData<Application>([
+        'applications',
+        'detail',
+        id,
+      ])
       patchApplicationInCache(queryClient, id, payload)
 
-      return { snapshot }
+      return { previous, previousDetail, id }
     },
     onError: (_err, _vars, ctx) => {
-      ctx?.snapshot.forEach(([key, data]: [QueryKey, unknown]) =>
-        queryClient.setQueryData(key, data),
+      if (!ctx) return
+      queryClient.setQueryData(APPLICATIONS_LIST_KEY, ctx.previous)
+      queryClient.setQueryData(
+        ['applications', 'detail', ctx.id],
+        ctx.previousDetail,
       )
     },
     onSuccess: (data) => {
-      syncRowAcrossViews(queryClient, data)
+      queryClient.setQueryData<Application[]>(APPLICATIONS_LIST_KEY, (old) =>
+        old?.map((a) => (a.id === data.id ? data : a)),
+      )
       queryClient.setQueryData(['applications', 'detail', data.id], data)
     },
   })
@@ -391,15 +305,9 @@ export function useDeleteApplication() {
     mutationFn: (id: string) =>
       api.delete<{ id: string }>(`/api/applications/${id}`),
     onSuccess: (_data, id) => {
-      for (const [key, data] of queryClient.getQueriesData<Application[]>({
-        queryKey: ['applications'],
-      })) {
-        if (!Array.isArray(data)) continue
-        queryClient.setQueryData<Application[]>(
-          key,
-          data.filter((a) => a.id !== id),
-        )
-      }
+      queryClient.setQueryData<Application[]>(APPLICATIONS_LIST_KEY, (old) =>
+        old?.filter((a) => a.id !== id),
+      )
       queryClient.removeQueries({ queryKey: ['applications', 'detail', id] })
     },
   })
