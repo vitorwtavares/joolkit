@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api'
 
 export interface FilterConfig {
@@ -33,5 +33,60 @@ export function useTrackerViews() {
   return useQuery({
     queryKey: TRACKER_VIEWS_KEY,
     queryFn: () => api.get<TrackerView[]>('/api/tracker/views'),
+  })
+}
+
+export interface CreateTrackerViewPayload {
+  name: string
+  filter_config?: FilterConfig | null
+  sort_config?: SortConfig | null
+  hidden_columns?: string[] | null
+}
+
+export type UpdateTrackerViewPayload = {
+  id: string
+} & Partial<CreateTrackerViewPayload>
+
+// Appends the new view to the cached list so the tab strip updates without a
+// refetch; the server assigns its position at the end of the list.
+export function useCreateTrackerView() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateTrackerViewPayload) =>
+      api.post<TrackerView>('/api/tracker/views', payload),
+    onSuccess: (view) => {
+      queryClient.setQueryData<TrackerView[]>(TRACKER_VIEWS_KEY, (old) =>
+        old ? [...old, view] : [view],
+      )
+    },
+  })
+}
+
+export function useUpdateTrackerView() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...patch }: UpdateTrackerViewPayload) =>
+      api.put<TrackerView>(`/api/tracker/views/${id}`, patch),
+    onSuccess: (view) => {
+      queryClient.setQueryData<TrackerView[]>(
+        TRACKER_VIEWS_KEY,
+        (old) => old?.map((v) => (v.id === view.id ? view : v)) ?? [view],
+      )
+    },
+  })
+}
+
+export function useDeleteTrackerView() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.delete<{ id: string }>(`/api/tracker/views/${id}`),
+    onSuccess: (_data, id) => {
+      queryClient.setQueryData<TrackerView[]>(TRACKER_VIEWS_KEY, (old) =>
+        old?.filter((v) => v.id !== id),
+      )
+      // Drop the deleted view's applications cache so it doesn't linger.
+      queryClient.removeQueries({ queryKey: ['applications', id] })
+    },
   })
 }
