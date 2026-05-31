@@ -9,7 +9,10 @@ import {
   useApplications,
   useCreateApplication,
 } from '@/api/hooks/useApplications'
-import type { CreateApplicationPayload } from '@/api/hooks/useApplications'
+import type {
+  ApplicationStatus,
+  CreateApplicationPayload,
+} from '@/api/hooks/useApplications'
 import {
   useCreateTrackerView,
   useDeleteTrackerView,
@@ -29,6 +32,7 @@ import { ViewTab } from '@/components/tracker/ViewTab'
 import { ViewFormDialog } from '@/components/tracker/ViewFormDialog'
 import { DeleteViewDialog } from '@/components/tracker/DeleteViewDialog'
 import { TrackerDraftProvider } from '@/components/tracker/draft'
+import { STATUS_CONFIG } from '@/components/tracker/statusConfig'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,10 +56,14 @@ function getTabsMaskImage(
   return `linear-gradient(to right, ${stops.join(', ')})`
 }
 
+// Status keys in pipeline order — the order we list and prefer statuses in.
+const STATUS_OPTIONS = Object.keys(STATUS_CONFIG) as ApplicationStatus[]
+
 // Derives the starting field values for a new entry so it lands in the
-// currently active view. For a status filter we seed the first matching status;
-// for the Favorites view we flag the row favorite; "All" (no filter) defaults
-// to prospect.
+// currently active view rather than being filtered out on creation. For a
+// status filter we pick the first status the filter actually shows (works for
+// both Includes and Excludes); the Favorites view flags the row favorite; "All"
+// (no filter) defaults to prospect.
 function newEntryDefaults(
   view: TrackerView | undefined,
 ): CreateApplicationPayload {
@@ -64,10 +72,11 @@ function newEntryDefaults(
   if (filter.field === 'is_favorite') {
     return { status: 'prospect', is_favorite: true }
   }
-  if (filter.operator !== 'is_not' && filter.values.length > 0) {
-    return { status: filter.values[0] as CreateApplicationPayload['status'] }
-  }
-  return { status: 'prospect' }
+  const shows = (status: string) =>
+    filter.operator === 'is_not'
+      ? !filter.values.includes(status)
+      : filter.values.includes(status)
+  return { status: STATUS_OPTIONS.find(shows) ?? 'prospect' }
 }
 
 export default function ApplicationTracker() {
