@@ -6,28 +6,10 @@ const router = Router()
 const JOINED_SELECT =
   '*, location:locations(id, name), skills:application_skills(skill:skills(id, name))'
 
-const VIEW_FILTERS: Record<
-  string,
-  { values?: string[]; isFavorite?: boolean }
-> = {
-  prospects: { values: ['prospect'] },
-  ready: { values: ['ready_to_apply'] },
-  applied: { values: ['applied'] },
-  'in-progress': {
-    values: [
-      'pending_schedule',
-      'interview_scheduled',
-      'awaiting_response',
-      'technical_test',
-      'offer_received',
-    ],
-  },
-  'no-openings': { values: ['no_openings'] },
-  rejected: { values: ['rejected', 'rejected_ghosted'] },
-  favorites: { isFavorite: true },
-}
-
-const ALLOWED_VIEWS = new Set(['all', ...Object.keys(VIEW_FILTERS)])
+// Hard ceiling on applications per user. A flat safeguard that keeps datasets
+// within the bounds the client table and per-user queries are designed for; not
+// a billing tier (that limit, when it lands, replaces this constant).
+const MAX_APPLICATIONS = 500
 
 async function fetchApplicationWithJoins(id: string, userId: string) {
   return await getSupabase()
@@ -72,28 +54,15 @@ async function setApplicationSkills(
   return { status: 500, message: error.message }
 }
 
+// Returns all of the user's applications (newest first). Filtering, sorting,
+// and search are applied client-side on the loaded set — see the tracker page.
 router.get('/', async (req, res) => {
-  const view = typeof req.query.view === 'string' ? req.query.view : 'all'
-  if (!ALLOWED_VIEWS.has(view))
-    return res.status(400).json({ error: `Invalid view: ${view}` })
-
-  const filter = VIEW_FILTERS[view]
-
-  let query = getSupabase()
+  const { data, error } = await getSupabase()
     .from('applications')
     .select(JOINED_SELECT)
     .eq('user_id', req.userId!)
     .order('created_at', { ascending: false })
 
-  if (filter) {
-    if (filter.isFavorite) {
-      query = query.eq('is_favorite', true)
-    } else if (filter.values) {
-      query = query.in('status', filter.values)
-    }
-  }
-
-  const { data, error } = await query
   if (error) return res.status(500).json({ error: error.message })
   return res.json(data)
 })
@@ -128,6 +97,17 @@ router.post('/', async (req, res) => {
     notes,
     skill_ids,
   } = req.body
+
+  const { count, error: countError } = await getSupabase()
+    .from('applications')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', req.userId!)
+
+  if (countError) return res.status(500).json({ error: countError.message })
+  if ((count ?? 0) >= MAX_APPLICATIONS)
+    return res
+      .status(400)
+      .json({ error: `Maximum of ${MAX_APPLICATIONS} applications reached` })
 
   if (location_id) {
     const locationError = await validateLocationOwnership(

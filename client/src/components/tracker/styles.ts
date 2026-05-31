@@ -11,6 +11,7 @@ export const COL_W = {
   workStyle: '120px',
   visa: '85px',
   applied: '85px',
+  nextDeadline: '110px',
   timeInStage: '100px',
   skills: '200px',
 }

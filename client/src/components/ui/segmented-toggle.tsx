@@ -1,4 +1,3 @@
-import { useLayoutEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 type SegmentedOption<T extends string> = {
@@ -11,92 +10,95 @@ interface SegmentedToggleProps<T extends string> {
   value: T
   onChange: (value: T) => void
   variant?: 'default' | 'compact'
+  disabled?: boolean
+  fullWidth?: boolean
   className?: string
   buttonClassName?: string
 }
 
+// Equal-width segments via CSS grid (`auto-cols-[1fr]`) sized to the widest
+// label — no JS measurement, which is what previously broke inside animated
+// popovers. The highlight is one column wide and slides between segments with a
+// transform, so the active position animates smoothly.
 export function SegmentedToggle<T extends string>({
   options,
   value,
   onChange,
   variant = 'default',
+  disabled = false,
+  fullWidth = false,
   className = '',
   buttonClassName = '',
 }: SegmentedToggleProps<T>) {
-  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
-  const [itemWidth, setItemWidth] = useState<number | null>(null)
-  const [highlightStyle, setHighlightStyle] = useState({
-    left: 0,
-    width: 0,
-  })
+  const activeIndex = options.findIndex((option) => option.value === value)
 
-  useLayoutEffect(() => {
-    const updateWidths = () => {
-      const widths = options
-        .map((option) => buttonRefs.current[option.value]?.offsetWidth ?? 0)
-        .filter(Boolean)
-
-      if (!widths.length) return
-
-      setItemWidth(Math.max(...widths))
-    }
-
-    updateWidths()
-    window.addEventListener('resize', updateWidths)
-
-    return () => window.removeEventListener('resize', updateWidths)
-  }, [options, variant])
-
-  useLayoutEffect(() => {
-    const activeButton = buttonRefs.current[value]
-    if (!activeButton) return
-
-    setHighlightStyle({
-      left: activeButton.offsetLeft,
-      width: activeButton.offsetWidth,
-    })
-  }, [value, itemWidth, options])
-
-  const buttonBaseClassName =
-    variant === 'compact'
-      ? 'relative z-10 cursor-pointer rounded-md px-2 py-1 text-center text-[12.5px] transition-colors outline-none focus-visible:outline-none'
-      : 'relative z-10 cursor-pointer rounded-md px-3.5 py-1 text-center text-[12.5px] transition-colors outline-none focus-visible:outline-none'
+  const buttonBaseClassName = cn(
+    'relative z-10 rounded-md py-1 text-center text-[12.5px] whitespace-nowrap transition-colors outline-none focus-visible:outline-none',
+    variant === 'compact' ? 'px-2' : 'px-3.5',
+    disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+  )
 
   return (
     <div
       className={cn(
-        'relative inline-flex rounded-lg border border-border-subtle bg-secondary p-[3px]',
+        'rounded-lg border border-border-subtle bg-secondary p-[3px]',
+        fullWidth ? 'flex w-full' : 'inline-flex',
+        disabled && 'opacity-50',
         className,
       )}
     >
       <div
-        aria-hidden="true"
-        className="absolute top-[3px] bottom-[3px] rounded-md bg-surface-selected shadow-[0_1px_0_rgba(0,0,0,0.18)] transition-[left,width] duration-200 ease-out"
-        style={highlightStyle}
-      />
-      {options.map((option) => {
-        const isActive = option.value === value
-
-        return (
-          <button
-            key={option.value}
-            ref={(node) => {
-              buttonRefs.current[option.value] = node
+        className={cn(
+          'relative grid auto-cols-[1fr] grid-flow-col',
+          fullWidth && 'w-full',
+        )}
+      >
+        {activeIndex >= 0 && !disabled && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 rounded-md bg-surface-selected shadow-[0_1px_0_rgba(0,0,0,0.18)] transition-transform duration-200 ease-out"
+            style={{
+              width: `${100 / options.length}%`,
+              transform: `translateX(${activeIndex * 100}%)`,
             }}
-            onClick={() => onChange(option.value)}
-            style={itemWidth ? { width: itemWidth } : undefined}
-            className={cn(
-              buttonBaseClassName,
-              isActive
-                ? 'font-medium text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-              buttonClassName,
-            )}
-          >
-            {option.label}
-          </button>
-        )
-      })}
+          />
+        )}
+        {/* With no slider to divide them, the disabled state renders faint
+            separators at each segment boundary so it doesn't read as one
+            blank pill. */}
+        {disabled &&
+          options
+            .slice(1)
+            .map((option, i) => (
+              <div
+                key={option.value}
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-1.5 w-px bg-foreground/15"
+                style={{ left: `${((i + 1) * 100) / options.length}%` }}
+              />
+            ))}
+        {options.map((option) => {
+          const isActive = option.value === value
+          return (
+            <button
+              key={option.value}
+              type="button"
+              disabled={disabled}
+              onClick={() => onChange(option.value)}
+              className={cn(
+                buttonBaseClassName,
+                isActive && !disabled
+                  ? 'font-medium text-foreground'
+                  : 'text-muted-foreground',
+                !disabled && !isActive && 'hover:text-foreground',
+                buttonClassName,
+              )}
+            >
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
