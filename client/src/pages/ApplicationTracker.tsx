@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import {
-  Columns3,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  X,
-} from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { ApiError } from '@/api/api'
 import { cn } from '@/lib/utils'
@@ -30,6 +23,7 @@ import { ApplicationTable } from '@/components/tracker/ApplicationTable'
 import { ApplicationDrawer } from '@/components/tracker/ApplicationDrawer'
 import { SortControl } from '@/components/tracker/SortControl'
 import { FilterControl } from '@/components/tracker/FilterControl'
+import { ColumnsControl } from '@/components/tracker/ColumnsControl'
 import { sortApplications } from '@/components/tracker/applicationSort'
 import { ViewTab } from '@/components/tracker/ViewTab'
 import { ViewFormDialog } from '@/components/tracker/ViewFormDialog'
@@ -280,6 +274,14 @@ function ApplicationTrackerInner() {
     )
   }
 
+  function handleColumnsChange(next: string[] | null) {
+    if (!activeView) return
+    updateView.mutate(
+      { id: activeView.id, hidden_columns: next },
+      { onError: () => toast.error('Failed to update columns') },
+    )
+  }
+
   function handleSubmitView(name: string) {
     if (!viewForm) return
     if (viewForm.mode === 'create') {
@@ -429,16 +431,10 @@ function ApplicationTrackerInner() {
               value={activeView?.filter_config ?? null}
               onApply={handleApplyFilter}
             />
-            <Button
-              variant="outline"
-              size="sm"
-              disabled
-              aria-label="Columns"
-              className="max-[1599px]:size-8 max-[1599px]:px-0"
-            >
-              <Columns3 size={14} />
-              <span className="hidden min-[1600px]:inline">Columns</span>
-            </Button>
+            <ColumnsControl
+              value={activeView?.hidden_columns ?? null}
+              onChange={handleColumnsChange}
+            />
             <Button
               size="sm"
               onClick={handleNewEntry}
@@ -457,6 +453,7 @@ function ApplicationTrackerInner() {
             applications={visibleApplications}
             isLoading={isLoading}
             selectedAppId={selectedAppId}
+            hiddenColumns={activeView?.hidden_columns ?? null}
             onRowClick={openDrawer}
             onCloseDrawer={closeDrawer}
             onDeleteSelected={forceCloseDrawer}

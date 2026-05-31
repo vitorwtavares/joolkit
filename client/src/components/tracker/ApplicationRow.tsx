@@ -38,6 +38,7 @@ import type {
 interface ApplicationRowProps {
   app: Application
   isSelected: boolean
+  hiddenColumns?: string[] | null
   onRowClick: (id: string) => void
   onCloseDrawer: () => void
   onDeleteSelected?: () => void
@@ -46,10 +47,12 @@ interface ApplicationRowProps {
 function ApplicationRowImpl({
   app: serverApp,
   isSelected,
+  hiddenColumns,
   onRowClick,
   onCloseDrawer,
   onDeleteSelected,
 }: ApplicationRowProps) {
+  const show = (key: string) => !hiddenColumns?.includes(key)
   const app = useResolvedApp(serverApp)
   const draft = useTrackerDraft(app.id)
   const save = draft.apply
@@ -176,99 +179,127 @@ function ApplicationRowImpl({
         </td>
 
         {/* Job title */}
-        <td className={`${TD} relative`} style={{ padding: 0 }}>
-          <TextCell
-            value={app.job_name}
-            url={app.job_url}
-            className="pl-9"
-            maxLength={100}
-            onSave={(v) => save({ job_name: v })}
-            onCommit={draft.flush}
-          />
-          <LabelUrlButton
-            url={app.job_url}
-            onSave={(url) => save({ job_url: url })}
-            label={app.job_name}
-            onSaveLabel={(v) => save({ job_name: v })}
-            labelTitle="Job title"
-            urlTitle="Job posting link"
-          />
-        </td>
+        {show('jobName') && (
+          <td className={`${TD} relative`} style={{ padding: 0 }}>
+            <TextCell
+              value={app.job_name}
+              url={app.job_url}
+              className="pl-9"
+              maxLength={100}
+              onSave={(v) => save({ job_name: v })}
+              onCommit={draft.flush}
+            />
+            <LabelUrlButton
+              url={app.job_url}
+              onSave={(url) => save({ job_url: url })}
+              label={app.job_name}
+              onSaveLabel={(v) => save({ job_name: v })}
+              labelTitle="Job title"
+              urlTitle="Job posting link"
+            />
+          </td>
+        )}
 
         {/* Status */}
-        <td className={`${TD} relative`} style={{ padding: 0 }}>
-          <StatusCell
-            value={app.status}
-            onSave={(v: ApplicationStatus) => save({ status: v })}
-          />
-        </td>
+        {show('status') && (
+          <td className={`${TD} relative`} style={{ padding: 0 }}>
+            <StatusCell
+              value={app.status}
+              onSave={(v: ApplicationStatus) => save({ status: v })}
+            />
+          </td>
+        )}
 
         {/* Location */}
-        <td className={`${TD} relative`} style={{ padding: 0 }}>
-          <LocationCell
-            value={app.location}
-            onSave={(locationId) => save({ location_id: locationId })}
-          />
-        </td>
+        {show('location') && (
+          <td className={`${TD} relative`} style={{ padding: 0 }}>
+            <LocationCell
+              value={app.location}
+              onSave={(locationId) => save({ location_id: locationId })}
+            />
+          </td>
+        )}
 
         {/* Salary */}
-        <td className={`${TD} relative`} style={{ padding: 0 }}>
-          <TextCell
-            value={app.salary}
-            onSave={(v) => save({ salary: v })}
-            onCommit={draft.flush}
-          />
-        </td>
+        {show('salary') && (
+          <td className={`${TD} relative`} style={{ padding: 0 }}>
+            <TextCell
+              value={app.salary}
+              onSave={(v) => save({ salary: v })}
+              onCommit={draft.flush}
+            />
+          </td>
+        )}
 
         {/* Work style */}
-        <td className={`${TD} relative`} style={{ padding: 0 }}>
-          <EnumCell
-            value={app.work_style}
-            options={WORK_STYLE_OPTIONS}
-            onSave={(v) => save({ work_style: v })}
-          />
-        </td>
+        {show('workStyle') && (
+          <td className={`${TD} relative`} style={{ padding: 0 }}>
+            <EnumCell
+              value={app.work_style}
+              options={WORK_STYLE_OPTIONS}
+              onSave={(v) => save({ work_style: v })}
+            />
+          </td>
+        )}
 
         {/* Visa */}
-        <td className={`${TD} relative`} style={{ padding: 0 }}>
-          <EnumCell
-            value={app.visa_support}
-            options={VISA_OPTIONS}
-            renderDisplay={(v) =>
-              v == null ? (
-                <EmptyCell />
-              ) : (
-                <span style={{ color: visaColor }}>
-                  {v === 'yes' ? 'Yes' : v === 'no' ? 'No' : 'Unknown'}
-                </span>
-              )
-            }
-            onSave={(v) => save({ visa_support: v })}
-          />
-        </td>
+        {show('visa') && (
+          <td className={`${TD} relative`} style={{ padding: 0 }}>
+            <EnumCell
+              value={app.visa_support}
+              options={VISA_OPTIONS}
+              renderDisplay={(v) =>
+                v == null ? (
+                  <EmptyCell />
+                ) : (
+                  <span style={{ color: visaColor }}>
+                    {v === 'yes' ? 'Yes' : v === 'no' ? 'No' : 'Unknown'}
+                  </span>
+                )
+              }
+              onSave={(v) => save({ visa_support: v })}
+            />
+          </td>
+        )}
 
         {/* Date applied */}
-        <td className={`${TD} relative`} style={{ padding: 0 }}>
-          <DateCell
-            value={app.date_applied}
-            onSave={(v) => save({ date_applied: v })}
-          />
-        </td>
+        {show('applied') && (
+          <td className={`${TD} relative`} style={{ padding: 0 }}>
+            <DateCell
+              value={app.date_applied}
+              onSave={(v) => save({ date_applied: v })}
+            />
+          </td>
+        )}
+
+        {/* Next deadline */}
+        {show('nextDeadline') && (
+          <td className={`${TD} relative`} style={{ padding: 0 }}>
+            <DateCell
+              value={app.next_deadline}
+              onSave={(v) => save({ next_deadline: v })}
+            />
+          </td>
+        )}
 
         {/* Time in stage (read-only) */}
-        <td
-          className={`${TD} ${timeInStageColor(getDaysInStage(app.last_moved_at))}`}
-        >
-          {formatTimeInStage(app.last_moved_at)}
-        </td>
+        {show('timeInStage') && (
+          <td
+            className={`${TD} ${timeInStageColor(getDaysInStage(app.last_moved_at))}`}
+          >
+            {formatTimeInStage(app.last_moved_at)}
+          </td>
+        )}
 
         {/* Skills */}
-        <td className={`${TD} relative`} style={{ padding: 0 }}>
-          <SkillsCell
-            value={app.skills ?? []}
-            onSave={(skillIds) => save({ skill_ids: skillIds })}
-          />
-        </td>
+        {show('skills') && (
+          <td className={`${TD} relative`} style={{ padding: 0 }}>
+            <SkillsCell
+              value={app.skills ?? []}
+              onSave={(skillIds) => save({ skill_ids: skillIds })}
+            />
+          </td>
+        )}
       </tr>
 
       <DeleteApplicationDialog
