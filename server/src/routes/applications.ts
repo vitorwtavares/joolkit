@@ -11,34 +11,6 @@ const JOINED_SELECT =
 // a billing tier (that limit, when it lands, replaces this constant).
 const MAX_APPLICATIONS = 500
 
-type FilterConfig = {
-  field: 'status' | 'is_favorite'
-  operator: 'is' | 'is_not' | 'includes'
-  values: (string | boolean)[]
-}
-
-// Parse the `?filter=` query param (a JSON-encoded view filter_config) into a
-// validated FilterConfig, or null when absent. Returns `'invalid'` when present
-// but malformed so the caller can answer 400.
-function parseFilter(raw: unknown): FilterConfig | null | 'invalid' {
-  if (typeof raw !== 'string' || raw.length === 0) return null
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    return 'invalid'
-  }
-
-  const f = parsed as Partial<FilterConfig>
-  const fieldOk = f.field === 'status' || f.field === 'is_favorite'
-  const opOk =
-    f.operator === 'is' || f.operator === 'is_not' || f.operator === 'includes'
-  if (!fieldOk || !opOk || !Array.isArray(f.values)) return 'invalid'
-
-  return f as FilterConfig
-}
-
 async function fetchApplicationWithJoins(id: string, userId: string) {
   return await getSupabase()
     .from('applications')
@@ -82,34 +54,15 @@ async function setApplicationSkills(
   return { status: 500, message: error.message }
 }
 
+// Returns all of the user's applications (newest first). Filtering, sorting,
+// and search are applied client-side on the loaded set — see the tracker page.
 router.get('/', async (req, res) => {
-  const filter = parseFilter(req.query.filter)
-  if (filter === 'invalid')
-    return res.status(400).json({ error: 'Invalid filter' })
-
-  let query = getSupabase()
+  const { data, error } = await getSupabase()
     .from('applications')
     .select(JOINED_SELECT)
     .eq('user_id', req.userId!)
     .order('created_at', { ascending: false })
 
-  if (filter) {
-    if (filter.field === 'is_favorite') {
-      const truthy = filter.values[0] === true || filter.values[0] === 'true'
-      query = query.eq('is_favorite', truthy)
-    } else if (filter.operator === 'is_not') {
-      query = query.not(
-        'status',
-        'in',
-        `(${(filter.values as string[]).join(',')})`,
-      )
-    } else {
-      // 'is' and 'includes' both narrow to membership in the value set.
-      query = query.in('status', filter.values as string[])
-    }
-  }
-
-  const { data, error } = await query
   if (error) return res.status(500).json({ error: error.message })
   return res.json(data)
 })

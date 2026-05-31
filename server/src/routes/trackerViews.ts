@@ -5,7 +5,9 @@ const router = Router()
 
 type FilterConfig = {
   field: 'status' | 'is_favorite'
-  operator: 'is' | 'is_not' | 'includes'
+  // Both operators are multi-select: 'is' = matches any of the values,
+  // 'is_not' = matches none of them. Surfaced as "Includes" / "Excludes".
+  operator: 'is' | 'is_not'
   values: (string | boolean)[]
 }
 
@@ -38,7 +40,7 @@ const DEFAULT_VIEWS: {
     name: 'In progress',
     filter_config: {
       field: 'status',
-      operator: 'includes',
+      operator: 'is',
       values: [
         'pending_schedule',
         'interview_scheduled',
@@ -56,7 +58,7 @@ const DEFAULT_VIEWS: {
     name: 'Rejected',
     filter_config: {
       field: 'status',
-      operator: 'includes',
+      operator: 'is',
       values: ['rejected', 'rejected_ghosted'],
     },
   },
