@@ -10,6 +10,7 @@ import {
   X,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ApiError } from '@/api/api'
 import { cn } from '@/lib/utils'
 import {
   appMatchesFilter,
@@ -245,7 +246,10 @@ function ApplicationTrackerInner() {
   function handleNewEntry() {
     createApplication.mutate(newEntryDefaults(activeView), {
       onSuccess: (app) => openDrawer(app.id),
-      onError: () => toast.error('Failed to create entry'),
+      onError: (error) =>
+        toast.error(
+          error instanceof ApiError ? error.message : 'Failed to create entry',
+        ),
     })
   }
 
