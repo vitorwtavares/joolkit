@@ -1,33 +1,41 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { Filter, Columns3, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { ApiError } from '@/api/api'
 import { cn } from '@/lib/utils'
 import {
-  appMatchesView,
+  appMatchesFilter,
   useApplications,
   useCreateApplication,
 } from '@/api/hooks/useApplications'
 import type {
-  ApplicationView,
+  ApplicationStatus,
   CreateApplicationPayload,
 } from '@/api/hooks/useApplications'
+import {
+  useCreateTrackerView,
+  useDeleteTrackerView,
+  useTrackerViews,
+  useUpdateTrackerView,
+  type FilterConfig,
+  type SortConfig,
+  type TrackerView,
+} from '@/api/hooks/useTrackerViews'
 import { ApplicationTable } from '@/components/tracker/ApplicationTable'
 import { ApplicationDrawer } from '@/components/tracker/ApplicationDrawer'
+import { SortControl } from '@/components/tracker/SortControl'
+import { FilterControl } from '@/components/tracker/FilterControl'
+import { ColumnsControl } from '@/components/tracker/ColumnsControl'
+import { sortApplications } from '@/components/tracker/applicationSort'
+import { ViewTab } from '@/components/tracker/ViewTab'
+import { ViewFormDialog } from '@/components/tracker/ViewFormDialog'
+import { DeleteViewDialog } from '@/components/tracker/DeleteViewDialog'
 import { TrackerDraftProvider } from '@/components/tracker/draft'
+import { STATUS_CONFIG } from '@/components/tracker/statusConfig'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
-
-const VIEWS: { label: string; value: ApplicationView }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Prospects', value: 'prospects' },
-  { label: 'Ready to apply', value: 'ready' },
-  { label: 'Applied', value: 'applied' },
-  { label: 'In progress', value: 'in-progress' },
-  { label: 'No openings', value: 'no-openings' },
-  { label: 'Rejected', value: 'rejected' },
-  { label: 'Favorites', value: 'favorites' },
-]
+import { Input } from '@/components/ui/input'
 
 // Fade for the tabs scroll area. The right edge fades over a 48px region
 // (visible at 80px from the edge → transparent at 32px from the edge), with
@@ -48,23 +56,27 @@ function getTabsMaskImage(
   return `linear-gradient(to right, ${stops.join(', ')})`
 }
 
-function newEntryDefaults(view: ApplicationView): CreateApplicationPayload {
-  switch (view) {
-    case 'ready':
-      return { status: 'ready_to_apply' }
-    case 'applied':
-      return { status: 'applied' }
-    case 'in-progress':
-      return { status: 'pending_schedule' }
-    case 'no-openings':
-      return { status: 'no_openings' }
-    case 'rejected':
-      return { status: 'rejected' }
-    case 'favorites':
-      return { status: 'prospect', is_favorite: true }
-    default:
-      return { status: 'prospect' }
+// Status keys in pipeline order — the order we list and prefer statuses in.
+const STATUS_OPTIONS = Object.keys(STATUS_CONFIG) as ApplicationStatus[]
+
+// Derives the starting field values for a new entry so it lands in the
+// currently active view rather than being filtered out on creation. For a
+// status filter we pick the first status the filter actually shows (works for
+// both Includes and Excludes); the Favorites view flags the row favorite; "All"
+// (no filter) defaults to prospect.
+function newEntryDefaults(
+  view: TrackerView | undefined,
+): CreateApplicationPayload {
+  const filter = view?.filter_config
+  if (!filter) return { status: 'prospect' }
+  if (filter.field === 'is_favorite') {
+    return { status: 'prospect', is_favorite: true }
   }
+  const shows = (status: string) =>
+    filter.operator === 'is_not'
+      ? !filter.values.includes(status)
+      : filter.values.includes(status)
+  return { status: STATUS_OPTIONS.find(shows) ?? 'prospect' }
 }
 
 export default function ApplicationTracker() {
@@ -77,11 +89,18 @@ export default function ApplicationTracker() {
 
 function ApplicationTrackerInner() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const raw = searchParams.get('view') ?? 'all'
-  const view = (
-    VIEWS.some((v) => v.value === raw) ? raw : 'all'
-  ) as ApplicationView
+  const { data: views = [], isLoading: viewsLoading } = useTrackerViews()
 
+  // The permanent "All" view (filter_config null) is the fallback tab when no
+  // view is selected.
+  const allView = useMemo(
+    () => views.find((v) => v.is_permanent) ?? views[0],
+    [views],
+  )
+  const requestedViewId = searchParams.get('view')
+  const activeView = views.find((v) => v.id === requestedViewId) ?? allView
+
+  const [search, setSearch] = useState('')
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [mountedAppId, setMountedAppId] = useState<string | null>(null)
@@ -90,30 +109,55 @@ function ApplicationTrackerInner() {
   const [tabsOverflowLeft, setTabsOverflowLeft] = useState(false)
   const [tabsOverflowRight, setTabsOverflowRight] = useState(false)
 
-  // Server applies the view filter (and, in P7+, stored filter configs from
-  // `tracker_views`) — keep this query as the source of truth for what gets
-  // rendered. Don't refactor this into a client-side filter on the `'all'`
-  // dataset: that would diverge from server-applied filters, defeat per-view
-  // filter persistence, and break the day we paginate.
-  const { data: applications = [], isLoading } = useApplications(view)
+  // One shared fetch of the full dataset feeds every view. Filter, sort, and
+  // search are all applied client-side below — consistent and instant, and it
+  // keeps optimistically created/edited rows correctly placed without a refetch.
+  const { data: applications = [], isLoading: appsLoading } = useApplications()
+  const isLoading = viewsLoading || appsLoading
 
-  // Tab counts are derived separately. For now we piggy-back on a full `'all'`
-  // fetch (cached, shared with the display query when view === 'all').
-  // TODO: replace with a dedicated `GET /api/applications/counts` endpoint
-  // when we paginate — otherwise this fetch grows unbounded with the dataset.
-  const { data: allApplications = [] } = useApplications('all')
+  const trimmedSearch = search.trim()
+  const filterConfig = activeView?.filter_config ?? null
+  const sortConfig = activeView?.sort_config ?? null
+  const visibleApplications = useMemo(() => {
+    const filtered = applications.filter((app) =>
+      appMatchesFilter(app, filterConfig),
+    )
+    const q = trimmedSearch.toLowerCase()
+    const searched = q
+      ? filtered.filter((app) => app.company_name.toLowerCase().includes(q))
+      : filtered
+    return sortApplications(searched, sortConfig)
+  }, [applications, filterConfig, trimmedSearch, sortConfig])
+
+  const emptyMessage = trimmedSearch
+    ? 'No companies match your search.'
+    : filterConfig && applications.length > 0
+      ? 'No applications match this view.'
+      : undefined
 
   const viewCounts = useMemo(() => {
-    const out = {} as Record<ApplicationView, number>
-    for (const v of VIEWS) {
-      out[v.value] = allApplications.filter((app) =>
-        appMatchesView(app, v.value),
+    const out: Record<string, number> = {}
+    for (const v of views) {
+      out[v.id] = applications.filter((app) =>
+        appMatchesFilter(app, v.filter_config),
       ).length
     }
     return out
-  }, [allApplications])
+  }, [views, applications])
 
   const createApplication = useCreateApplication()
+  const createView = useCreateTrackerView()
+  const updateView = useUpdateTrackerView()
+  const deleteView = useDeleteTrackerView()
+
+  // View management dialogs. `viewForm` drives the create/rename dialog;
+  // `deleteTarget` drives the delete confirmation.
+  const [viewForm, setViewForm] = useState<
+    | { mode: 'create'; filterConfig?: FilterConfig }
+    | { mode: 'rename'; view: TrackerView }
+    | null
+  >(null)
+  const [deleteTarget, setDeleteTarget] = useState<TrackerView | null>(null)
 
   useEffect(() => {
     const el = tabsScrollRef.current
@@ -203,14 +247,84 @@ function ApplicationTrackerInner() {
     closeTimerRef.current = setTimeout(() => setMountedAppId(null), 150)
   }, [])
 
-  function setView(v: ApplicationView) {
-    setSearchParams({ view: v }, { replace: true })
+  function setView(id: string) {
+    setSearchParams({ view: id }, { replace: true })
   }
 
   function handleNewEntry() {
-    createApplication.mutate(newEntryDefaults(view), {
+    createApplication.mutate(newEntryDefaults(activeView), {
       onSuccess: (app) => openDrawer(app.id),
-      onError: () => toast.error('Failed to create entry'),
+      onError: (error) =>
+        toast.error(
+          error instanceof ApiError ? error.message : 'Failed to create entry',
+        ),
+    })
+  }
+
+  function handleSortChange(next: SortConfig | null) {
+    if (!activeView) return
+    updateView.mutate(
+      { id: activeView.id, sort_config: next },
+      { onError: () => toast.error('Failed to update sort') },
+    )
+  }
+
+  function handleApplyFilter(next: FilterConfig | null) {
+    if (!activeView) return
+    // The permanent "All" view can't hold a filter — prompt the user to save
+    // the filter as a new view instead. Clearing (null) on "All" is a no-op.
+    if (activeView.is_permanent) {
+      if (next) setViewForm({ mode: 'create', filterConfig: next })
+      return
+    }
+    updateView.mutate(
+      { id: activeView.id, filter_config: next },
+      { onError: () => toast.error('Failed to update filter') },
+    )
+  }
+
+  function handleColumnsChange(next: string[] | null) {
+    if (!activeView) return
+    updateView.mutate(
+      { id: activeView.id, hidden_columns: next },
+      { onError: () => toast.error('Failed to update columns') },
+    )
+  }
+
+  function handleSubmitView(name: string) {
+    if (!viewForm) return
+    if (viewForm.mode === 'create') {
+      createView.mutate(
+        { name, filter_config: viewForm.filterConfig ?? null },
+        {
+          onSuccess: (view) => {
+            setViewForm(null)
+            setView(view.id)
+          },
+          onError: () => toast.error('Failed to create view'),
+        },
+      )
+    } else {
+      updateView.mutate(
+        { id: viewForm.view.id, name },
+        {
+          onSuccess: () => setViewForm(null),
+          onError: () => toast.error('Failed to rename view'),
+        },
+      )
+    }
+  }
+
+  function handleConfirmDelete() {
+    if (!deleteTarget) return
+    const target = deleteTarget
+    deleteView.mutate(target.id, {
+      onSuccess: () => {
+        setDeleteTarget(null)
+        // Fall back to the permanent "All" view if the active view was deleted.
+        if (activeView?.id === target.id && allView) setView(allView.id)
+      },
+      onError: () => toast.error('Failed to delete view'),
     })
   }
 
@@ -241,37 +355,25 @@ function ApplicationTrackerInner() {
                 ),
               }}
             >
-              {VIEWS.map(({ label, value }) => {
-                const isActive = view === value
-                const count = viewCounts[value]
-                return (
-                  <button
-                    key={value}
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => setView(value)}
-                    className={cn(
-                      'flex cursor-pointer items-center gap-1.5 border-b-2 px-3.5 py-2 text-[14px] font-medium whitespace-nowrap transition-colors',
-                      'mb-[-0.5px]',
-                      isActive
-                        ? 'border-brand text-foreground'
-                        : 'border-transparent text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    {label}
-                    <span
-                      className={cn(
-                        'rounded-full px-1.5 py-px font-mono text-[11px]',
-                        isActive
-                          ? 'bg-brand-soft text-brand'
-                          : 'bg-secondary text-text-faint',
-                      )}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                )
-              })}
+              {views.map((v) => (
+                <ViewTab
+                  key={v.id}
+                  view={v}
+                  isActive={activeView?.id === v.id}
+                  count={viewCounts[v.id] ?? 0}
+                  onSelect={() => setView(v.id)}
+                  onRename={() => setViewForm({ mode: 'rename', view: v })}
+                  onDelete={() => setDeleteTarget(v)}
+                />
+              ))}
+              <button
+                type="button"
+                onClick={() => setViewForm({ mode: 'create' })}
+                aria-label="New view"
+                className="ms-0.5 mb-[-0.5px] flex size-7 flex-shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                <Plus size={16} />
+              </button>
             </div>
 
             {/* Chevrons — appear only when there are more tabs to scroll to in
@@ -309,26 +411,39 @@ function ApplicationTrackerInner() {
                 'border-l border-border-subtle max-[800px]:border-l-0',
             )}
           >
-            <Button
-              variant="outline"
-              size="sm"
-              disabled
-              aria-label="Filter"
-              className="max-[1599px]:size-8 max-[1599px]:px-0"
-            >
-              <Filter size={14} />
-              <span className="hidden min-[1600px]:inline">Filter</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled
-              aria-label="Columns"
-              className="max-[1599px]:size-8 max-[1599px]:px-0"
-            >
-              <Columns3 size={14} />
-              <span className="hidden min-[1600px]:inline">Columns</span>
-            </Button>
+            <div className="relative max-[800px]:flex-1">
+              <Search
+                size={14}
+                className="pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search company"
+                aria-label="Search by company name"
+                className="h-8 w-[180px] ps-8 pe-7 max-[800px]:w-full"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  aria-label="Clear search"
+                  className="absolute end-1.5 top-1/2 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <SortControl value={sortConfig} onChange={handleSortChange} />
+            <FilterControl
+              value={activeView?.filter_config ?? null}
+              onApply={handleApplyFilter}
+            />
+            <ColumnsControl
+              value={activeView?.hidden_columns ?? null}
+              onChange={handleColumnsChange}
+            />
             <Button
               size="sm"
               onClick={handleNewEntry}
@@ -344,12 +459,14 @@ function ApplicationTrackerInner() {
         {/* Table */}
         <div className="flex-1 overflow-auto">
           <ApplicationTable
-            applications={applications}
+            applications={visibleApplications}
             isLoading={isLoading}
             selectedAppId={selectedAppId}
+            hiddenColumns={activeView?.hidden_columns ?? null}
             onRowClick={openDrawer}
             onCloseDrawer={closeDrawer}
             onDeleteSelected={forceCloseDrawer}
+            emptyMessage={emptyMessage}
           />
         </div>
       </div>
@@ -374,6 +491,36 @@ function ApplicationTrackerInner() {
           />
         )}
       </div>
+
+      <ViewFormDialog
+        open={viewForm !== null}
+        onOpenChange={(open) => {
+          if (!open) setViewForm(null)
+        }}
+        mode={viewForm?.mode ?? 'create'}
+        initialName={viewForm?.mode === 'rename' ? viewForm.view.name : ''}
+        description={
+          viewForm?.mode === 'create' && viewForm.filterConfig
+            ? 'The "All" view can\'t be filtered. Save this filter as a new view instead.'
+            : undefined
+        }
+        isSubmitting={
+          viewForm?.mode === 'rename'
+            ? updateView.isPending
+            : createView.isPending
+        }
+        onSubmit={handleSubmitView}
+      />
+
+      <DeleteViewDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
+        }}
+        viewName={deleteTarget?.name ?? null}
+        isDeleting={deleteView.isPending}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   )
 }
