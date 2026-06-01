@@ -307,6 +307,17 @@
   }
 }
 
+aside
+  .sidebar-toggle-button:is(
+    :hover,
+    [data-state='delayed-open'],
+    [data-state='instant-open'],
+    [data-state='open']
+  ) {
+  background: var(--sidebar-hover) !important;
+  color: var(--sidebar-foreground) !important;
+}
+
 /* ── Cover Letter Editor ── */
 .ProseMirror {
   font-family: Helvetica, Arial, sans-serif;
