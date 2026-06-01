@@ -1,3 +1,3 @@
-export function getInitials(email: string): string {
-  return email[0].toUpperCase()
+export function getInitials(value: string): string {
+  return value.trim().charAt(0).toUpperCase()
 }
