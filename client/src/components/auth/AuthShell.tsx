@@ -7,13 +7,9 @@ interface AuthShellProps {
 
 export function AuthShell({ children }: AuthShellProps) {
   return (
-    <div className="flex min-h-screen justify-center overflow-auto bg-background">
-      <div className="flex w-[min(420px,calc(100%_-_48px))] flex-col gap-12 pt-10 pb-16">
-        <img
-          src={joolkitStackedLogo}
-          alt="joolkit"
-          className="mx-auto my-10 h-24"
-        />
+    <div className="flex min-h-screen flex-col items-center overflow-auto bg-background px-6 py-10">
+      <img src={joolkitStackedLogo} alt="joolkit" className="h-24 shrink-0" />
+      <div className="flex w-[min(420px,100%)] flex-1 flex-col justify-center py-10">
         {children}
       </div>
     </div>
