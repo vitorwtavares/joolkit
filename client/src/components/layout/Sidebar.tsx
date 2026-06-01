@@ -50,12 +50,12 @@ export default function Sidebar() {
 
   return (
     <aside className="flex w-[224px] min-w-[224px] flex-col gap-0.5 border-r border-sidebar-border bg-sidebar px-3 py-5 text-sidebar-foreground">
-      <div className="mb-4 pt-3 pr-2 pb-2 pl-2">
+      <div className="mb-4 pl-2">
         <img
           src={joolkitLogo}
           alt="joolkit"
           onClick={() => navigate('/')}
-          className="h-6 cursor-pointer"
+          className="h-5 cursor-pointer"
         />
       </div>
 
@@ -70,7 +70,7 @@ export default function Sidebar() {
                     'text-muted-foreground/40',
                   )}
                 >
-                  <Icon size={16} className="opacity-40" />
+                  <Icon size={16} className="opacity-50" />
                   {label}
                 </span>
               </TooltipTrigger>
@@ -97,7 +97,7 @@ export default function Sidebar() {
                 <Icon
                   size={16}
                   className={cn(
-                    isActive ? 'text-brand opacity-100' : 'opacity-55',
+                    isActive ? 'text-brand opacity-100' : 'opacity-80',
                   )}
                 />
                 {label}
