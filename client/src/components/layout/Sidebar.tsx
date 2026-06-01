@@ -13,7 +13,6 @@ import {
 import { cn } from '@/lib/utils'
 import { getInitials } from '@/utils/getInitials'
 import { useAuth } from '@/context/auth'
-import { useProfile } from '@/api/hooks/useProfile'
 import {
   Popover,
   PopoverContent,
@@ -50,7 +49,6 @@ const navItems = [
 
 export default function Sidebar() {
   const { user, signOut } = useAuth()
-  const { data: profile } = useProfile()
   const navigate = useNavigate()
   const location = useLocation()
   const [isAccountActive, setIsAccountActive] = useState(false)
@@ -65,8 +63,8 @@ export default function Sidebar() {
   })
 
   const email = user?.email ?? ''
-  const displayName = profile?.name || email
-  const initial = email ? getInitials(email) : '?'
+  const displayName = user?.user_metadata?.full_name || email
+  const initial = displayName ? getInitials(displayName) : '?'
   const labelClassName = cn(
     'min-w-0 overflow-hidden whitespace-nowrap transition-[max-width,opacity,transform] duration-200 ease-out',
     isCollapsed

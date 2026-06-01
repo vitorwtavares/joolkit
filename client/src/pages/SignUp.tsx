@@ -10,6 +10,7 @@ import { AuthShell } from '@/components/auth/AuthShell'
 
 export default function SignUp() {
   const { user, isLoading } = useAuth()
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [done, setDone] = useState(false)
@@ -22,7 +23,11 @@ export default function SignUp() {
     e.preventDefault()
     setSubmitting(true)
     try {
-      const { error } = await supabase.auth.signUp({ email, password })
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName } },
+      })
       if (error) toast.error(error.message)
       else setDone(true)
     } catch {
@@ -60,6 +65,24 @@ export default function SignUp() {
           </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="sign-up-name"
+                className="text-[13px] font-semibold text-foreground"
+              >
+                Full name
+              </Label>
+              <Input
+                id="sign-up-name"
+                type="text"
+                required
+                autoComplete="name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="h-[42px] rounded-[10px] bg-card"
+              />
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <Label
                 htmlFor="sign-up-email"
