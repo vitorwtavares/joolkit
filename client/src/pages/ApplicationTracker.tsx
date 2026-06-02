@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { Plus, ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
+import {
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  PanelsTopLeft,
+  Search,
+  X,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { ApiError } from '@/api/api'
 import { cn } from '@/lib/utils'
@@ -108,6 +115,16 @@ function ApplicationTrackerInner() {
   const tabsScrollRef = useRef<HTMLDivElement>(null)
   const [tabsOverflowLeft, setTabsOverflowLeft] = useState(false)
   const [tabsOverflowRight, setTabsOverflowRight] = useState(false)
+
+  const scrollTabsToStart = useCallback(() => {
+    tabsScrollRef.current?.scrollTo({ left: 0, behavior: 'smooth' })
+  }, [])
+
+  const scrollTabsToEnd = useCallback(() => {
+    const el = tabsScrollRef.current
+    if (!el) return
+    el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' })
+  }, [])
 
   // One shared fetch of the full dataset feeds every view. Filter, sort, and
   // search are all applied client-side below — consistent and instant, and it
@@ -370,7 +387,7 @@ function ApplicationTrackerInner() {
                 type="button"
                 onClick={() => setViewForm({ mode: 'create' })}
                 aria-label="New view"
-                className="ms-0.5 mb-[-0.5px] flex size-7 flex-shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                className="ms-0.5 mb-[-0.5px] flex size-7 flex-shrink-0 cursor-pointer items-center justify-center rounded-md bg-secondary text-brand transition-colors hover:bg-brand-soft hover:text-brand"
               >
                 <Plus size={16} />
               </button>
@@ -378,30 +395,33 @@ function ApplicationTrackerInner() {
 
             {/* Chevrons — appear only when there are more tabs to scroll to in
                 that direction. Sit outside the masked scroll area so the mask
-                doesn't fade them, and absorb pointer events so users can't
-                accidentally click a tab hidden under the fade. */}
-            <div
-              aria-hidden
+                doesn't fade them. */}
+            <button
+              type="button"
+              aria-label="Scroll views to start"
+              onClick={scrollTabsToStart}
               className={cn(
-                'absolute inset-y-0 left-16 flex w-8 items-center justify-start transition-opacity',
+                'absolute inset-y-0 left-16 flex w-8 cursor-pointer items-center justify-start transition-opacity',
                 tabsOverflowLeft
                   ? 'opacity-100'
                   : 'pointer-events-none opacity-0',
               )}
             >
               <ChevronLeft size={16} className="text-foreground" />
-            </div>
-            <div
-              aria-hidden
+            </button>
+            <button
+              type="button"
+              aria-label="Scroll views to end"
+              onClick={scrollTabsToEnd}
               className={cn(
-                'absolute inset-y-0 right-0 flex w-8 items-center justify-end pr-2 transition-opacity',
+                'absolute inset-y-0 right-0 flex w-8 cursor-pointer items-center justify-end pr-2 transition-opacity',
                 tabsOverflowRight
                   ? 'opacity-100'
                   : 'pointer-events-none opacity-0',
               )}
             >
               <ChevronRight size={16} className="text-foreground" />
-            </div>
+            </button>
           </div>
 
           <div
@@ -440,6 +460,16 @@ function ApplicationTrackerInner() {
               value={activeView?.filter_config ?? null}
               onApply={handleApplyFilter}
             />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setViewForm({ mode: 'create' })}
+              aria-label="New view"
+              className="max-[1599px]:size-8 max-[1599px]:px-0"
+            >
+              <PanelsTopLeft size={14} />
+              <span className="hidden min-[1600px]:inline">New view</span>
+            </Button>
             <ColumnsControl
               value={activeView?.hidden_columns ?? null}
               onChange={handleColumnsChange}
