@@ -312,12 +312,29 @@
 aside
   .sidebar-toggle-button:is(
     :hover,
+    :focus-visible,
     [data-state='delayed-open'],
     [data-state='instant-open'],
     [data-state='open']
   ) {
   background: var(--sidebar-hover) !important;
   color: var(--sidebar-foreground) !important;
+}
+
+aside[data-collapsed='true'] .sidebar-toggle-button {
+  opacity: 0;
+  transition-property: right, left, background-color, color;
+}
+
+aside[data-collapsed='true']
+  .sidebar-header:hover
+  .sidebar-toggle-button[data-can-reveal='true'] {
+  opacity: 1;
+}
+
+aside[data-collapsed='true']
+  .sidebar-toggle-button[data-can-reveal='true']:is(:hover, :focus-visible) {
+  opacity: 1;
 }
 
 /* ── Cover Letter Editor ── */

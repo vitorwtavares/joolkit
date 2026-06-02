@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import {
@@ -28,7 +28,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import joolkitLogo from '@/assets/logo/png/joolkit-horizontal-light-no-border.png'
+import joolkitMark from '@/assets/logo/png/joolkit-mark-512-no-border.png'
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = 'joolkit-sidebar-collapsed'
 
@@ -65,6 +65,8 @@ export default function Sidebar() {
       return false
     }
   })
+  const [canRevealCollapsedToggle, setCanRevealCollapsedToggle] =
+    useState(isCollapsed)
 
   const email = user?.email ?? ''
   const displayName = user?.user_metadata?.full_name || email
@@ -77,6 +79,8 @@ export default function Sidebar() {
   )
 
   const toggleSidebar = () => {
+    setCanRevealCollapsedToggle(false)
+
     setIsCollapsed((current) => {
       const next = !current
 
@@ -90,6 +94,18 @@ export default function Sidebar() {
     })
   }
 
+  useEffect(() => {
+    if (!isCollapsed) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCanRevealCollapsedToggle(true)
+    }, 260)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [isCollapsed])
+
   return (
     <aside
       className={cn(
@@ -98,49 +114,68 @@ export default function Sidebar() {
       )}
       data-collapsed={isCollapsed}
     >
-      <div className="sidebar-header relative mb-4 h-8">
-        {!isCollapsed && (
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="absolute top-1/2 left-2 h-8 w-[112px] -translate-y-1/2 overflow-hidden rounded-sm text-left transition-opacity duration-200 ease-out outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-            aria-label="Go to quick copy"
+      <div className="sidebar-header group/sidebar-header relative mb-4 h-8">
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          disabled={isCollapsed}
+          tabIndex={isCollapsed ? -1 : undefined}
+          className="absolute top-0 left-0 flex h-8 w-full items-center overflow-hidden rounded-lg text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-default disabled:opacity-100"
+          aria-label="Go to quick copy"
+        >
+          <span className="flex size-8 shrink-0 items-center justify-center">
+            <img src={joolkitMark} alt="" className="h-6 w-auto" />
+          </span>
+          <span
+            className={cn(
+              'min-w-0 translate-x-0 overflow-hidden font-brand text-[23px] leading-none font-bold tracking-normal whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out',
+              isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[120px] opacity-100',
+            )}
           >
-            <img
-              src={joolkitLogo}
-              alt=""
-              className="absolute top-1/2 left-0 w-[104px] -translate-y-1/2"
-            />
-          </button>
-        )}
+            joolkit
+          </span>
+        </button>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={toggleSidebar}
-              aria-label={isCollapsed ? 'Open sidebar' : 'Close sidebar'}
-              aria-expanded={!isCollapsed}
-              className={cn(
-                'sidebar-toggle-button absolute top-0 z-10 border-transparent text-muted-foreground transition-[right,left,opacity,background-color,color] duration-200 ease-out hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:border-transparent focus-visible:ring-0 data-[state=delayed-open]:bg-sidebar-hover data-[state=delayed-open]:text-sidebar-foreground data-[state=instant-open]:bg-sidebar-hover data-[state=instant-open]:text-sidebar-foreground data-[state=open]:bg-sidebar-hover data-[state=open]:text-sidebar-foreground',
-                isCollapsed
-                  ? 'left-0 opacity-100'
-                  : 'right-0 opacity-100 aria-expanded:bg-transparent aria-expanded:text-muted-foreground hover:aria-expanded:bg-sidebar-hover hover:aria-expanded:text-sidebar-foreground',
-              )}
-            >
-              {isCollapsed ? (
+        {isCollapsed && canRevealCollapsedToggle ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={toggleSidebar}
+                aria-label="Open sidebar"
+                aria-expanded={false}
+                data-can-reveal
+                className="sidebar-toggle-button absolute top-0 left-0 z-10 border-transparent text-muted-foreground transition-[opacity,background-color,color] duration-200 ease-out hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:border-transparent focus-visible:ring-0 data-[state=delayed-open]:bg-sidebar-hover data-[state=delayed-open]:text-sidebar-foreground data-[state=instant-open]:bg-sidebar-hover data-[state=instant-open]:text-sidebar-foreground data-[state=open]:bg-sidebar-hover data-[state=open]:text-sidebar-foreground"
+              >
                 <PanelLeftOpen data-icon="inline-start" />
-              ) : (
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              Open sidebar
+            </TooltipContent>
+          </Tooltip>
+        ) : !isCollapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={toggleSidebar}
+                aria-label="Close sidebar"
+                aria-expanded
+                className="sidebar-toggle-button absolute top-0 right-0 z-10 border-transparent text-muted-foreground opacity-100 transition-[background-color,color] duration-200 ease-out hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:border-transparent focus-visible:ring-0 aria-expanded:bg-transparent aria-expanded:text-muted-foreground hover:aria-expanded:bg-sidebar-hover hover:aria-expanded:text-sidebar-foreground data-[state=delayed-open]:bg-sidebar-hover data-[state=delayed-open]:text-sidebar-foreground data-[state=instant-open]:bg-sidebar-hover data-[state=instant-open]:text-sidebar-foreground data-[state=open]:bg-sidebar-hover data-[state=open]:text-sidebar-foreground"
+              >
                 <PanelLeftClose data-icon="inline-start" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={8}>
-            {isCollapsed ? 'Open sidebar' : 'Close sidebar'}
-          </TooltipContent>
-        </Tooltip>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              Close sidebar
+            </TooltipContent>
+          </Tooltip>
+        ) : null}
       </div>
 
       {navItems.map(({ to, label, icon: Icon, disabled }) => {
