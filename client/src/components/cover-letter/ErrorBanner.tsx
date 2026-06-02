@@ -1,17 +1,11 @@
 import { Info } from 'lucide-react'
-import { TOKEN_ROLE, TOKEN_COMPANY } from '@/constants'
 
 interface ErrorBannerProps {
-  role: string
-  company: string
+  unresolvedTokens: string[]
 }
 
-export function ErrorBanner({ role, company }: ErrorBannerProps) {
-  const missing: string[] = []
-  if (!role) missing.push(TOKEN_ROLE)
-  if (!company) missing.push(TOKEN_COMPANY)
-
-  if (missing.length === 0) return null
+export function ErrorBanner({ unresolvedTokens }: ErrorBannerProps) {
+  if (unresolvedTokens.length === 0) return null
 
   return (
     <div className="flex items-start gap-2.5 rounded-lg border border-danger-border-soft bg-danger-soft-strong px-3.5 py-2.5">
@@ -21,7 +15,7 @@ export function ErrorBanner({ role, company }: ErrorBannerProps) {
           Unresolved tokens detected
         </strong>
         Fill in{' '}
-        {missing.map((token, i) => (
+        {unresolvedTokens.map((token, i) => (
           <span key={token}>
             {i > 0 && ' and '}
             <code className="font-mono text-[11px]">{token}</code>

@@ -68,6 +68,9 @@ interface EditorSidePanelProps {
   isEditorEmpty: boolean
   isLoadingTokens: boolean
   isLoadingTemplates: boolean
+  isRoleUnresolved: boolean
+  isCompanyUnresolved: boolean
+  unresolvedTokens: string[]
 }
 
 function formatLastSaved(dateStr: string | undefined): string {
@@ -105,13 +108,14 @@ export function EditorSidePanel({
   isEditorEmpty,
   isLoadingTokens,
   isLoadingTemplates,
+  isRoleUnresolved,
+  isCompanyUnresolved,
+  unresolvedTokens,
 }: EditorSidePanelProps) {
   const uploadInputRef = useRef<HTMLInputElement>(null)
   const [pendingAction, setPendingAction] = useState<PendingAction>(null)
-  const roleEmpty = !role
-  const companyEmpty = !company
-  const hasUnresolved = roleEmpty || companyEmpty
-  const unresolvedCount = (roleEmpty ? 1 : 0) + (companyEmpty ? 1 : 0)
+  const hasUnresolved = unresolvedTokens.length > 0
+  const unresolvedCount = unresolvedTokens.length
   const label = capitalize(variation)
   const isLoadingDownload = isLoadingTokens || isLoadingTemplates
   const hasFile = !!template?.file_url
@@ -169,7 +173,7 @@ export function EditorSidePanel({
             <div className="mb-3 flex flex-col gap-1.5">
               <label
                 htmlFor="cover-letter-role"
-                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${roleEmpty ? 'text-danger' : 'text-muted-foreground'}`}
+                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${isRoleUnresolved ? 'text-danger' : 'text-muted-foreground'}`}
               >
                 {TOKEN_ROLE}
               </label>
@@ -181,7 +185,7 @@ export function EditorSidePanel({
                 onBlur={onTokenBlur}
                 placeholder="e.g. Software Engineer"
                 className={`h-8 w-full rounded-md px-2.5 font-sans text-[13px] transition-[border-color,box-shadow] outline-none ${
-                  roleEmpty
+                  isRoleUnresolved
                     ? 'border border-danger-border bg-danger-soft text-danger placeholder:text-danger-muted'
                     : 'border border-border bg-card text-foreground focus:border-brand-border focus:ring-3 focus:ring-brand-soft'
                 }`}
@@ -191,7 +195,7 @@ export function EditorSidePanel({
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="cover-letter-company"
-                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${companyEmpty ? 'text-danger' : 'text-muted-foreground'}`}
+                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${isCompanyUnresolved ? 'text-danger' : 'text-muted-foreground'}`}
               >
                 {TOKEN_COMPANY}
               </label>
@@ -203,7 +207,7 @@ export function EditorSidePanel({
                 onBlur={onTokenBlur}
                 placeholder="e.g. Xiaomi"
                 className={`h-8 w-full rounded-md px-2.5 font-sans text-[13px] transition-[border-color,box-shadow] outline-none ${
-                  companyEmpty
+                  isCompanyUnresolved
                     ? 'border border-danger-border bg-danger-soft text-danger placeholder:text-danger-muted'
                     : 'border border-border bg-card text-foreground focus:border-brand-border focus:ring-3 focus:ring-brand-soft'
                 }`}
@@ -230,7 +234,7 @@ export function EditorSidePanel({
             </div>
             {hasUnresolved && (
               <div className="mt-3 w-full">
-                <ErrorBanner role={role} company={company} />
+                <ErrorBanner unresolvedTokens={unresolvedTokens} />
               </div>
             )}
           </>
