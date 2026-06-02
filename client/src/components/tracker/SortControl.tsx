@@ -68,7 +68,23 @@ export function SortControl({ value, onChange }: SortControlProps) {
           )}
         </div>
 
-        <div className="flex flex-col">
+        {/* Always shown (disabled until a field is picked) to keep the popover
+            height stable. */}
+        <SegmentedToggle<SortConfig['direction']>
+          variant="compact"
+          fullWidth
+          disabled={!value}
+          value={value?.direction ?? 'asc'}
+          options={[
+            { value: 'asc', label: labels.asc },
+            { value: 'desc', label: labels.desc },
+          ]}
+          onChange={(direction) =>
+            value && onChange({ field: value.field, direction })
+          }
+        />
+
+        <div className="mt-2 flex flex-col border-t border-border-subtle pt-2">
           {SORTABLE_FIELDS.map((f) => {
             const isActive = value?.field === f.field
             return (
@@ -93,24 +109,6 @@ export function SortControl({ value, onChange }: SortControlProps) {
               </button>
             )
           })}
-        </div>
-
-        {/* Always shown (disabled until a field is picked) to keep the popover
-            height stable. */}
-        <div className="mt-2 border-t border-border-subtle px-2 pt-3 pb-1">
-          <SegmentedToggle<SortConfig['direction']>
-            variant="compact"
-            fullWidth
-            disabled={!value}
-            value={value?.direction ?? 'asc'}
-            options={[
-              { value: 'asc', label: labels.asc },
-              { value: 'desc', label: labels.desc },
-            ]}
-            onChange={(direction) =>
-              value && onChange({ field: value.field, direction })
-            }
-          />
         </div>
       </PopoverContent>
     </Popover>

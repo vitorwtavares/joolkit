@@ -1,7 +1,14 @@
 import { useState } from 'react'
-import { Check, Filter, X } from 'lucide-react'
+import { Check, ChevronDown, Filter, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Popover,
   PopoverContent,
@@ -26,6 +33,19 @@ const STATUS_OPTIONS = Object.keys(STATUS_CONFIG) as ApplicationStatus[]
 const OPERATOR_OPTIONS: { value: FilterConfig['operator']; label: string }[] = [
   { value: 'is', label: 'Includes' },
   { value: 'is_not', label: 'Excludes' },
+]
+
+const FAVORITE_OPERATOR_OPTIONS: {
+  value: FilterConfig['operator']
+  label: string
+}[] = [
+  { value: 'is', label: 'Favorites' },
+  { value: 'is_not', label: 'Not favorites' },
+]
+
+const FILTER_FIELDS: { value: FilterConfig['field']; label: string }[] = [
+  { value: 'status', label: 'Status' },
+  { value: 'is_favorite', label: 'Favorites' },
 ]
 
 export function FilterControl({ value, onApply }: FilterControlProps) {
@@ -78,21 +98,27 @@ interface FilterPanelProps extends FilterControlProps {
 }
 
 function FilterPanel({ value, onApply, onClose }: FilterPanelProps) {
-  // Only status filters are editable here; a non-status filter (e.g. the
-  // Favorites view's is_favorite filter) seeds an empty status selection and
-  // can be cleared via Clear.
+  const [field, setField] = useState<FilterConfig['field']>(
+    value?.field ?? 'status',
+  )
   const statusFilter = value?.field === 'status' ? value : null
   const [operator, setOperator] = useState<FilterConfig['operator']>(
-    statusFilter?.operator === 'is_not' ? 'is_not' : 'is',
+    value?.operator === 'is_not' ? 'is_not' : 'is',
   )
   const [statuses, setStatuses] = useState<ApplicationStatus[]>(
     statusFilter ? (statusFilter.values as ApplicationStatus[]) : [],
   )
+  const fieldLabel =
+    FILTER_FIELDS.find((option) => option.value === field)?.label ?? 'Status'
 
-  const draft: FilterConfig | null = statuses.length
-    ? { field: 'status', operator, values: statuses }
-    : null
+  const draft: FilterConfig | null =
+    field === 'status'
+      ? statuses.length
+        ? { field: 'status', operator, values: statuses }
+        : null
+      : { field: 'is_favorite', operator, values: [true] }
   const dirty = !sameFilter(draft, value)
+  const canApply = field === 'status' ? statuses.length > 0 && dirty : dirty
 
   function toggleStatus(status: ApplicationStatus) {
     setStatuses((prev) =>
@@ -115,9 +141,37 @@ function FilterPanel({ value, onApply, onClose }: FilterPanelProps) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between px-1 pt-1">
-        <span className="text-[13px] font-medium text-muted-foreground">
-          Filter by status
-        </span>
+        <div className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
+          Filter by
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex cursor-pointer items-center gap-0.5 rounded-md bg-secondary px-1.5 py-0.5 text-foreground transition-colors hover:bg-muted"
+              >
+                {fieldLabel}
+                <ChevronDown size={12} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-36">
+              <DropdownMenuRadioGroup
+                value={field}
+                onValueChange={(next) =>
+                  setField(next as FilterConfig['field'])
+                }
+              >
+                {FILTER_FIELDS.map((option) => (
+                  <DropdownMenuRadioItem
+                    key={option.value}
+                    value={option.value}
+                  >
+                    {option.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
         {value && (
           <button
             type="button"
@@ -133,66 +187,80 @@ function FilterPanel({ value, onApply, onClose }: FilterPanelProps) {
         variant="compact"
         fullWidth
         value={operator}
-        options={OPERATOR_OPTIONS}
+        options={
+          field === 'status' ? OPERATOR_OPTIONS : FAVORITE_OPERATOR_OPTIONS
+        }
         onChange={setOperator}
       />
 
-      <div className="flex min-h-7 flex-wrap items-center gap-1 px-1">
-        {statuses.length === 0 ? (
-          <span className="text-[12px] text-muted-foreground">
-            No statuses selected
-          </span>
-        ) : (
-          statuses.map((s) => (
-            <Badge
-              key={s}
-              bg={STATUS_CONFIG[s].bg}
-              className="gap-1 ps-2.5 pe-1"
-            >
-              {STATUS_CONFIG[s].label}
-              <button
-                type="button"
-                onClick={() => toggleStatus(s)}
-                aria-label={`Remove ${STATUS_CONFIG[s].label}`}
-                className="flex cursor-pointer items-center justify-center rounded opacity-70 transition-opacity hover:opacity-100"
-              >
-                <X size={12} />
-              </button>
-            </Badge>
-          ))
-        )}
-      </div>
-
-      <div className="flex max-h-52 flex-col overflow-y-auto border-t border-border-subtle pt-1">
-        {STATUS_OPTIONS.map((status) => {
-          const isSelected = statuses.includes(status)
-          return (
-            <button
-              key={status}
-              type="button"
-              onClick={() => toggleStatus(status)}
-              className={cn(
-                'flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-[14px] transition-colors hover:bg-muted',
-                isSelected ? 'text-foreground' : 'text-muted-foreground',
-              )}
-            >
-              <span
-                aria-hidden
-                className="size-2.5 flex-shrink-0 rounded-full"
-                style={{ background: STATUS_CONFIG[status].bg }}
-              />
-              <span className="flex-1 text-left">
-                {STATUS_CONFIG[status].label}
+      {field === 'status' ? (
+        <>
+          <div className="flex min-h-7 flex-wrap items-center gap-1 px-1">
+            {statuses.length === 0 ? (
+              <span className="text-[12px] text-muted-foreground">
+                No statuses selected
               </span>
-              {isSelected && <Check size={14} className="text-brand" />}
-            </button>
-          )
-        })}
-      </div>
+            ) : (
+              statuses.map((s) => (
+                <Badge
+                  key={s}
+                  bg={STATUS_CONFIG[s].bg}
+                  className="gap-1 ps-2.5 pe-1"
+                >
+                  {STATUS_CONFIG[s].label}
+                  <button
+                    type="button"
+                    onClick={() => toggleStatus(s)}
+                    aria-label={`Remove ${STATUS_CONFIG[s].label}`}
+                    className="flex cursor-pointer items-center justify-center rounded opacity-70 transition-opacity hover:opacity-100"
+                  >
+                    <X size={12} />
+                  </button>
+                </Badge>
+              ))
+            )}
+          </div>
+
+          <div className="flex max-h-52 flex-col overflow-y-auto border-t border-border-subtle pt-1">
+            {STATUS_OPTIONS.map((status) => {
+              const isSelected = statuses.includes(status)
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => toggleStatus(status)}
+                  className={cn(
+                    'flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-[14px] transition-colors hover:bg-muted',
+                    isSelected ? 'text-foreground' : 'text-muted-foreground',
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className="size-2.5 flex-shrink-0 rounded-full"
+                    style={{ background: STATUS_CONFIG[status].bg }}
+                  />
+                  <span className="flex-1 text-left">
+                    {STATUS_CONFIG[status].label}
+                  </span>
+                  {isSelected && <Check size={14} className="text-brand" />}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      ) : (
+        <div className="border-t border-border-subtle px-1 pt-3 pb-2">
+          <p className="text-[12px] leading-5 text-muted-foreground">
+            {operator === 'is'
+              ? 'Only entries marked as favorite will be shown.'
+              : 'Entries marked as favorite will be hidden.'}
+          </p>
+        </div>
+      )}
 
       <Button
         size="sm"
-        disabled={!statuses.length || !dirty}
+        disabled={!canApply}
         onClick={apply}
         className="mt-1 w-full"
       >
