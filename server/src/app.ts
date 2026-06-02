@@ -3,6 +3,7 @@ import cors from 'cors'
 import { authMiddleware } from './middleware/auth'
 import { createRateLimitMiddleware } from './middleware/rateLimit'
 import healthRouter from './routes/health'
+import accountRouter from './routes/account'
 import profileRouter from './routes/profile'
 import coverLettersRouter from './routes/coverLetters'
 import exportRouter from './routes/export'
@@ -30,6 +31,7 @@ const generalLimiter = createRateLimitMiddleware({
 app.use('/api/health', healthRouter)
 app.use(generalLimiter)
 app.use(authMiddleware)
+app.use('/api/account', accountRouter)
 app.use('/api/profile', profileRouter)
 app.use('/api/cover-letters', coverLettersRouter)
 app.use('/api/export', exportRouter)

@@ -92,6 +92,15 @@ export default function SignIn() {
             {submitting ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
+
+        <p className="mt-5 text-center text-[13.5px] text-muted-foreground">
+          <Link
+            to="/forgot-password"
+            className="font-medium text-foreground underline underline-offset-[3px] transition-colors hover:text-brand"
+          >
+            Forgot your password?
+          </Link>
+        </p>
       </div>
     </AuthShell>
   )
