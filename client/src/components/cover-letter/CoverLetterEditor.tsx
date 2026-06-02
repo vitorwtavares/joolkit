@@ -6,7 +6,6 @@ import TextAlign from '@tiptap/extension-text-align'
 import FontFamily from '@tiptap/extension-font-family'
 import { Extension } from '@tiptap/core'
 import { Plugin } from '@tiptap/pm/state'
-import { TOKEN_ROLE, TOKEN_COMPANY } from '@/constants'
 import { TextStyle, FontSize } from '@tiptap/extension-text-style'
 import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -29,6 +28,7 @@ import { EditorSidePanel } from './EditorSidePanel'
 import { VariationToggle } from './VariationToggle'
 import { EditorCanvas } from './EditorCanvas'
 import { EditorStatusBar } from './EditorStatusBar'
+import { getCoverLetterTokenValidation } from './tokenValidation'
 
 const PAGE_CONTENT_HEIGHT = 1123 - 80 * 2
 const MAX_PAGES = 3
@@ -185,12 +185,20 @@ export function CoverLetterEditor() {
     })
   }, [editor, role, company])
 
-  const { isEmpty: isEditorEmpty } = useEditorState({
+  const { isEmpty: isEditorEmpty, text: editorText } = useEditorState({
     editor,
-    selector: (ctx) => ({ isEmpty: ctx.editor?.isEmpty ?? true }),
+    selector: (ctx) => ({
+      isEmpty: ctx.editor?.isEmpty ?? true,
+      text: ctx.editor?.getText() ?? '',
+    }),
   })
 
-  const hasUnresolved = !role || !company
+  const tokenValidation = getCoverLetterTokenValidation({
+    text: editorText,
+    role,
+    company,
+  })
+  const hasUnresolved = tokenValidation.unresolvedTokens.length > 0
 
   const handleTokenBlur = () => flushTokenSave(role, company)
 
@@ -289,7 +297,7 @@ export function CoverLetterEditor() {
   const handleDownload = () => {
     if (hasUnresolved) {
       toast.error(
-        `Fill in ${TOKEN_ROLE} and ${TOKEN_COMPANY} before downloading`,
+        `Fill in ${tokenValidation.unresolvedTokens.join(' and ')} before downloading`,
       )
       return
     }
@@ -388,6 +396,9 @@ export function CoverLetterEditor() {
           isEditorEmpty={isEditorEmpty}
           isLoadingTokens={tokensLoading}
           isLoadingTemplates={templatesLoading}
+          isRoleUnresolved={tokenValidation.isRoleUnresolved}
+          isCompanyUnresolved={tokenValidation.isCompanyUnresolved}
+          unresolvedTokens={tokenValidation.unresolvedTokens}
         />
       </div>
 
