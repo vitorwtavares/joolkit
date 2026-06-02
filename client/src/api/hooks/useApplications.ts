@@ -184,7 +184,9 @@ export function appMatchesFilter(
 ): boolean {
   if (!filter) return true
   if (filter.field === 'is_favorite') {
-    return app.is_favorite === (filter.values[0] === true)
+    const target = filter.values[0] === true
+    if (filter.operator === 'is_not') return app.is_favorite !== target
+    return app.is_favorite === target
   }
   const values = filter.values as string[]
   // 'is' = status is any of the values; 'is_not' = none of them.
