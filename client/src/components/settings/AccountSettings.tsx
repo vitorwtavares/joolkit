@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { useAuth } from '@/context/auth'
@@ -8,22 +8,35 @@ import { Button } from '@/components/ui/button'
 import { DeleteAccountDialog } from '@/components/account/DeleteAccountDialog'
 import { SettingRow } from './SettingRow'
 
+const RESET_COOLDOWN_SECONDS = 60
+
 export function AccountSettings() {
   const { user, signOut } = useAuth()
   const email = user?.email ?? ''
   const deleteAccount = useDeleteAccount()
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [sendingReset, setSendingReset] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = setTimeout(() => setCooldown(cooldown - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [cooldown])
 
   async function handleSendResetEmail() {
-    if (sendingReset) return
+    if (sendingReset || cooldown > 0) return
     setSendingReset(true)
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: getPasswordResetRedirectUrl(),
       })
-      if (error) toast.error(error.message)
-      else toast.success(`We've sent a password reset link to ${email}.`)
+      if (error) {
+        toast.error(error.message)
+      } else {
+        toast.success(`We've sent a password reset link to ${email}.`)
+        setCooldown(RESET_COOLDOWN_SECONDS)
+      }
     } catch {
       toast.error('Something went wrong. Please try again.')
     } finally {
@@ -42,6 +55,10 @@ export function AccountSettings() {
     await signOut().catch(() => {})
   }
 
+  let resetLabel = 'Send reset link'
+  if (sendingReset) resetLabel = 'Sending...'
+  else if (cooldown > 0) resetLabel = `Resend in ${cooldown}s`
+
   return (
     <div className="flex flex-col">
       <h2 className="text-lg font-semibold tracking-tight">Account</h2>
@@ -56,9 +73,9 @@ export function AccountSettings() {
             variant="outline"
             size="sm"
             onClick={handleSendResetEmail}
-            disabled={sendingReset}
+            disabled={sendingReset || cooldown > 0}
           >
-            {sendingReset ? 'Sending...' : 'Send reset link'}
+            {resetLabel}
           </Button>
         </SettingRow>
 
