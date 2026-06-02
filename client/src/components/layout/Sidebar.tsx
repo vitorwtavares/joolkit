@@ -28,7 +28,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import joolkitLogo from '@/assets/joolkit-logo/joolkit-wordmark-light.svg'
+import joolkitLogo from '@/assets/logo/png/joolkit-horizontal-light-no-border.png'
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = 'joolkit-sidebar-collapsed'
 
@@ -103,13 +103,13 @@ export default function Sidebar() {
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="absolute top-1/2 left-2 h-[29px] w-[92px] -translate-y-1/2 overflow-hidden rounded-sm text-left transition-opacity duration-200 ease-out outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="absolute top-1/2 left-2 h-8 w-[112px] -translate-y-1/2 overflow-hidden rounded-sm text-left transition-opacity duration-200 ease-out outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             aria-label="Go to quick copy"
           >
             <img
               src={joolkitLogo}
               alt=""
-              className="absolute top-1/2 left-0 h-5 -translate-y-1/2"
+              className="absolute top-1/2 left-0 w-[104px] -translate-y-1/2"
             />
           </button>
         )}
