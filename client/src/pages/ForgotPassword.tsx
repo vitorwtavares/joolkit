@@ -7,12 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthShell } from '@/components/auth/AuthShell'
+import { getPasswordResetRedirectUrl } from '@/utils/getPasswordResetRedirectUrl'
 
-export default function SignUp() {
+export default function ForgotPassword() {
   const { user, isLoading } = useAuth()
-  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [done, setDone] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -23,10 +22,8 @@ export default function SignUp() {
     e.preventDefault()
     setSubmitting(true)
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: fullName } },
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: getPasswordResetRedirectUrl(),
       })
       if (error) toast.error(error.message)
       else setDone(true)
@@ -45,53 +42,30 @@ export default function SignUp() {
             Check your email
           </h1>
           <p className="text-sm text-muted-foreground">
-            We sent a confirmation link to{' '}
-            <span className="text-foreground">{email}</span>.
+            If an account exists for{' '}
+            <span className="text-foreground">{email}</span>, we've sent a link
+            to reset your password.
           </p>
         </div>
       ) : (
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Create an account
+            Reset your password
           </h1>
           <p className="mb-7 text-[13.5px] text-muted-foreground">
-            Already have an account?{' '}
-            <Link
-              to="/sign-in"
-              className="font-medium text-foreground underline underline-offset-[3px] transition-colors hover:text-brand"
-            >
-              Sign in
-            </Link>
+            Enter your email and we'll send you a link to set a new password.
           </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label
-                htmlFor="sign-up-name"
-                className="text-[13px] font-semibold text-foreground"
-              >
-                Full name
-              </Label>
-              <Input
-                id="sign-up-name"
-                type="text"
-                required
-                autoComplete="name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="h-[42px] rounded-[10px] bg-card"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="sign-up-email"
+                htmlFor="forgot-password-email"
                 className="text-[13px] font-semibold text-foreground"
               >
                 Email
               </Label>
               <Input
-                id="sign-up-email"
+                id="forgot-password-email"
                 type="email"
                 required
                 autoComplete="email"
@@ -101,33 +75,24 @@ export default function SignUp() {
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="sign-up-password"
-                className="text-[13px] font-semibold text-foreground"
-              >
-                Password
-              </Label>
-              <Input
-                id="sign-up-password"
-                type="password"
-                required
-                autoComplete="new-password"
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-[42px] rounded-[10px] bg-card"
-              />
-            </div>
-
             <Button
               type="submit"
               className="mt-3 h-11 w-full rounded-[10px] text-sm font-medium"
               disabled={submitting}
             >
-              {submitting ? 'Creating account...' : 'Create account'}
+              {submitting ? 'Sending...' : 'Send reset link'}
             </Button>
           </form>
+
+          <p className="mt-7 text-[13.5px] text-muted-foreground">
+            Remembered it?{' '}
+            <Link
+              to="/sign-in"
+              className="font-medium text-foreground underline underline-offset-[3px] transition-colors hover:text-brand"
+            >
+              Back to sign in
+            </Link>
+          </p>
         </div>
       )}
     </AuthShell>
