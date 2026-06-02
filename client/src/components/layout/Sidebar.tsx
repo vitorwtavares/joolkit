@@ -7,12 +7,14 @@ import {
   CalendarDays,
   LogOut,
   FileText,
+  Settings,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getInitials } from '@/utils/getInitials'
 import { useAuth } from '@/context/auth'
+import { SettingsModal } from '@/components/settings/SettingsModal'
 import {
   Popover,
   PopoverContent,
@@ -52,6 +54,8 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const [isAccountActive, setIsAccountActive] = useState(false)
+  const [popoverOpen, setPopoverOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
       return (
@@ -200,7 +204,7 @@ export default function Sidebar() {
 
       <div className="flex-1" />
 
-      <Popover>
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         {isCollapsed ? (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -308,18 +312,33 @@ export default function Sidebar() {
           <Separator />
 
           <button
+            onClick={() => {
+              setPopoverOpen(false)
+              setSettingsOpen(true)
+            }}
+            className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground transition-colors outline-none hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:bg-sidebar-hover focus-visible:text-sidebar-foreground focus-visible:outline-none"
+          >
+            <Settings size={14} className="opacity-70" />
+            Settings
+          </button>
+
+          <Separator />
+
+          <button
             onClick={() =>
               signOut().catch(() =>
                 toast.error('Failed to sign out. Please try again.'),
               )
             }
-            className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground transition-colors outline-none hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:bg-sidebar-hover focus-visible:text-sidebar-foreground focus-visible:outline-none"
+            className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground transition-colors outline-none hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:bg-sidebar-hover focus-visible:text-sidebar-foreground focus-visible:outline-none"
           >
             <LogOut size={14} className="opacity-70" />
             Sign out
           </button>
         </PopoverContent>
       </Popover>
+
+      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
     </aside>
   )
 }
