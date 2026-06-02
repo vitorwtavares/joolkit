@@ -53,30 +53,19 @@ export function SegmentedToggle<T extends string>({
           fullWidth && 'w-full',
         )}
       >
-        {activeIndex >= 0 && !disabled && (
+        {activeIndex >= 0 && (
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-0 rounded-md bg-surface-selected shadow-[0_1px_0_rgba(0,0,0,0.18)] transition-transform duration-200 ease-out"
+            className={cn(
+              'pointer-events-none absolute inset-y-0 left-0 rounded-md bg-surface-selected shadow-[0_1px_0_rgba(0,0,0,0.18)] transition-transform duration-200 ease-out',
+              disabled && 'opacity-60 shadow-none',
+            )}
             style={{
               width: `${100 / options.length}%`,
               transform: `translateX(${activeIndex * 100}%)`,
             }}
           />
         )}
-        {/* With no slider to divide them, the disabled state renders faint
-            separators at each segment boundary so it doesn't read as one
-            blank pill. */}
-        {disabled &&
-          options
-            .slice(1)
-            .map((option, i) => (
-              <div
-                key={option.value}
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-y-1.5 w-px bg-foreground/15"
-                style={{ left: `${((i + 1) * 100) / options.length}%` }}
-              />
-            ))}
         {options.map((option) => {
           const isActive = option.value === value
           return (
