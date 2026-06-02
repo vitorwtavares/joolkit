@@ -120,7 +120,7 @@ export default function Sidebar() {
           onClick={() => navigate('/')}
           disabled={isCollapsed}
           tabIndex={isCollapsed ? -1 : undefined}
-          className="absolute top-0 left-0 flex h-8 w-full items-center overflow-hidden rounded-lg text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-default disabled:opacity-100"
+          className="absolute top-0 left-0 flex h-8 w-full cursor-pointer items-center overflow-hidden rounded-lg text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-default disabled:opacity-100"
           aria-label="Go to quick copy"
         >
           <span className="flex size-8 shrink-0 items-center justify-center">
