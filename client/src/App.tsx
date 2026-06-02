@@ -8,6 +8,8 @@ import AnswerBank from './pages/AnswerBank'
 import ApplicationTracker from './pages/ApplicationTracker'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import NotFound from './pages/NotFound'
 import { Toaster } from './components/ui/sonner'
 import { TooltipProvider } from './components/ui/tooltip'
@@ -24,6 +26,8 @@ export default function App() {
         <Routes>
           <Route path="/sign-in" element={<SignIn />} />
           <Route path="/sign-up" element={<SignUp />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route element={<AuthGuard />}>
             <Route path="/" element={<Navigate to="/quick-copy" replace />} />
             <Route element={<Layout />}>
