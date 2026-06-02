@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { Plus, ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
+import {
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  PanelsTopLeft,
+  Search,
+  X,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { ApiError } from '@/api/api'
 import { cn } from '@/lib/utils'
@@ -453,6 +460,16 @@ function ApplicationTrackerInner() {
               value={activeView?.filter_config ?? null}
               onApply={handleApplyFilter}
             />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setViewForm({ mode: 'create' })}
+              aria-label="New view"
+              className="max-[1599px]:size-8 max-[1599px]:px-0"
+            >
+              <PanelsTopLeft size={14} />
+              <span className="hidden min-[1600px]:inline">New view</span>
+            </Button>
             <ColumnsControl
               value={activeView?.hidden_columns ?? null}
               onChange={handleColumnsChange}
