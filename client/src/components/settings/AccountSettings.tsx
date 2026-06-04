@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { useAuth } from '@/context/auth'
 import { useDeleteAccount } from '@/api/hooks/useAccount'
+import {
+  formatPasswordResetCooldown,
+  usePasswordResetCooldown,
+} from '@/hooks/usePasswordResetCooldown'
 import { getPasswordResetRedirectUrl } from '@/utils/getPasswordResetRedirectUrl'
 import { Button } from '@/components/ui/button'
 import { DeleteAccountDialog } from '@/components/account/DeleteAccountDialog'
 import { SettingRow } from './SettingRow'
-
-const RESET_COOLDOWN_SECONDS = 60
 
 export function AccountSettings() {
   const { user, signOut } = useAuth()
@@ -16,16 +18,21 @@ export function AccountSettings() {
   const deleteAccount = useDeleteAccount()
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [sendingReset, setSendingReset] = useState(false)
-  const [cooldown, setCooldown] = useState(0)
-
-  useEffect(() => {
-    if (cooldown <= 0) return
-    const timer = setTimeout(() => setCooldown(cooldown - 1), 1000)
-    return () => clearTimeout(timer)
-  }, [cooldown])
+  const resetCooldown = usePasswordResetCooldown(email)
 
   async function handleSendResetEmail() {
-    if (sendingReset || cooldown > 0) return
+    if (sendingReset) return
+
+    const remainingSeconds = resetCooldown.refreshCooldown()
+    if (remainingSeconds > 0) {
+      toast.error(
+        `Please wait ${formatPasswordResetCooldown(
+          remainingSeconds,
+        )} before requesting another link.`,
+      )
+      return
+    }
+
     setSendingReset(true)
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -35,7 +42,7 @@ export function AccountSettings() {
         toast.error(error.message)
       } else {
         toast.success(`We've sent a password reset link to ${email}.`)
-        setCooldown(RESET_COOLDOWN_SECONDS)
+        resetCooldown.startNextCooldown()
       }
     } catch {
       toast.error('Something went wrong. Please try again.')
@@ -57,7 +64,9 @@ export function AccountSettings() {
 
   let resetLabel = 'Send reset link'
   if (sendingReset) resetLabel = 'Sending...'
-  else if (cooldown > 0) resetLabel = `Resend in ${cooldown}s`
+  else if (resetCooldown.isCoolingDown) {
+    resetLabel = `Resend in ${resetCooldown.formattedRemaining}`
+  }
 
   return (
     <div className="flex flex-col">
@@ -73,7 +82,7 @@ export function AccountSettings() {
             variant="outline"
             size="sm"
             onClick={handleSendResetEmail}
-            disabled={sendingReset || cooldown > 0}
+            disabled={sendingReset || resetCooldown.isCoolingDown}
           >
             {resetLabel}
           </Button>
