@@ -18,6 +18,7 @@ interface TextCellProps {
   className?: string
   linkClassName?: string
   maxLength?: number
+  onEditingChange?: (editing: boolean) => void
 }
 
 export function TextCell({
@@ -29,6 +30,7 @@ export function TextCell({
   className = '',
   linkClassName,
   maxLength,
+  onEditingChange,
 }: TextCellProps) {
   const safeUrl = url ? sanitizeUrl(url) : null
   const [editing, setEditing] = useState(false)
@@ -40,6 +42,7 @@ export function TextCell({
     if (trimmed !== (value ?? '')) onSave(trimmed || null)
     onCommit?.()
     setEditing(false)
+    onEditingChange?.(false)
   }
 
   if (editing) {
@@ -67,13 +70,19 @@ export function TextCell({
       <TooltipTrigger asChild>
         <span
           tabIndex={0}
-          onClick={() => setEditing(true)}
+          onClick={() => {
+            setEditing(true)
+            onEditingChange?.(true)
+          }}
           onMouseEnter={() => {
             if (value) check(innerRef.current)
           }}
           onMouseLeave={reset}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') setEditing(true)
+            if (e.key === 'Enter' || e.key === ' ') {
+              setEditing(true)
+              onEditingChange?.(true)
+            }
           }}
           className={`absolute inset-0 flex cursor-text items-center overflow-hidden px-3 text-[14px] transition-colors hover:bg-surface-hover-subtle ${className}`}
           style={{ fontWeight: bold ? 500 : undefined }}
