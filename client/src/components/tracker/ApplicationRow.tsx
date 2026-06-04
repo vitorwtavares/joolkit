@@ -58,6 +58,7 @@ function ApplicationRowImpl({
   const save = draft.apply
   const { mutate: deleteApp, isPending: isDeleting } = useDeleteApplication()
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [companyNameEditing, setCompanyNameEditing] = useState(false)
 
   function openDrawer() {
     onRowClick(app.id)
@@ -151,6 +152,7 @@ function ApplicationRowImpl({
             maxLength={50}
             onSave={(v) => save({ company_name: v ?? '' })}
             onCommit={draft.flush}
+            onEditingChange={setCompanyNameEditing}
           />
           <span className="pointer-events-none absolute top-1/2 left-9 -translate-y-1/2">
             <CompanyAvatar name={app.company_name || null} />
@@ -161,21 +163,25 @@ function ApplicationRowImpl({
             label={app.company_name || null}
             onSaveLabel={(v) => save({ company_name: v ?? '' })}
           />
-          <button
-            type="button"
-            onClick={isSelected ? onCloseDrawer : openDrawer}
-            className={cn(
-              'absolute top-1/2 right-2 flex -translate-y-1/2 cursor-pointer items-center rounded border border-border-overlay bg-secondary px-1.5 py-1.5 text-muted-foreground transition-all hover:border-border-overlay-strong hover:text-foreground',
-              isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
-            )}
-            aria-label={isSelected ? 'Close details' : 'Open details'}
-          >
-            {isSelected ? (
-              <PanelRightClose size={15} />
-            ) : (
-              <PanelRightOpen size={15} />
-            )}
-          </button>
+          {!companyNameEditing && (
+            <button
+              type="button"
+              onClick={isSelected ? onCloseDrawer : openDrawer}
+              className={cn(
+                'absolute top-1/2 right-2 flex -translate-y-1/2 cursor-pointer items-center rounded border border-border-overlay bg-secondary px-1.5 py-1.5 text-muted-foreground transition-all hover:border-border-overlay-strong hover:text-foreground',
+                isSelected
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover:opacity-100',
+              )}
+              aria-label={isSelected ? 'Close details' : 'Open details'}
+            >
+              {isSelected ? (
+                <PanelRightClose size={15} />
+              ) : (
+                <PanelRightOpen size={15} />
+              )}
+            </button>
+          )}
         </td>
 
         {/* Job title */}

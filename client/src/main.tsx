@@ -1,17 +1,11 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import {
-  persistQueryClientRestore,
-  persistQueryClientSubscribe,
-} from '@tanstack/react-query-persist-client'
-import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
 import { AuthProvider } from './context/auth'
 import './index.css'
 import App from './App'
 
-const CACHE_MAX_AGE = 24 * 60 * 60 * 1000
-const CACHE_BUSTER = 'joolkit-v1'
+const LEGACY_QUERY_CACHE_KEY = 'joolkit:query-cache'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,27 +13,12 @@ const queryClient = new QueryClient({
   },
 })
 
-const persister = createAsyncStoragePersister({
-  storage: window.localStorage,
-  key: 'joolkit:query-cache',
-})
-
-// Pre-hydrate before React mounts so cached data is available on first render.
-await persistQueryClientRestore({
-  queryClient,
-  persister,
-  maxAge: CACHE_MAX_AGE,
-  buster: CACHE_BUSTER,
-})
-
-persistQueryClientSubscribe({
-  queryClient,
-  persister,
-  buster: CACHE_BUSTER,
-  dehydrateOptions: {
-    shouldDehydrateQuery: (query) => query.queryKey[0] === 'profile',
-  },
-})
+try {
+  // TODO 2026-06-11: Remove this legacy cache cleanup after browsers have cleared it.
+  window.localStorage.removeItem(LEGACY_QUERY_CACHE_KEY)
+} catch {
+  // Storage can be unavailable in restricted browser contexts.
+}
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Root element #root not found in index.html')

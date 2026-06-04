@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthShell } from '@/components/auth/AuthShell'
+import {
+  formatPasswordResetCooldown,
+  usePasswordResetCooldown,
+} from '@/hooks/usePasswordResetCooldown'
 import { getPasswordResetRedirectUrl } from '@/utils/getPasswordResetRedirectUrl'
 
 export default function ForgotPassword() {
@@ -14,19 +18,32 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [done, setDone] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const resetCooldown = usePasswordResetCooldown(email)
 
   if (isLoading) return null
   if (user) return <Navigate to="/quick-copy" replace />
 
-  async function handleSubmit(e: React.SubmitEvent) {
-    e.preventDefault()
+  async function sendResetEmail() {
+    const remainingSeconds = resetCooldown.refreshCooldown()
+    if (remainingSeconds > 0) {
+      toast.error(
+        `Please wait ${formatPasswordResetCooldown(
+          remainingSeconds,
+        )} before requesting another link.`,
+      )
+      return
+    }
+
     setSubmitting(true)
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: getPasswordResetRedirectUrl(),
       })
       if (error) toast.error(error.message)
-      else setDone(true)
+      else {
+        resetCooldown.startNextCooldown()
+        setDone(true)
+      }
     } catch {
       toast.error('Something went wrong. Please try again.')
     } finally {
@@ -34,10 +51,21 @@ export default function ForgotPassword() {
     }
   }
 
+  function handleSubmit(e: React.SubmitEvent) {
+    e.preventDefault()
+    void sendResetEmail()
+  }
+
+  let resetLabel = 'Send reset link'
+  if (submitting) resetLabel = 'Sending...'
+  else if (resetCooldown.isCoolingDown) {
+    resetLabel = `Resend in ${resetCooldown.formattedRemaining}`
+  } else if (done) resetLabel = 'Send another link'
+
   return (
     <AuthShell>
       {done ? (
-        <div>
+        <div className="flex flex-col gap-5">
           <h1 className="text-2xl font-semibold tracking-tight">
             Check your email
           </h1>
@@ -46,6 +74,14 @@ export default function ForgotPassword() {
             <span className="text-foreground">{email}</span>, we've sent a link
             to reset your password.
           </p>
+          <Button
+            type="button"
+            className="h-11 w-full rounded-[10px] text-sm font-medium"
+            disabled={submitting || resetCooldown.isCoolingDown}
+            onClick={() => void sendResetEmail()}
+          >
+            {resetLabel}
+          </Button>
         </div>
       ) : (
         <div>
@@ -78,9 +114,9 @@ export default function ForgotPassword() {
             <Button
               type="submit"
               className="mt-3 h-11 w-full rounded-[10px] text-sm font-medium"
-              disabled={submitting}
+              disabled={submitting || resetCooldown.isCoolingDown}
             >
-              {submitting ? 'Sending...' : 'Send reset link'}
+              {resetLabel}
             </Button>
           </form>
 
