@@ -143,6 +143,11 @@ export function ResumeButton({
       setIconPop(position)
       toast.success(`${label} uploaded`)
     } catch {
+      // The DB never recorded this file, so remove it instead of orphaning it.
+      await supabase.storage
+        .from('resumes')
+        .remove([path])
+        .catch(() => {})
       setUploading(null)
     } finally {
       setUploading(null)
