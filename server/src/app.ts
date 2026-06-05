@@ -5,6 +5,7 @@ import { createRateLimitMiddleware } from './middleware/rateLimit'
 import healthRouter from './routes/health'
 import accountRouter from './routes/account'
 import profileRouter from './routes/profile'
+import resumesRouter from './routes/resumes'
 import coverLettersRouter from './routes/coverLetters'
 import exportRouter from './routes/export'
 import answersRouter from './routes/answers'
@@ -33,6 +34,7 @@ app.use(generalLimiter)
 app.use(authMiddleware)
 app.use('/api/account', accountRouter)
 app.use('/api/profile', profileRouter)
+app.use('/api/resumes', resumesRouter)
 app.use('/api/cover-letters', coverLettersRouter)
 app.use('/api/export', exportRouter)
 app.use('/api/answers', answersRouter)
