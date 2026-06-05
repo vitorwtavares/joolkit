@@ -21,6 +21,10 @@ function getFileUrl(value: unknown): string | null {
     : null
 }
 
+function isUserStoragePath(fileUrl: string, userId: string): boolean {
+  return fileUrl.startsWith(`${userId}/`)
+}
+
 async function fetchResumeVariations(userId: string) {
   return getSupabase()
     .from('resume_variations')
@@ -73,6 +77,10 @@ router.post('/', async (req, res) => {
     res.status(400).json({ error: 'file_url is required' })
     return
   }
+  if (!isUserStoragePath(fileUrl, req.userId!)) {
+    res.status(400).json({ error: 'file_url must belong to the current user' })
+    return
+  }
 
   const { data: resumes, error: fetchError } = await fetchResumeVariations(
     req.userId!,
@@ -114,6 +122,10 @@ router.put('/:id/file', async (req, res) => {
   const fileUrl = getFileUrl(req.body.file_url)
   if (!fileUrl) {
     res.status(400).json({ error: 'file_url is required' })
+    return
+  }
+  if (!isUserStoragePath(fileUrl, req.userId!)) {
+    res.status(400).json({ error: 'file_url must belong to the current user' })
     return
   }
 

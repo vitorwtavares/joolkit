@@ -201,6 +201,17 @@ describe('POST /api/resumes', () => {
     expect(res.body).toEqual({ error: 'file_url is required' })
   })
 
+  it('returns 400 when file_url is outside the current user folder', async () => {
+    const res = await request(buildApp())
+      .post('/api/resumes')
+      .send({ file_url: 'other-user/resume.pdf' })
+
+    expect(res.status).toBe(400)
+    expect(res.body).toEqual({
+      error: 'file_url must belong to the current user',
+    })
+  })
+
   it('creates a resume variation at the next position', async () => {
     const { mockFrom, mockInsert } = mockCreateChain({
       existingResumes: [{ id: '1', position: 1 }],
@@ -281,6 +292,17 @@ describe('PUT /api/resumes/:id/file', () => {
 
     expect(res.status).toBe(400)
     expect(res.body).toEqual({ error: 'file_url is required' })
+  })
+
+  it('returns 400 when file_url is outside the current user folder', async () => {
+    const res = await request(buildApp())
+      .put('/api/resumes/2/file')
+      .send({ file_url: 'other-user/resume.pdf' })
+
+    expect(res.status).toBe(400)
+    expect(res.body).toEqual({
+      error: 'file_url must belong to the current user',
+    })
   })
 
   it('updates an existing resume file by id', async () => {
