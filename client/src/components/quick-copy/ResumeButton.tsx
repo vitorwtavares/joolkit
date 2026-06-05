@@ -119,13 +119,6 @@ export function ResumeButton({
 
     setUploading(position)
 
-    if (existingResume?.file_url && existingResume.file_url !== path) {
-      await supabase.storage
-        .from('resumes')
-        .remove([existingResume.file_url])
-        .catch(() => {})
-    }
-
     const { error } = await supabase.storage
       .from('resumes')
       .upload(path, file, { upsert: true })
@@ -139,6 +132,14 @@ export function ResumeButton({
 
     try {
       await onUploaded(id, path, label)
+      // Only once the DB points at the new file is it safe to drop the old one;
+      // a best-effort removal failure just orphans a file, never breaks the row.
+      if (existingResume?.file_url && existingResume.file_url !== path) {
+        await supabase.storage
+          .from('resumes')
+          .remove([existingResume.file_url])
+          .catch(() => {})
+      }
       setIconPop(position)
       toast.success(`${label} uploaded`)
     } catch {
@@ -167,8 +168,13 @@ export function ResumeButton({
     if (locked || busy) return
     setRemoving(resume.position)
     try {
-      await supabase.storage.from('resumes').remove([resume.file_url])
       await onRemoved(resume.id)
+      // The row is gone from the DB; a failed storage delete only orphans a
+      // file, so keep it best-effort and don't surface it as a removal failure.
+      await supabase.storage
+        .from('resumes')
+        .remove([resume.file_url])
+        .catch(() => {})
     } catch {
       setRemoving(null)
       return
