@@ -29,6 +29,7 @@ function makeAnswer(overrides: Partial<Answer> = {}): Answer {
     short_answer: 'Existing short',
     long_answer: 'Existing long',
     preferred_variant: 'short',
+    tags: [],
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
     ...overrides,
@@ -88,6 +89,7 @@ describe('EditAnswerModal', () => {
       short_answer: 'short body',
       long_answer: null,
       preferred_variant: 'short',
+      tags: [],
     })
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce())
   })
@@ -111,6 +113,7 @@ describe('EditAnswerModal', () => {
       short_answer: 'Updated short',
       long_answer: 'Existing long',
       preferred_variant: 'long',
+      tags: [],
     })
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce())
   })

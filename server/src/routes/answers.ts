@@ -3,7 +3,26 @@ import { getSupabase } from '../middleware/auth'
 
 const router = Router()
 
-const MAX_ANSWERS = 12
+const MAX_ANSWERS = 40
+const MAX_TAGS = 8
+const MAX_TAG_LENGTH = 24
+
+function sanitizeTags(input: unknown): string[] {
+  if (!Array.isArray(input)) return []
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const raw of input) {
+    if (typeof raw !== 'string') continue
+    const tag = raw.trim().slice(0, MAX_TAG_LENGTH)
+    if (!tag) continue
+    const key = tag.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    result.push(tag)
+    if (result.length >= MAX_TAGS) break
+  }
+  return result
+}
 
 router.get('/', async (req, res) => {
   const { data, error } = await getSupabase()
@@ -28,7 +47,8 @@ router.post('/', async (req, res) => {
       .status(400)
       .json({ error: `Maximum of ${MAX_ANSWERS} answers reached` })
 
-  const { question, short_answer, long_answer, preferred_variant } = req.body
+  const { question, short_answer, long_answer, preferred_variant, tags } =
+    req.body
 
   const { data, error } = await getSupabase()
     .from('answers')
@@ -38,6 +58,7 @@ router.post('/', async (req, res) => {
       short_answer: short_answer ?? '',
       long_answer: long_answer ?? null,
       preferred_variant: preferred_variant ?? 'short',
+      tags: sanitizeTags(tags),
       position: (count ?? 0) + 1,
     })
     .select()
@@ -98,7 +119,8 @@ router.put('/reorder', async (req, res) => {
 })
 
 router.put('/:id', async (req, res) => {
-  const { question, short_answer, long_answer, preferred_variant } = req.body
+  const { question, short_answer, long_answer, preferred_variant, tags } =
+    req.body
   const update: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   }
@@ -107,6 +129,7 @@ router.put('/:id', async (req, res) => {
   if (long_answer !== undefined) update.long_answer = long_answer
   if (preferred_variant !== undefined)
     update.preferred_variant = preferred_variant
+  if (tags !== undefined) update.tags = sanitizeTags(tags)
 
   const { data, error } = await getSupabase()
     .from('answers')

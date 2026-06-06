@@ -9,6 +9,7 @@ export interface Answer {
   short_answer: string
   long_answer: string | null
   preferred_variant: 'short' | 'long'
+  tags: string[]
   created_at: string
   updated_at: string
 }
@@ -40,7 +41,7 @@ export function useCreateAnswer() {
 type UpdateAnswerPayload = { id: string } & Partial<
   Pick<
     Answer,
-    'question' | 'short_answer' | 'long_answer' | 'preferred_variant'
+    'question' | 'short_answer' | 'long_answer' | 'preferred_variant' | 'tags'
   >
 >
 
@@ -49,6 +50,19 @@ export function useUpdateAnswer() {
   return useMutation({
     mutationFn: ({ id, ...payload }: UpdateAnswerPayload) =>
       api.put<Answer>(`/api/answers/${id}`, payload),
+    onMutate: async ({ id, ...patch }) => {
+      await queryClient.cancelQueries({ queryKey: ['answers'] })
+      const previous = queryClient.getQueryData<Answer[]>(['answers'])
+      queryClient.setQueryData<Answer[]>(['answers'], (prev) =>
+        prev ? prev.map((a) => (a.id === id ? { ...a, ...patch } : a)) : prev,
+      )
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['answers'], context.previous)
+      }
+    },
     onSuccess: (data) => {
       queryClient.setQueryData<Answer[]>(['answers'], (prev) => {
         if (!prev) {

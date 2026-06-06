@@ -23,6 +23,7 @@ import {
   useDeleteAnswer,
 } from '@/api/hooks/useAnswers'
 import type { Answer } from '@/api/hooks/useAnswers'
+import { TagInput } from './TagInput'
 
 interface EditAnswerModalProps {
   open: boolean
@@ -44,6 +45,7 @@ export function EditAnswerModal({
   const [question, setQuestion] = useState('')
   const [shortAnswer, setShortAnswer] = useState('')
   const [longAnswer, setLongAnswer] = useState('')
+  const [tags, setTags] = useState<string[]>([])
   const [confirmClose, setConfirmClose] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -59,6 +61,7 @@ export function EditAnswerModal({
       setQuestion(answer?.question ?? '')
       setShortAnswer(answer?.short_answer ?? '')
       setLongAnswer(answer?.long_answer ?? '')
+      setTags(answer?.tags ?? [])
       setConfirmClose(false)
       setConfirmDelete(false)
     }
@@ -68,7 +71,8 @@ export function EditAnswerModal({
   const isDirty =
     question !== (answer?.question ?? '') ||
     shortAnswer !== (answer?.short_answer ?? '') ||
-    longAnswer !== (answer?.long_answer ?? '')
+    longAnswer !== (answer?.long_answer ?? '') ||
+    JSON.stringify(tags) !== JSON.stringify(answer?.tags ?? [])
 
   function requestClose() {
     if (isDirty) {
@@ -96,6 +100,7 @@ export function EditAnswerModal({
           short_answer: trimmedShort,
           long_answer: trimmedLong || null,
           preferred_variant: answer.preferred_variant,
+          tags,
         })
       } else {
         await createAnswer.mutateAsync({
@@ -103,6 +108,7 @@ export function EditAnswerModal({
           short_answer: trimmedShort,
           long_answer: trimmedLong || null,
           preferred_variant: 'short',
+          tags,
         })
       }
       onClose()
@@ -147,24 +153,27 @@ export function EditAnswerModal({
             entry.
           </DialogDescription>
 
-          <div className="flex items-center gap-3 border-b border-border-subtle px-[22px] py-[18px]">
-            <input
-              ref={questionRef}
-              id="answer-question"
-              name="answer-question"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Type your question here..."
-              className="min-w-0 flex-1 bg-transparent text-[17px] font-semibold tracking-[-0.015em] text-foreground outline-none placeholder:text-muted-foreground/50"
-            />
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={requestClose}
-              className="flex-shrink-0 text-muted-foreground"
-            >
-              <X />
-            </Button>
+          <div className="flex flex-col gap-2.5 border-b border-border-subtle px-[22px] py-[18px]">
+            <div className="flex items-center gap-3">
+              <input
+                ref={questionRef}
+                id="answer-question"
+                name="answer-question"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="Type your question here..."
+                className="min-w-0 flex-1 bg-transparent text-[17px] font-semibold tracking-[-0.015em] text-foreground outline-none placeholder:text-muted-foreground/50"
+              />
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={requestClose}
+                className="flex-shrink-0 text-muted-foreground"
+              >
+                <X />
+              </Button>
+            </div>
+            <TagInput tags={tags} onChange={setTags} />
           </div>
 
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-px overflow-y-auto bg-border-subtle md:grid-cols-2">

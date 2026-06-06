@@ -10,6 +10,12 @@ const LABELS: Record<SnippetVariant, string> = {
   detailed: 'Detailed',
 }
 
+// The card only ever shows 3 clamped lines, but `line-clamp` still lays out the
+// full string. Render at most this many characters — roughly the most 3 lines
+// show at the card width, plus a little headroom — so long answers don't pay
+// layout cost on every card. Copy uses the full text regardless.
+const PREVIEW_LIMIT = 120
+
 interface SnippetProps {
   variant: SnippetVariant
   text: string | null | undefined
@@ -28,7 +34,7 @@ export function Snippet({ variant, text }: SnippetProps) {
 
   if (!text?.trim()) {
     return (
-      <div className="flex min-h-[96px] w-full flex-col rounded-lg border border-dashed border-border-subtle px-[11px] py-2.5">
+      <div className="flex h-[96px] w-full flex-col rounded-lg border border-dashed border-border-subtle px-[11px] py-2.5">
         <div className="mb-1 flex items-center">
           <span className="text-[11px] font-medium tracking-[0.05em] text-text-faint uppercase">
             {LABELS[variant]}
@@ -60,7 +66,7 @@ export function Snippet({ variant, text }: SnippetProps) {
       onClick={handleCopy}
       aria-label={`Copy ${LABELS[variant]} answer`}
       className={cn(
-        'group/snippet relative flex min-h-[96px] w-full cursor-pointer flex-col rounded-lg border px-[11px] py-2.5 text-left transition-[border-color,background-color]',
+        'group/snippet relative flex h-[96px] w-full cursor-pointer flex-col overflow-hidden rounded-lg border px-[11px] py-2.5 text-left transition-[border-color,background-color]',
         copied
           ? 'border-[rgba(95,191,129,0.42)] bg-[rgba(95,191,129,0.08)]'
           : 'border-border-subtle bg-white/[0.015] hover:border-border hover:bg-secondary',
@@ -90,7 +96,11 @@ export function Snippet({ variant, text }: SnippetProps) {
           )}
         </span>
       </div>
-      <p className="line-clamp-3 text-[13px] text-muted-foreground">{text}</p>
+      <p className="line-clamp-3 text-[13px] leading-snug text-muted-foreground">
+        {text && text.length > PREVIEW_LIMIT
+          ? text.slice(0, PREVIEW_LIMIT)
+          : text}
+      </p>
     </button>
   )
 }
