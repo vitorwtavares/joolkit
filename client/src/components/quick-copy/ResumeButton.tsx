@@ -229,14 +229,14 @@ export function ResumeButton({
             </div>
             <div
               className={cn(
-                'rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10.5px] leading-none text-muted-foreground',
+                'rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] leading-none text-muted-foreground',
                 maxReached && 'border-brand-border bg-brand-soft text-brand',
               )}
             >
               {filledCount}/{RESUME_VARIATION_LIMIT}
             </div>
           </div>
-          <div className="mt-0.5 text-[12px] text-text-faint">
+          <div className="mt-0.5 text-[13px] text-text-faint">
             Up to {RESUME_VARIATION_LIMIT} variations
           </div>
         </div>
@@ -272,7 +272,7 @@ export function ResumeButton({
             <span className="text-[13px] font-semibold text-foreground">
               Upload a file
             </span>
-            <span className="max-w-[26ch] text-[11.5px] text-text-faint">
+            <span className="max-w-[26ch] text-[12px] text-text-faint">
               Add up to {RESUME_VARIATION_LIMIT} variations. Each becomes a
               one-click download.
             </span>
@@ -388,7 +388,7 @@ export function ResumeButton({
                           )}
                         </span>
                       )}
-                      <span className="mt-0.5 block truncate text-[11.5px] text-text-faint">
+                      <span className="mt-0.5 block truncate text-[12px] text-text-faint">
                         {filename}
                       </span>
                     </span>
@@ -433,7 +433,7 @@ export function ResumeButton({
                   type="button"
                   disabled={locked || busy}
                   onClick={handleAdd}
-                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border-strong bg-transparent px-3 py-2.5 text-[12.5px] font-medium text-muted-foreground transition-colors hover:border-brand-border hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-60"
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border-strong bg-transparent px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-brand-border hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-60"
                 >
                   {addingNewVariation ? (
                     <Loader2 size={14} className="animate-spin" />
