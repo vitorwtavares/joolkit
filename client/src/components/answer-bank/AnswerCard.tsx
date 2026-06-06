@@ -36,7 +36,7 @@ export function AnswerCard({ answer, onEdit }: AnswerCardProps) {
     <>
       <article className="group/card relative flex min-h-[196px] flex-col rounded-[10px] border border-border bg-card p-4 pb-3 transition-colors hover:border-border-strong">
         <header className="mb-3 flex items-start gap-2.5">
-          <h3 className="mt-0.5 line-clamp-2 min-w-0 flex-1 text-[15px] leading-snug font-medium tracking-[-0.005em]">
+          <h3 className="mt-0.5 line-clamp-2 min-h-[42px] min-w-0 flex-1 text-[15px] leading-snug font-medium tracking-[-0.005em]">
             {answer.question || (
               <span className="text-muted-foreground italic">No question</span>
             )}
