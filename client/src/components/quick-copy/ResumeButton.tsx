@@ -296,28 +296,22 @@ export function ResumeButton({
                 return (
                   <div
                     key={resume.id}
-                    role="button"
-                    tabIndex={busy || isOnCooldown || rowEditing ? -1 : 0}
-                    aria-disabled={busy || isOnCooldown}
-                    title={`Download ${filename}`}
-                    onClick={() => {
-                      if (!rowEditing) void handleDownload(resume)
-                    }}
-                    onKeyDown={(event) => {
-                      if (rowEditing) return
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
-                        void handleDownload(resume)
-                      }
-                    }}
                     className={cn(
-                      'group/resume-row grid min-h-[64px] w-full cursor-pointer grid-cols-[34px_1fr_auto] items-center gap-3 rounded-lg border border-border bg-secondary px-3 py-2.5 text-left transition-[background-color,border-color,transform] hover:border-brand hover:bg-surface-selected focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-border active:translate-y-px',
-                      (rowBusy || busy) && 'pointer-events-none opacity-70',
+                      'group/resume-row relative grid h-[62px] min-h-0 w-full shrink-0 grid-cols-[34px_1fr_auto] content-center items-center gap-3 rounded-lg border border-border bg-secondary px-3 py-2.5 transition-[background-color,border-color] hover:border-brand hover:bg-surface-selected',
+                      (rowBusy || busy) && 'opacity-70',
                     )}
                   >
+                    <button
+                      type="button"
+                      aria-label={`Download ${filename}`}
+                      title={`Download ${filename}`}
+                      disabled={busy || isOnCooldown || rowEditing}
+                      onClick={() => void handleDownload(resume)}
+                      className="absolute inset-0 z-0 cursor-pointer rounded-lg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-border disabled:cursor-default"
+                    />
                     <span
                       className={cn(
-                        'flex size-[34px] items-center justify-center rounded-lg bg-brand-soft text-brand',
+                        'pointer-events-none relative z-10 flex size-[34px] items-center justify-center rounded-lg bg-brand-soft text-brand',
                         iconPop === resume.position && 'animate-icon-pop',
                       )}
                       onAnimationEnd={() => {
@@ -330,12 +324,9 @@ export function ResumeButton({
                         <FileText size={16} />
                       )}
                     </span>
-                    <span className="min-w-0">
+                    <span className="pointer-events-none relative z-10 min-w-0">
                       {rowEditing ? (
-                        <span
-                          className="flex max-w-[275px] min-w-0 items-center gap-1.5"
-                          onClick={(event) => event.stopPropagation()}
-                        >
+                        <span className="pointer-events-auto flex h-7 max-w-[275px] min-w-0 items-center gap-1.5">
                           <input
                             ref={labelInputRef}
                             value={labelDraft}
@@ -359,10 +350,7 @@ export function ResumeButton({
                             type="button"
                             aria-label="Save resume label"
                             disabled={rowSavingLabel}
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              void saveLabel(resume)
-                            }}
+                            onClick={() => void saveLabel(resume)}
                             className="flex size-6 cursor-pointer items-center justify-center rounded-md bg-success-soft-strong text-success transition-colors hover:bg-success/25 disabled:pointer-events-none disabled:opacity-50"
                           >
                             {rowSavingLabel ? (
@@ -375,17 +363,14 @@ export function ResumeButton({
                             type="button"
                             aria-label="Cancel resume label edit"
                             disabled={rowSavingLabel}
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              cancelLabelEdit()
-                            }}
+                            onClick={cancelLabelEdit}
                             className="flex size-6 cursor-pointer items-center justify-center rounded-md bg-danger-soft-fill text-danger transition-colors hover:bg-danger/25 disabled:pointer-events-none disabled:opacity-50"
                           >
                             <X size={12} />
                           </button>
                         </span>
                       ) : (
-                        <span className="flex min-w-0 items-center gap-1">
+                        <span className="flex h-7 min-w-0 items-center gap-1">
                           <span className="block truncate text-[13px] font-semibold text-foreground">
                             {label}
                           </span>
@@ -395,11 +380,8 @@ export function ResumeButton({
                               aria-label={`Edit ${label} label`}
                               title="Edit label"
                               disabled={busy}
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                startLabelEdit(resume)
-                              }}
-                              className="flex size-5 flex-shrink-0 cursor-pointer items-center justify-center rounded-md text-text-faint transition-colors hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-50"
+                              onClick={() => startLabelEdit(resume)}
+                              className="pointer-events-auto flex size-5 flex-shrink-0 cursor-pointer items-center justify-center rounded-md text-text-faint transition-colors hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-50"
                             >
                               <Pencil size={11} strokeWidth={2.4} />
                             </button>
@@ -410,7 +392,7 @@ export function ResumeButton({
                         {filename}
                       </span>
                     </span>
-                    <span className="flex items-center gap-1">
+                    <span className="pointer-events-none relative z-10 flex items-center gap-1">
                       <span className="flex size-[30px] items-center justify-center rounded-md text-text-faint transition-colors group-hover/resume-row:bg-brand-soft group-hover/resume-row:text-brand">
                         <Download size={15} />
                       </span>
@@ -419,11 +401,10 @@ export function ResumeButton({
                         aria-label={`Replace ${label}`}
                         title="Replace file"
                         disabled={locked || busy}
-                        onClick={(event) => {
-                          event.stopPropagation()
+                        onClick={() =>
                           openUploader(resume.position, label, resume.id)
-                        }}
-                        className="flex size-7 cursor-pointer items-center justify-center rounded-md text-text-faint transition-colors hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-50"
+                        }
+                        className="pointer-events-auto flex size-7 cursor-pointer items-center justify-center rounded-md text-text-faint transition-colors hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-50"
                       >
                         <RefreshCcw size={15} />
                       </button>
@@ -432,11 +413,8 @@ export function ResumeButton({
                         aria-label={`Remove ${label}`}
                         title="Remove"
                         disabled={locked || busy}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          void handleRemove(resume)
-                        }}
-                        className="flex size-7 cursor-pointer items-center justify-center rounded-md text-text-faint transition-colors hover:bg-danger-soft-fill hover:text-danger disabled:pointer-events-none disabled:opacity-50"
+                        onClick={() => void handleRemove(resume)}
+                        className="pointer-events-auto flex size-7 cursor-pointer items-center justify-center rounded-md text-text-faint transition-colors hover:bg-danger-soft-fill hover:text-danger disabled:pointer-events-none disabled:opacity-50"
                       >
                         <Trash2 size={14} />
                       </button>
