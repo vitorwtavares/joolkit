@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Plus, Search, X } from 'lucide-react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAnswers } from '@/api/hooks/useAnswers'
 import { AnswerCard } from '@/components/answer-bank/AnswerCard'
@@ -16,6 +17,7 @@ export default function AnswerBank() {
   const { data: answers = [], isLoading } = useAnswers()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingAnswer, setEditingAnswer] = useState<Answer | null>(null)
+  const [search, setSearch] = useState('')
 
   function openNew() {
     setEditingAnswer(null)
@@ -34,6 +36,16 @@ export default function AnswerBank() {
 
   const canAddMore = answers.length < MAX_ANSWERS
 
+  const trimmedSearch = search.trim().toLowerCase()
+  const filteredAnswers = useMemo(() => {
+    if (!trimmedSearch) return answers
+    return answers.filter(
+      (a) =>
+        a.question.toLowerCase().includes(trimmedSearch) ||
+        a.tags?.some((tag) => tag.toLowerCase().includes(trimmedSearch)),
+    )
+  }, [answers, trimmedSearch])
+
   return (
     <div className="flex-1 overflow-y-auto p-16 pb-6">
       <PageHeader
@@ -47,27 +59,57 @@ export default function AnswerBank() {
           </>
         }
         right={
-          <Button onClick={openNew} disabled={!canAddMore}>
-            <Plus size={13} />
-            New answer
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search
+                size={14}
+                className="pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search answers"
+                aria-label="Search by question or tag"
+                className="h-8 w-[180px] ps-8 pe-7"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  aria-label="Clear search"
+                  className="absolute end-1.5 top-1/2 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <Button onClick={openNew} disabled={!canAddMore}>
+              <Plus size={13} />
+              New answer
+            </Button>
+          </div>
         }
       />
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-3">
-        {isLoading ? (
-          Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+      {isLoading ? (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-3">
+          {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
             <Skeleton key={i} className="h-[196px] rounded-[10px] bg-card" />
-          ))
-        ) : (
-          <>
-            {answers.map((answer) => (
-              <AnswerCard key={answer.id} answer={answer} onEdit={openEdit} />
-            ))}
-            {canAddMore && <EmptySlotCard onAdd={openNew} />}
-          </>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : trimmedSearch && filteredAnswers.length === 0 ? (
+        <p className="text-[14px] text-muted-foreground">
+          No answers match your search.
+        </p>
+      ) : (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-3">
+          {filteredAnswers.map((answer) => (
+            <AnswerCard key={answer.id} answer={answer} onEdit={openEdit} />
+          ))}
+          {!trimmedSearch && canAddMore && <EmptySlotCard onAdd={openNew} />}
+        </div>
+      )}
 
       <EditAnswerModal
         open={modalOpen}
