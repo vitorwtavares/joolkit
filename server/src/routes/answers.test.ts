@@ -140,8 +140,24 @@ describe('POST /api/answers', () => {
     expect(payload).not.toHaveProperty('id')
   })
 
+  it('sanitizes tags: trims, drops empties, and dedupes case-insensitively', async () => {
+    const count = selectEqCountHandler({ count: 0, error: null })
+    const insert = insertSelectSingleHandler({
+      data: { ...baseAnswer, id: 'a1', position: 1 },
+      error: null,
+    })
+    mockFromSequence([count, insert])
+
+    await request(buildApp())
+      .post('/api/answers')
+      .send({ short_answer: 'S', tags: ['  React ', 'react', '', 'Remote'] })
+
+    const payload = insert.insert.mock.calls[0][0]
+    expect(payload.tags).toEqual(['React', 'Remote'])
+  })
+
   it('rejects with 400 when MAX_ANSWERS is reached', async () => {
-    const count = selectEqCountHandler({ count: 12, error: null })
+    const count = selectEqCountHandler({ count: 40, error: null })
     mockFromSequence([count])
 
     const res = await request(buildApp())
@@ -149,7 +165,7 @@ describe('POST /api/answers', () => {
       .send({ short_answer: 'S' })
 
     expect(res.status).toBe(400)
-    expect(res.body).toEqual({ error: 'Maximum of 12 answers reached' })
+    expect(res.body).toEqual({ error: 'Maximum of 40 answers reached' })
   })
 })
 
@@ -158,7 +174,7 @@ describe('PUT /api/answers/reorder', () => {
     const cases = [
       { orderedIds: 'nope' },
       { orderedIds: [] },
-      { orderedIds: Array.from({ length: 13 }, (_, i) => `id${i}`) },
+      { orderedIds: Array.from({ length: 41 }, (_, i) => `id${i}`) },
       { orderedIds: ['a', ''] },
     ]
     for (const body of cases) {

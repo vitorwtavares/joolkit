@@ -10,9 +10,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { useDeleteAnswer } from '@/api/hooks/useAnswers'
+import { useDeleteAnswer, useUpdateAnswer } from '@/api/hooks/useAnswers'
 import type { Answer } from '@/api/hooks/useAnswers'
 import { Snippet } from './Snippet'
+import { TagInput } from './TagInput'
 
 interface AnswerCardProps {
   answer: Answer
@@ -29,12 +30,13 @@ export function AnswerCard({ answer, onEdit }: AnswerCardProps) {
   const edited = formatEditedDate(answer.updated_at)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const deleteAnswer = useDeleteAnswer()
+  const updateAnswer = useUpdateAnswer()
 
   return (
     <>
       <article className="group/card relative flex min-h-[196px] flex-col rounded-[10px] border border-border bg-card p-4 pb-3 transition-colors hover:border-border-strong">
         <header className="mb-3 flex items-start gap-2.5">
-          <h3 className="mt-0.5 line-clamp-2 min-w-0 flex-1 text-[15px] leading-snug font-medium tracking-[-0.005em]">
+          <h3 className="mt-0.5 line-clamp-2 min-h-[42px] min-w-0 flex-1 text-[15px] leading-snug font-medium tracking-[-0.005em]">
             {answer.question || (
               <span className="text-muted-foreground italic">No question</span>
             )}
@@ -64,11 +66,20 @@ export function AnswerCard({ answer, onEdit }: AnswerCardProps) {
           <Snippet variant="detailed" text={answer.long_answer} />
         </div>
 
-        {edited && (
-          <footer className="mt-auto flex items-center justify-end border-t border-border-subtle pt-2">
-            <span className="text-[12px] text-text-faint">Edited {edited}</span>
-          </footer>
-        )}
+        <footer className="mt-auto flex items-center gap-3 border-t border-border-subtle pt-2.5">
+          <TagInput
+            tags={answer.tags ?? []}
+            onChange={(next) =>
+              updateAnswer.mutate({ id: answer.id, tags: next })
+            }
+            className="min-w-0 flex-1"
+          />
+          {edited && (
+            <span className="shrink-0 text-[12px] text-text-faint">
+              Edited {edited}
+            </span>
+          )}
+        </footer>
       </article>
 
       <AlertDialog

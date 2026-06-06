@@ -27,6 +27,7 @@ function makeAnswer(overrides: Partial<Answer> = {}): Answer {
     short_answer: 'S',
     long_answer: null,
     preferred_variant: 'short',
+    tags: [],
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
     ...overrides,
