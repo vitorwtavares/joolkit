@@ -5,7 +5,7 @@ export const COL_W = {
   star: '60px',
   company: '210px',
   jobName: '190px',
-  status: '170px',
+  status: '180px',
   location: '150px',
   salary: '130px',
   workStyle: '120px',
@@ -23,7 +23,7 @@ export const POPOVER_ITEM_CLASS =
   'flex h-[34px] w-full cursor-pointer items-center rounded px-2 text-left text-[14px] transition-colors hover:bg-muted'
 
 export const TH =
-  'sticky top-0 z-30 bg-background px-3 py-[9px] text-left text-[14px] font-medium text-muted-foreground uppercase tracking-[0.04em] whitespace-nowrap'
+  'sticky top-0 z-30 bg-background px-3 py-[9px] text-left font-mono text-[13px] font-medium text-text-faint uppercase whitespace-nowrap'
 
 export const TD =
   'h-[44px] px-3 py-2 text-[14px] border-b border-border-faint align-middle whitespace-nowrap'

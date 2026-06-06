@@ -5,33 +5,34 @@ interface CompanyAvatarProps {
   className?: string
 }
 
-// Hue derived purely from the first letter — A maps to red, walking around the
-// hue circle through Z. Every company starting with "S" is the same blue;
-// editing a name only changes the color when the first letter changes.
-function hueFor(name: string): number {
+// Color derived purely from the first letter, walking A-Z through the hue
+// circle so alphabetically sorted companies form a gentle gradient.
+function colorFor(name: string): string {
   const code = name.trim().charAt(0).toUpperCase().charCodeAt(0)
-  if (code >= 65 && code <= 90) return ((code - 65) / 26) * 360
-  return 220
+  if (code >= 65 && code <= 90) {
+    const hue = ((code - 65) / 26) * 360
+    return `oklch(68% 0.16 ${hue})`
+  }
+  return 'oklch(68% 0.16 220)'
 }
 
 export function CompanyAvatar({ name, className }: CompanyAvatarProps) {
   const trimmed = name?.trim() ?? ''
   const letter = trimmed.charAt(0).toUpperCase() || '?'
-  const hue = trimmed ? hueFor(trimmed) : 0
+  const color = trimmed ? colorFor(trimmed) : null
   const filled = !!trimmed
 
   return (
     <span
       aria-hidden
       className={cn(
-        'inline-grid size-[24px] flex-shrink-0 place-items-center rounded-md text-[12px] font-semibold',
+        'inline-grid size-[24px] flex-shrink-0 place-items-center rounded-[5px] text-[12px] font-semibold text-white',
         className,
       )}
       style={
         filled
           ? {
-              background: `oklch(32% 0.05 ${hue})`,
-              color: `oklch(85% 0.1 ${hue})`,
+              background: color ?? undefined,
             }
           : {
               background: 'var(--secondary)',
