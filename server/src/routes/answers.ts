@@ -3,7 +3,7 @@ import { getSupabase } from '../middleware/auth'
 
 const router = Router()
 
-const MAX_ANSWERS = 12
+const MAX_ANSWERS = 40
 
 router.get('/', async (req, res) => {
   const { data, error } = await getSupabase()
