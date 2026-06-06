@@ -10,6 +10,12 @@ const LABELS: Record<SnippetVariant, string> = {
   detailed: 'Detailed',
 }
 
+// The card only ever shows 3 clamped lines, but `line-clamp` still lays out the
+// full string. Render at most this many characters — roughly the most 3 lines
+// show at the card width, plus a little headroom — so long answers don't pay
+// layout cost on every card. Copy uses the full text regardless.
+const PREVIEW_LIMIT = 120
+
 interface SnippetProps {
   variant: SnippetVariant
   text: string | null | undefined
@@ -91,7 +97,9 @@ export function Snippet({ variant, text }: SnippetProps) {
         </span>
       </div>
       <p className="line-clamp-3 text-[13px] leading-snug text-muted-foreground">
-        {text}
+        {text && text.length > PREVIEW_LIMIT
+          ? text.slice(0, PREVIEW_LIMIT)
+          : text}
       </p>
     </button>
   )
