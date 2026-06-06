@@ -140,6 +140,22 @@ describe('POST /api/answers', () => {
     expect(payload).not.toHaveProperty('id')
   })
 
+  it('sanitizes tags: trims, drops empties, and dedupes case-insensitively', async () => {
+    const count = selectEqCountHandler({ count: 0, error: null })
+    const insert = insertSelectSingleHandler({
+      data: { ...baseAnswer, id: 'a1', position: 1 },
+      error: null,
+    })
+    mockFromSequence([count, insert])
+
+    await request(buildApp())
+      .post('/api/answers')
+      .send({ short_answer: 'S', tags: ['  React ', 'react', '', 'Remote'] })
+
+    const payload = insert.insert.mock.calls[0][0]
+    expect(payload.tags).toEqual(['React', 'Remote'])
+  })
+
   it('rejects with 400 when MAX_ANSWERS is reached', async () => {
     const count = selectEqCountHandler({ count: 40, error: null })
     mockFromSequence([count])
