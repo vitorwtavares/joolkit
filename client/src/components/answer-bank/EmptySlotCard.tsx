@@ -16,10 +16,10 @@ export function EmptySlotCard({ onAdd }: EmptySlotCardProps) {
           <Plus size={16} />
         </div>
         <div>
-          <div className="text-[13px] font-medium text-muted-foreground">
+          <div className="text-[14px] font-medium text-muted-foreground">
             Add an answer
           </div>
-          <div className="mt-0.5 text-[11.5px] text-text-faint">
+          <div className="mt-0.5 text-[12px] text-text-faint">
             Question + Default + Detailed
           </div>
         </div>

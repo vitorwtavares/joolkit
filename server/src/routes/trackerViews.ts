@@ -11,6 +11,13 @@ type FilterConfig = {
   values: (string | boolean)[]
 }
 
+const DEFAULT_ALL_VIEW_HIDDEN_COLUMNS = [
+  'salary',
+  'workStyle',
+  'visa',
+  'skills',
+]
+
 // Default views seeded the first time a user loads the tracker. Their
 // filter_config mirrors the status groups the tracker has always used. "All"
 // is permanent (no filter, cannot be deleted) and sits first.
@@ -76,7 +83,7 @@ async function seedDefaultViews(userId: string) {
     is_permanent: v.is_permanent ?? false,
     filter_config: v.filter_config,
     sort_config: null,
-    hidden_columns: null,
+    hidden_columns: v.is_permanent ? DEFAULT_ALL_VIEW_HIDDEN_COLUMNS : null,
   }))
   return await getSupabase().from('tracker_views').insert(rows).select('*')
 }

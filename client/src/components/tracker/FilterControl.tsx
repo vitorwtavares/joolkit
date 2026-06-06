@@ -221,7 +221,7 @@ function FilterPanel({ value, onApply, onClose }: FilterPanelProps) {
             )}
           </div>
 
-          <div className="flex max-h-52 flex-col overflow-y-auto border-t border-border-subtle pt-1">
+          <div className="flex max-h-52 flex-col gap-0.5 overflow-y-auto border-t border-border-subtle pt-1">
             {STATUS_OPTIONS.map((status) => {
               const isSelected = statuses.includes(status)
               return (
@@ -237,7 +237,7 @@ function FilterPanel({ value, onApply, onClose }: FilterPanelProps) {
                   <span
                     aria-hidden
                     className="size-2.5 flex-shrink-0 rounded-full"
-                    style={{ background: STATUS_CONFIG[status].bg }}
+                    style={{ background: STATUS_CONFIG[status].fg }}
                   />
                   <span className="flex-1 text-left">
                     {STATUS_CONFIG[status].label}
@@ -250,7 +250,7 @@ function FilterPanel({ value, onApply, onClose }: FilterPanelProps) {
         </>
       ) : (
         <div className="border-t border-border-subtle px-1 pt-3 pb-2">
-          <p className="text-[12px] leading-5 text-muted-foreground">
+          <p className="text-[12.5px] leading-5 text-muted-foreground">
             {operator === 'is'
               ? 'Only entries marked as favorite will be shown.'
               : 'Entries marked as favorite will be hidden.'}

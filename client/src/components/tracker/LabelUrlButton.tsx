@@ -83,7 +83,7 @@ export function LabelUrlButton({
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="mb-1.5">
-          <p className="mb-1 text-[12px] text-muted-foreground">{labelTitle}</p>
+          <p className="mb-1 text-[13px] text-muted-foreground">{labelTitle}</p>
           <input
             name="tracker-label-name"
             autoFocus
@@ -99,7 +99,7 @@ export function LabelUrlButton({
           />
         </div>
         <div>
-          <p className="mb-1 text-[12px] text-muted-foreground">{urlTitle}</p>
+          <p className="mb-1 text-[13px] text-muted-foreground">{urlTitle}</p>
           <div className="flex gap-1.5">
             <input
               name="tracker-label-url"

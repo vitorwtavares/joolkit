@@ -162,7 +162,7 @@ export function CoverLetterCard({
           <div className="text-[14px] font-semibold text-foreground">
             Cover letter
           </div>
-          <div className="text-[12px] whitespace-nowrap text-text-faint">
+          <div className="text-[13px] whitespace-nowrap text-text-faint">
             Upload up to 2 templates
           </div>
         </div>
@@ -174,7 +174,7 @@ export function CoverLetterCard({
           </Button>
           <button
             onClick={() => setTutorialOpen(true)}
-            className="cursor-pointer rounded-md px-1.5 py-0.5 text-[12px] text-text-faint transition-colors hover:bg-secondary hover:text-foreground"
+            className="cursor-pointer rounded-md px-1.5 py-0.5 text-[13px] text-text-faint transition-colors hover:bg-secondary hover:text-foreground"
           >
             How to use tokens
           </button>
@@ -268,7 +268,7 @@ export function CoverLetterCard({
                   text={label}
                   className="text-[12.5px] font-medium text-foreground"
                 />
-                <span className="text-[11px] text-text-faint">
+                <span className="text-[12px] text-text-faint">
                   {t ? 'Click to download' : 'Click to upload'}
                 </span>
               </button>

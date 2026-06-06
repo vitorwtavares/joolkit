@@ -1,7 +1,9 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+@import '@fontsource-variable/hanken-grotesk';
 @import '@fontsource-variable/geist';
+@import '@fontsource-variable/jetbrains-mono';
 @import '@fontsource/bricolage-grotesque/latin-700.css';
 
 :root {
@@ -91,22 +93,25 @@
   --canvas-shadow:
     0px 0px 10px 4px rgba(0, 0, 0, 0.25), 0 0 0 0.5px rgba(255, 255, 255, 0.06);
 
-  /* Palette — matches the 10-color Notion-style picker */
-  --palette-default: #3d3b38;
-  --palette-gray: #6b6b69;
-  --palette-brown: #7a5040;
-  --palette-orange: #975935;
-  --palette-yellow: #8e7330;
-  --palette-green: #4c7850;
-  --palette-blue: #3c5a96;
-  --palette-purple: #5e4998;
-  --palette-pink: #8a4562;
-  --palette-red: #8f3f3f;
+  /* Palette — solid foreground colors used with soft color-mix backgrounds. */
+  --palette-default: #6aa9b8;
+  --palette-gray: #9aa0aa;
+  --palette-brown: #c78a5f;
+  --palette-orange: #d2a64f;
+  --palette-yellow: #d6c65a;
+  --palette-green: #56b27e;
+  --palette-blue: #5b8def;
+  --palette-purple: #9b7cf0;
+  --palette-pink: #e0728f;
+  --palette-red: #df6f70;
 }
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-sans: 'Hanken Grotesk Variable', 'Geist Variable', sans-serif;
+  --font-mono:
+    'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, 'Liberation Mono', 'Courier New', monospace;
   --font-brand: 'Bricolage Grotesque', var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
