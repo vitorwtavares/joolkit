@@ -52,10 +52,10 @@ export function ViewTab({
         {view.name}
         <span
           className={cn(
-            'rounded-full px-1.5 py-px font-mono text-[11px]',
+            'inline-flex h-4 min-w-4 items-center justify-center rounded-[6px] px-1.5 py-px font-mono text-[12px] leading-[1] font-medium',
             isActive
-              ? 'bg-brand-soft text-brand'
-              : 'bg-secondary text-text-faint',
+              ? 'bg-brand text-brand-foreground'
+              : 'bg-input-subtle text-text-faint',
           )}
         >
           {count}

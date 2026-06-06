@@ -339,7 +339,7 @@ export default function Sidebar() {
           )}
         >
           <div className="px-3 py-3">
-            <span className="block truncate text-xs leading-tight text-muted-foreground">
+            <span className="block truncate text-[13px] leading-tight text-muted-foreground">
               {email}
             </span>
           </div>

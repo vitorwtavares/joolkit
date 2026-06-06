@@ -30,11 +30,11 @@ export function Snippet({ variant, text }: SnippetProps) {
     return (
       <div className="flex min-h-[96px] w-full flex-col rounded-lg border border-dashed border-border-subtle px-[11px] py-2.5">
         <div className="mb-1 flex items-center">
-          <span className="text-[10.5px] font-medium tracking-[0.05em] text-text-faint uppercase">
+          <span className="text-[11px] font-medium tracking-[0.05em] text-text-faint uppercase">
             {LABELS[variant]}
           </span>
         </div>
-        <p className="text-[12px] text-text-faint italic">
+        <p className="text-[13px] text-text-faint italic">
           Add a {variant === 'default' ? 'short' : 'longer'} take…
         </p>
       </div>
@@ -67,13 +67,13 @@ export function Snippet({ variant, text }: SnippetProps) {
       )}
     >
       <div className="mb-1 flex items-center justify-between gap-2">
-        <span className="text-[10.5px] font-medium tracking-[0.05em] text-text-faint uppercase">
+        <span className="text-[11px] font-medium tracking-[0.05em] text-text-faint uppercase">
           {LABELS[variant]}
         </span>
         <span
           aria-hidden
           className={cn(
-            'inline-flex items-center gap-1 text-[10.5px] font-medium transition-opacity',
+            'inline-flex items-center gap-1 text-[11px] font-medium transition-opacity',
             copied
               ? 'text-[#a6d9b4] opacity-100'
               : 'text-muted-foreground opacity-0 group-hover/snippet:opacity-100',
@@ -90,7 +90,7 @@ export function Snippet({ variant, text }: SnippetProps) {
           )}
         </span>
       </div>
-      <p className="line-clamp-3 text-[12px] text-muted-foreground">{text}</p>
+      <p className="line-clamp-3 text-[13px] text-muted-foreground">{text}</p>
     </button>
   )
 }
