@@ -21,10 +21,6 @@ const pdfLimiter = createRateLimitMiddleware({
 // POST /api/export/cover-letter/:variation
 router.post('/cover-letter/:variation', pdfLimiter, async (req, res) => {
   const { variation } = req.params
-  if (variation !== 'formal' && variation !== 'light') {
-    res.status(400).json({ error: 'variation must be formal or light' })
-    return
-  }
 
   const supabase = getSupabase()
 
