@@ -155,7 +155,7 @@ export function CopyButton({
           }
         }}
         className={cn(
-          'flex w-full items-center gap-3 rounded-lg border bg-card px-3 py-3.5 text-left transition-colors outline-none hover:border-brand-border hover:bg-secondary focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
+          'flex h-[72px] w-full items-center gap-3 rounded-lg border bg-card px-3 py-3.5 text-left transition-colors outline-none hover:border-brand-border hover:bg-secondary focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
           filled
             ? 'cursor-pointer border-border'
             : locked
