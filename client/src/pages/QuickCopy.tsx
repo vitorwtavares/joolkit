@@ -5,9 +5,11 @@ import { toast } from 'sonner'
 import { useAuth } from '@/context/auth'
 import { useProfile, useUpdateProfile } from '@/api/hooks/useProfile'
 import {
+  useCreateCoverLetterVariation,
   useCoverLetters,
   useDeleteCoverLetterTemplate,
   useUpdateCoverLetterFile,
+  useUpdateCoverLetterLabel,
 } from '@/api/hooks/useCoverLetters'
 import {
   useCreateResumeVariation,
@@ -102,7 +104,10 @@ export default function QuickCopy() {
   const { mutateAsync: updateResumeLabel } = useUpdateResumeLabel()
   const { mutateAsync: deleteResumeVariation } = useDeleteResumeVariation()
   const { data: templates = [] } = useCoverLetters()
-  const { mutate: updateCoverLetterFile } = useUpdateCoverLetterFile()
+  const { mutateAsync: createCoverLetterVariation } =
+    useCreateCoverLetterVariation()
+  const { mutateAsync: updateCoverLetterFile } = useUpdateCoverLetterFile()
+  const { mutateAsync: updateCoverLetterLabel } = useUpdateCoverLetterLabel()
   const { mutateAsync: deleteCoverLetterTemplate } =
     useDeleteCoverLetterTemplate()
 
@@ -127,13 +132,6 @@ export default function QuickCopy() {
         },
       )
     })
-  }
-
-  function handleFileUploaded(variation: 'formal' | 'light', path: string) {
-    updateCoverLetterFile(
-      { variation, file_url: path },
-      { onError: () => toast.error('Failed to save file info') },
-    )
   }
 
   if (isLoading || !user) {
@@ -235,15 +233,34 @@ export default function QuickCopy() {
           <CoverLetterCard
             templates={templates}
             userId={user.id}
-            onFileUploaded={handleFileUploaded}
-            onFileRemoved={async (variation) => {
+            locked={locked}
+            onUploaded={async (variation, path, label) => {
+              try {
+                if (variation) {
+                  await updateCoverLetterFile({ variation, file_url: path })
+                } else {
+                  await createCoverLetterVariation({ file_url: path, label })
+                }
+              } catch {
+                toast.error('Failed to save file info')
+                throw new Error('Failed to save cover letter file info')
+              }
+            }}
+            onRemoved={async (variation) => {
               try {
                 await deleteCoverLetterTemplate(variation)
-                toast.success(
-                  `${variation.charAt(0).toUpperCase() + variation.slice(1)} template removed`,
-                )
+                toast.success('Cover letter removed')
               } catch {
                 toast.error('Failed to remove template')
+                throw new Error('Failed to remove cover letter')
+              }
+            }}
+            onLabelUpdated={async (variation, label) => {
+              try {
+                await updateCoverLetterLabel({ variation, label })
+              } catch {
+                toast.error('Failed to rename cover letter')
+                throw new Error('Failed to rename cover letter')
               }
             }}
           />
