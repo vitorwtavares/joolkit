@@ -22,6 +22,13 @@ export const TOGGLEABLE_COLUMNS: TrackerColumn[] = [
   { key: 'skills', label: 'Skills' },
 ]
 
+export const DEFAULT_ALL_VIEW_HIDDEN_COLUMNS = [
+  'salary',
+  'workStyle',
+  'visa',
+  'skills',
+]
+
 export function isColumnVisible(
   key: string,
   hiddenColumns: string[] | null | undefined,

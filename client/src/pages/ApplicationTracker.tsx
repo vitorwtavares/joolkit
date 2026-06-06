@@ -34,6 +34,7 @@ import { ApplicationDrawer } from '@/components/tracker/ApplicationDrawer'
 import { SortControl } from '@/components/tracker/SortControl'
 import { FilterControl } from '@/components/tracker/FilterControl'
 import { ColumnsControl } from '@/components/tracker/ColumnsControl'
+import { DEFAULT_ALL_VIEW_HIDDEN_COLUMNS } from '@/components/tracker/columns'
 import { sortApplications } from '@/components/tracker/applicationSort'
 import { ViewTab } from '@/components/tracker/ViewTab'
 import { ViewFormDialog } from '@/components/tracker/ViewFormDialog'
@@ -106,6 +107,9 @@ function ApplicationTrackerInner() {
   )
   const requestedViewId = searchParams.get('view')
   const activeView = views.find((v) => v.id === requestedViewId) ?? allView
+  const hiddenColumns =
+    activeView?.hidden_columns ??
+    (activeView?.is_permanent ? DEFAULT_ALL_VIEW_HIDDEN_COLUMNS : null)
 
   const [search, setSearch] = useState('')
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null)
@@ -303,7 +307,10 @@ function ApplicationTrackerInner() {
   function handleColumnsChange(next: string[] | null) {
     if (!activeView) return
     updateView.mutate(
-      { id: activeView.id, hidden_columns: next },
+      {
+        id: activeView.id,
+        hidden_columns: activeView.is_permanent && next === null ? [] : next,
+      },
       { onError: () => toast.error('Failed to update columns') },
     )
   }
@@ -471,7 +478,7 @@ function ApplicationTrackerInner() {
               <span className="hidden min-[1600px]:inline">New view</span>
             </Button>
             <ColumnsControl
-              value={activeView?.hidden_columns ?? null}
+              value={hiddenColumns}
               onChange={handleColumnsChange}
             />
             <Button
@@ -492,7 +499,7 @@ function ApplicationTrackerInner() {
             applications={visibleApplications}
             isLoading={isLoading}
             selectedAppId={selectedAppId}
-            hiddenColumns={activeView?.hidden_columns ?? null}
+            hiddenColumns={hiddenColumns}
             onRowClick={openDrawer}
             onCloseDrawer={closeDrawer}
             onDeleteSelected={forceCloseDrawer}
