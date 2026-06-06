@@ -9,6 +9,13 @@ import {
   useDeleteCoverLetterTemplate,
   useUpdateCoverLetterFile,
 } from '@/api/hooks/useCoverLetters'
+import {
+  useCreateResumeVariation,
+  useDeleteResumeVariation,
+  useResumes,
+  useUpdateResumeFile,
+  useUpdateResumeLabel,
+} from '@/api/hooks/useResumes'
 import { CopyButton } from '@/components/quick-copy/CopyButton'
 import { ResumeButton } from '@/components/quick-copy/ResumeButton'
 import { CoverLetterCard } from '@/components/quick-copy/CoverLetterCard'
@@ -89,6 +96,11 @@ export default function QuickCopy() {
   const { user } = useAuth()
   const { data: profile, isLoading, isFetching, dataUpdatedAt } = useProfile()
   const { mutate: updateProfile } = useUpdateProfile()
+  const { data: resumes = [], isLoading: resumesLoading } = useResumes()
+  const { mutateAsync: createResumeVariation } = useCreateResumeVariation()
+  const { mutateAsync: updateResumeFile } = useUpdateResumeFile()
+  const { mutateAsync: updateResumeLabel } = useUpdateResumeLabel()
+  const { mutateAsync: deleteResumeVariation } = useDeleteResumeVariation()
   const { data: templates = [] } = useCoverLetters()
   const { mutate: updateCoverLetterFile } = useUpdateCoverLetterFile()
   const { mutateAsync: deleteCoverLetterTemplate } =
@@ -185,21 +197,40 @@ export default function QuickCopy() {
         <h2 className="mb-3 text-[12px] font-medium tracking-[0.07em] text-text-faint uppercase">
           Files
         </h2>
-        <div className="grid grid-cols-1 gap-3 min-[1250px]:grid-cols-[minmax(220px,1fr)_minmax(0,3fr)]">
+        <div className="grid grid-cols-1 gap-3 min-[1250px]:grid-cols-[minmax(380px,1.8fr)_minmax(0,3fr)]">
           <ResumeButton
-            resumeUrl={profile.resume_url}
+            resumes={resumes}
             userId={user.id}
-            locked={locked}
-            onUploaded={(path) => handleProfileSave('resume_url', path)}
-            onRemoved={() =>
-              updateProfile(
-                { resume_url: null },
-                {
-                  onSuccess: () => toast.success('Resume removed'),
-                  onError: () => toast.error('Failed to remove resume'),
-                },
-              )
-            }
+            locked={locked || resumesLoading}
+            onUploaded={async (resumeId, path, label) => {
+              try {
+                if (resumeId) {
+                  await updateResumeFile({ id: resumeId, file_url: path })
+                } else {
+                  await createResumeVariation({ file_url: path, label })
+                }
+              } catch {
+                toast.error('Failed to save file info')
+                throw new Error('Failed to save resume file info')
+              }
+            }}
+            onRemoved={async (resumeId) => {
+              try {
+                await deleteResumeVariation(resumeId)
+                toast.success('Resume removed')
+              } catch {
+                toast.error('Failed to remove resume')
+                throw new Error('Failed to remove resume')
+              }
+            }}
+            onLabelUpdated={async (resumeId, label) => {
+              try {
+                await updateResumeLabel({ id: resumeId, label })
+              } catch {
+                toast.error('Failed to rename resume')
+                throw new Error('Failed to rename resume')
+              }
+            }}
           />
           <CoverLetterCard
             templates={templates}

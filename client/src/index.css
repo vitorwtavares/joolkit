@@ -309,6 +309,16 @@
   }
 }
 
+.persistent-scroll-area-viewport {
+  overflow-y: auto;
+  padding-right: 12px;
+  scrollbar-width: none;
+}
+
+.persistent-scroll-area-viewport::-webkit-scrollbar {
+  display: none;
+}
+
 aside
   .sidebar-toggle-button:is(
     :hover,
