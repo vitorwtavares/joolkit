@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -64,6 +65,10 @@ export function PersistentScrollArea({
     setThumb({ visible, top, height })
   }, [])
 
+  useLayoutEffect(() => {
+    updateThumb()
+  }, [children, updateThumb])
+
   useEffect(() => {
     updateThumb()
 
@@ -75,9 +80,17 @@ export function PersistentScrollArea({
     resizeObserver.observe(viewport)
     resizeObserver.observe(content)
 
+    const mutationObserver = new MutationObserver(updateThumb)
+    mutationObserver.observe(content, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    })
+
     window.addEventListener('resize', updateThumb)
     return () => {
       resizeObserver.disconnect()
+      mutationObserver.disconnect()
       window.removeEventListener('resize', updateThumb)
     }
   }, [updateThumb])
