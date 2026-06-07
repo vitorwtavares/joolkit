@@ -134,9 +134,11 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           | string
           | undefined) ??
         (ctx.editor.getAttributes('paragraph').fontFamily as string | undefined)
-      const fontSize = ctx.editor.getAttributes('textStyle').fontSize as
-        | string
-        | undefined
+      const fontSize =
+        (ctx.editor.getAttributes('textStyle').fontSize as
+          | string
+          | undefined) ??
+        (ctx.editor.getAttributes('paragraph').fontSize as string | undefined)
       return {
         activeFamily: fontFamily?.replace(/['"]/g, '') || 'Helvetica',
         activeSize: fontSize?.replace(/px|pt/g, '') || '12',

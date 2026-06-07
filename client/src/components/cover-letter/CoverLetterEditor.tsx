@@ -6,6 +6,7 @@ import TextAlign from '@tiptap/extension-text-align'
 import FontFamily from '@tiptap/extension-font-family'
 import { Extension } from '@tiptap/core'
 import { Plugin } from '@tiptap/pm/state'
+import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { TextStyle, FontSize } from '@tiptap/extension-text-style'
 import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -111,8 +112,12 @@ const PageHeightLimit = Extension.create<{ onPasteRejected?: () => void }>({
   },
 })
 
-const ParagraphFontFamily = Extension.create({
-  name: 'paragraphFontFamily',
+// A textStyle mark only styles text, so an empty line — which has no text —
+// loses its font size/family and collapses to the editor default. The
+// paragraph node stores the active size/family (stamped below) so the empty
+// line and caret can keep them.
+const ParagraphFontStyles = Extension.create({
+  name: 'paragraphFontStyles',
 
   addGlobalAttributes() {
     return [
@@ -129,8 +134,70 @@ const ParagraphFontFamily = Extension.create({
               return { style: `font-family: ${attributes.fontFamily}` }
             },
           },
+          fontSize: {
+            default: null,
+            parseHTML: (element) =>
+              (element as HTMLElement).style.fontSize || null,
+            // Never rendered on the <p> directly — only via the decoration
+            // below while the line is empty. Otherwise a stored size would
+            // inflate a line whose text has since been made smaller.
+            renderHTML: () => ({}),
+          },
         },
       },
+    ]
+  },
+
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        // Stamp the active font size/family onto a paragraph once it becomes
+        // empty, so the empty line and caret keep them.
+        appendTransaction(_transactions, _oldState, newState) {
+          const { selection, storedMarks } = newState
+          if (!selection.empty) return null
+          const { $from } = selection
+          const paragraph = $from.parent
+          if (paragraph.type.name !== 'paragraph' || paragraph.content.size > 0)
+            return null
+          const textStyle = (storedMarks ?? $from.marks()).find(
+            (m) => m.type.name === 'textStyle',
+          )
+          const next = { ...paragraph.attrs }
+          let changed = false
+          for (const attr of ['fontSize', 'fontFamily'] as const) {
+            const value = textStyle?.attrs[attr] as string | undefined
+            if (value && next[attr] !== value) {
+              next[attr] = value
+              changed = true
+            }
+          }
+          if (!changed) return null
+          return newState.tr.setNodeMarkup($from.before(), undefined, next)
+        },
+
+        props: {
+          // Apply the stored font size to the <p> only while it is empty, so a
+          // line with text is always sized by its text spans instead.
+          decorations(state) {
+            const decorations: Decoration[] = []
+            state.doc.descendants((node, pos) => {
+              if (
+                node.type.name === 'paragraph' &&
+                node.content.size === 0 &&
+                node.attrs.fontSize
+              ) {
+                decorations.push(
+                  Decoration.node(pos, pos + node.nodeSize, {
+                    style: `font-size: ${node.attrs.fontSize}`,
+                  }),
+                )
+              }
+            })
+            return DecorationSet.create(state.doc, decorations)
+          },
+        },
+      }),
     ]
   },
 })
@@ -196,7 +263,7 @@ export function CoverLetterEditor() {
       TextStyle,
       FontFamily,
       FontSize,
-      ParagraphFontFamily,
+      ParagraphFontStyles,
       PageHeightLimit.configure({
         onPasteRejected: () => setIsDirty(false),
       }),
