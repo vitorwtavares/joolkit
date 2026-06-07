@@ -37,6 +37,7 @@ import {
 } from './CoverLetterConfirmDialog'
 import { DiscardChangesDialog } from './DiscardChangesDialog'
 import { getCoverLetterTokenValidation } from './tokenValidation'
+import { getTokenValueMap } from './tokenUtils'
 import {
   COVER_LETTER_FALLBACK_LABEL,
   COVER_LETTER_LABEL_MAX_LENGTH,
@@ -152,12 +153,12 @@ export function CoverLetterEditor() {
 
   const { data: tokenData, isLoading: tokensLoading } = useCoverLetterTokens()
   const {
-    role,
-    setRole,
-    company,
-    setCompany,
-    scheduleTokenSave,
+    tokens,
+    updateToken,
+    addToken,
+    deleteToken,
     flushTokenSave,
+    flushTokenSaveAsync,
   } = useTokenState(tokenData)
 
   const { data: templates = [], isLoading: templatesLoading } =
@@ -238,11 +239,8 @@ export function CoverLetterEditor() {
   // Sync token decorations
   useEffect(() => {
     if (!editor?.view) return
-    setTokenHighlight(editor.view, {
-      role: role || null,
-      company: company || null,
-    })
-  }, [editor, role, company])
+    setTokenHighlight(editor.view, getTokenValueMap(tokens))
+  }, [editor, tokens])
 
   const { isEmpty: isEditorEmpty, text: editorText } = useEditorState({
     editor,
@@ -254,12 +252,11 @@ export function CoverLetterEditor() {
 
   const tokenValidation = getCoverLetterTokenValidation({
     text: editorText,
-    role,
-    company,
+    tokens,
   })
   const hasUnresolved = tokenValidation.unresolvedTokens.length > 0
 
-  const handleTokenBlur = () => flushTokenSave(role, company)
+  const handleTokenBlur = () => flushTokenSave()
 
   const handleSave = () => {
     if (!editor || !variation) return
@@ -426,13 +423,19 @@ export function CoverLetterEditor() {
   const handleVariationRename = (targetTemplate: CoverLetterTemplate) =>
     requestVariationSwitch(targetTemplate.variation, true)
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!variation) return
     if (hasUnresolved) {
       toast.error(
         `Fill in ${tokenValidation.unresolvedTokens.join(' and ')} before downloading`,
         TOAST_POSITION,
       )
+      return
+    }
+    try {
+      await flushTokenSaveAsync()
+    } catch {
+      toast.error('Failed to save tokens before downloading', TOAST_POSITION)
       return
     }
     exportPDF.mutate(variation, {
@@ -678,16 +681,10 @@ export function CoverLetterEditor() {
           onRequestRemove={requestRemove}
           onRequestRestore={requestRestore}
           onDownload={handleDownload}
-          role={role}
-          company={company}
-          onRoleChange={(v) => {
-            setRole(v)
-            scheduleTokenSave(v, company)
-          }}
-          onCompanyChange={(v) => {
-            setCompany(v)
-            scheduleTokenSave(role, v)
-          }}
+          tokens={tokens}
+          onTokenChange={updateToken}
+          onTokenDelete={deleteToken}
+          onTokenAdd={addToken}
           onTokenBlur={handleTokenBlur}
           isRestoring={restoreMutation.isPending}
           isDownloading={exportPDF.isPending}
@@ -699,8 +696,6 @@ export function CoverLetterEditor() {
           isEditorEmpty={isEditorEmpty}
           isLoadingTokens={tokensLoading}
           isLoadingTemplates={templatesLoading}
-          isRoleUnresolved={tokenValidation.isRoleUnresolved}
-          isCompanyUnresolved={tokenValidation.isCompanyUnresolved}
           unresolvedTokens={tokenValidation.unresolvedTokens}
           downloadDisabled={downloadDisabled}
         />

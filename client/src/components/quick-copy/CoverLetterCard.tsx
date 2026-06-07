@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { ExternalLink, FileText, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -13,7 +13,6 @@ import { useExportCoverLetterPDF } from '@/api/hooks/useCoverLetters'
 import { useCoverLetterTokens } from '@/api/hooks/useCoverLetterTokens'
 import { useTokenState } from '@/hooks/useTokenState'
 import { useDownloadBubble } from '@/hooks/useDownloadBubble'
-import { TOKEN_ROLE, TOKEN_COMPANY } from '@/constants'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,12 +24,18 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { CoverLetterVariationList } from '@/components/cover-letter/CoverLetterVariationList'
+import { CoverLetterTokenPanel } from '@/components/cover-letter/CoverLetterTokenPanel'
 import {
   COVER_LETTER_FALLBACK_LABEL,
   getCoverLetterTemplatePath,
   getNextCoverLetterPosition,
 } from '@/components/cover-letter/coverLetterVariationUtils'
-import { TokenTutorialDialog } from './TokenTutorialDialog'
+import {
+  getCoverLetterTokenValidation,
+  getCoverLetterUnresolvedTokensAcrossTexts,
+} from '@/components/cover-letter/tokenValidation'
+import { tiptapDocToText } from '@/components/cover-letter/tokenUtils'
+import { TokenTutorialTrigger } from '@/components/cover-letter/TokenTutorialTrigger'
 
 interface CoverLetterCardProps {
   templates: CoverLetterTemplate[]
@@ -64,7 +69,6 @@ export function CoverLetterCard({
   const [pendingDelete, setPendingDelete] =
     useState<CoverLetterTemplate | null>(null)
   const [savingLabel, setSavingLabel] = useState<string | null>(null)
-  const [tutorialOpen, setTutorialOpen] = useState(false)
   const [exportingVariation, setExportingVariation] = useState<string | null>(
     null,
   )
@@ -74,19 +78,29 @@ export function CoverLetterCard({
     isOnCooldown,
   } = useDownloadBubble()
 
-  const { data: tokenData } = useCoverLetterTokens()
+  const { data: tokenData, isLoading: tokensLoading } = useCoverLetterTokens()
   const exportPDF = useExportCoverLetterPDF()
   const {
-    role,
-    setRole,
-    company,
-    setCompany,
-    scheduleTokenSave,
+    tokens,
+    updateToken,
+    addToken,
+    deleteToken,
     flushTokenSave,
     flushTokenSaveAsync,
   } = useTokenState(tokenData)
 
-  const sortedTemplates = [...templates].sort((a, b) => a.position - b.position)
+  const sortedTemplates = useMemo(
+    () => [...templates].sort((a, b) => a.position - b.position),
+    [templates],
+  )
+  const unresolvedTokens = useMemo(
+    () =>
+      getCoverLetterUnresolvedTokensAcrossTexts(
+        sortedTemplates.map((template) => tiptapDocToText(template.content)),
+        tokens,
+      ),
+    [sortedTemplates, tokens],
+  )
   const filledCount = sortedTemplates.length
   const maxReached = filledCount >= COVER_LETTER_VARIATION_LIMIT
   const busy =
@@ -95,7 +109,12 @@ export function CoverLetterCard({
     savingLabel !== null ||
     exportingVariation !== null
   async function handleOpenInEditor() {
-    await flushTokenSaveAsync(role, company)
+    try {
+      await flushTokenSaveAsync()
+    } catch {
+      toast.error('Failed to save tokens before opening the editor')
+      return
+    }
     navigate('/cover-letter')
   }
 
@@ -160,15 +179,26 @@ export function CoverLetterCard({
     }
   }
 
-  function handleDownload(template: CoverLetterTemplate) {
+  async function handleDownload(template: CoverLetterTemplate) {
     if (busy || isOnCooldown) return
-    if (!role || !company) {
+    const tokenValidation = getCoverLetterTokenValidation({
+      text: tiptapDocToText(template.content),
+      tokens,
+    })
+
+    if (tokenValidation.unresolvedTokens.length > 0) {
       toast.error(
-        `Fill in ${TOKEN_ROLE} and ${TOKEN_COMPANY} before downloading`,
+        `Fill in ${tokenValidation.unresolvedTokens.join(' and ')} before downloading`,
       )
       return
     }
 
+    try {
+      await flushTokenSaveAsync()
+    } catch {
+      toast.error('Failed to save tokens before downloading')
+      return
+    }
     triggerDownload()
     setExportingVariation(template.variation)
     exportPDF.mutate(template.variation, {
@@ -243,13 +273,7 @@ export function CoverLetterCard({
             <ExternalLink size={13} />
             Open in editor
           </Button>
-          <button
-            type="button"
-            onClick={() => setTutorialOpen(true)}
-            className="cursor-pointer rounded-md px-1.5 py-0.5 text-[13px] text-text-faint transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            How to use tokens
-          </button>
+          <TokenTutorialTrigger variant="quick-copy" />
         </div>
       </header>
 
@@ -287,43 +311,16 @@ export function CoverLetterCard({
           onLabelUpdated={handleLabelUpdated}
         />
 
-        <div className="flex min-h-0 flex-col gap-2 rounded-lg border border-border bg-secondary p-3">
-          <div className="flex flex-col gap-1.5">
-            <div className="font-mono text-[13px] text-brand">{TOKEN_ROLE}</div>
-            <input
-              id="quick-copy-cover-letter-role"
-              name="quick-copy-cover-letter-role"
-              value={role}
-              onChange={(e) => {
-                setRole(e.target.value)
-                scheduleTokenSave(e.target.value, company)
-              }}
-              onBlur={() => flushTokenSave(role, company)}
-              placeholder="e.g. Software Engineer"
-              className="w-full rounded-md border border-border bg-background px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-brand-border"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <div className="font-mono text-[13px] text-brand">
-              {TOKEN_COMPANY}
-            </div>
-            <input
-              id="quick-copy-cover-letter-company"
-              name="quick-copy-cover-letter-company"
-              value={company}
-              onChange={(e) => {
-                setCompany(e.target.value)
-                scheduleTokenSave(role, e.target.value)
-              }}
-              onBlur={() => flushTokenSave(role, company)}
-              placeholder="e.g. Xiaomi"
-              className="w-full rounded-md border border-border bg-background px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-brand-border"
-            />
-          </div>
-        </div>
+        <CoverLetterTokenPanel
+          tokens={tokens}
+          unresolvedTokens={unresolvedTokens}
+          isLoading={tokensLoading}
+          onTokenChange={updateToken}
+          onTokenDelete={deleteToken}
+          onTokenAdd={addToken}
+          onTokenBlur={flushTokenSave}
+        />
       </div>
-
-      <TokenTutorialDialog open={tutorialOpen} onOpenChange={setTutorialOpen} />
 
       <AlertDialog
         open={pendingDelete !== null}
