@@ -13,6 +13,25 @@ interface UnresolvedTokensIndicatorProps {
   className?: string
 }
 
+const indicatorRowClass =
+  'flex h-[18px] min-w-0 items-center gap-1.5 text-[12px] leading-none'
+
+function TokenStatusDot({ resolved }: { resolved: boolean }) {
+  return (
+    <span className="flex shrink-0 items-center justify-center overflow-visible p-[3px]">
+      <span
+        aria-hidden
+        className={cn(
+          'size-1.5 rounded-full',
+          resolved
+            ? 'bg-success shadow-[0_0_0_3px_rgba(95,191,129,0.16)]'
+            : 'bg-danger shadow-[0_0_0_3px_var(--danger-soft-fill)]',
+        )}
+      />
+    </span>
+  )
+}
+
 export function UnresolvedTokensIndicator({
   unresolvedTokens,
   isLoading = false,
@@ -22,16 +41,17 @@ export function UnresolvedTokensIndicator({
 
   if (isLoading) {
     return (
-      <div className={cn('truncate text-[11px] text-text-faint', className)}>
-        Loading
+      <div className={cn(indicatorRowClass, 'text-text-faint', className)}>
+        <span className="truncate">Loading</span>
       </div>
     )
   }
 
   if (!hasUnresolved) {
     return (
-      <div className={cn('truncate text-[11px] text-text-faint', className)}>
-        All resolved
+      <div className={cn(indicatorRowClass, 'text-text-faint', className)}>
+        <TokenStatusDot resolved />
+        <span className="truncate">All resolved</span>
       </div>
     )
   }
@@ -42,11 +62,13 @@ export function UnresolvedTokensIndicator({
         <button
           type="button"
           className={cn(
-            'cursor-help truncate rounded-sm text-[12px] text-token-unresolved transition-colors outline-none hover:text-token-unresolved/90 focus-visible:ring-2 focus-visible:ring-token-unresolved-border/60',
+            indicatorRowClass,
+            'cursor-help rounded-sm border-0 bg-transparent p-0 text-token-unresolved transition-colors outline-none hover:text-token-unresolved/90 focus-visible:ring-2 focus-visible:ring-token-unresolved-border/60',
             className,
           )}
         >
-          {unresolvedTokens.length} unresolved
+          <TokenStatusDot resolved={false} />
+          <span className="truncate">{unresolvedTokens.length} unresolved</span>
         </button>
       </TooltipTrigger>
       <TooltipContent
