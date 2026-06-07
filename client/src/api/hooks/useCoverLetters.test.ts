@@ -4,9 +4,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 import type { CoverLetterTemplate } from './useCoverLetters'
 import {
+  useCreateCoverLetterVariation,
   useCoverLetters,
   useDeleteCoverLetterTemplate,
   useUpdateCoverLetterFile,
+  useUpdateCoverLetterLabel,
 } from './useCoverLetters'
 
 vi.mock('../api', () => ({
@@ -26,6 +28,8 @@ const formalTemplate: CoverLetterTemplate = {
   id: '1',
   user_id: 'user-1',
   variation: 'formal',
+  position: 1,
+  label: 'Formal',
   file_url: 'https://example.com/formal.pdf',
   content: null,
   created_at: '2024-01-01T00:00:00Z',
@@ -36,6 +40,8 @@ const lightTemplate: CoverLetterTemplate = {
   id: '2',
   user_id: 'user-1',
   variation: 'light',
+  position: 2,
+  label: 'Light',
   file_url: 'https://example.com/light.pdf',
   content: null,
   created_at: '2024-01-01T00:00:00Z',
@@ -73,13 +79,17 @@ describe('useCoverLetters', () => {
 })
 
 describe('useDeleteCoverLetterTemplate cache update', () => {
-  it('removes the deleted variation from the cache', async () => {
+  it('replaces cache with the compacted cover letter list returned by the server', async () => {
     const queryClient = makeQueryClient()
     queryClient.setQueryData<CoverLetterTemplate[]>(
       ['cover-letters'],
       [formalTemplate, lightTemplate],
     )
-    mockApi.delete.mockResolvedValue(undefined)
+    const compactedLight: CoverLetterTemplate = {
+      ...lightTemplate,
+      position: 1,
+    }
+    mockApi.delete.mockResolvedValue([compactedLight])
 
     const { result } = renderHook(() => useDeleteCoverLetterTemplate(), {
       wrapper: makeWrapper(queryClient),
@@ -92,11 +102,10 @@ describe('useDeleteCoverLetterTemplate cache update', () => {
     const cached = queryClient.getQueryData<CoverLetterTemplate[]>([
       'cover-letters',
     ])
-    expect(cached).toHaveLength(1)
-    expect(cached![0].variation).toBe('light')
+    expect(cached).toEqual([compactedLight])
   })
 
-  it('keeps other variation after deletion', async () => {
+  it('falls back to filtering when the server returns no body', async () => {
     const queryClient = makeQueryClient()
     queryClient.setQueryData<CoverLetterTemplate[]>(
       ['cover-letters'],
@@ -117,6 +126,33 @@ describe('useDeleteCoverLetterTemplate cache update', () => {
     ])
     expect(cached).toHaveLength(1)
     expect(cached![0].variation).toBe('formal')
+  })
+})
+
+describe('useCreateCoverLetterVariation cache update', () => {
+  it('inserts a new cover letter variation in position order', async () => {
+    const queryClient = makeQueryClient()
+    queryClient.setQueryData<CoverLetterTemplate[]>(
+      ['cover-letters'],
+      [lightTemplate],
+    )
+    mockApi.post.mockResolvedValue(formalTemplate)
+
+    const { result } = renderHook(() => useCreateCoverLetterVariation(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    result.current.mutate({
+      label: 'Formal',
+      file_url: 'https://example.com/formal.pdf',
+    })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    const cached = queryClient.getQueryData<CoverLetterTemplate[]>([
+      'cover-letters',
+    ])
+    expect(cached).toEqual([formalTemplate, lightTemplate])
   })
 })
 
@@ -208,5 +244,43 @@ describe('useUpdateCoverLetterFile cache update', () => {
       'cover-letters',
     ])
     expect(cached).toEqual([newFormal])
+  })
+})
+
+describe('useUpdateCoverLetterLabel cache update', () => {
+  it('replaces the renamed cover letter variation in cache', async () => {
+    const queryClient = makeQueryClient()
+    queryClient.setQueryData<CoverLetterTemplate[]>(
+      ['cover-letters'],
+      [formalTemplate, lightTemplate],
+    )
+
+    const renamedLight: CoverLetterTemplate = {
+      ...lightTemplate,
+      label: 'Direct',
+    }
+    mockApi.put.mockResolvedValue(renamedLight)
+
+    const { result } = renderHook(() => useUpdateCoverLetterLabel(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    result.current.mutate({
+      variation: 'light',
+      label: 'Direct',
+    })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(mockApi.put).toHaveBeenCalledWith('/api/cover-letters/light', {
+      label: 'Direct',
+    })
+    const cached = queryClient.getQueryData<CoverLetterTemplate[]>([
+      'cover-letters',
+    ])
+    expect(cached).toHaveLength(2)
+    expect(
+      cached!.find((template) => template.variation === 'light')?.label,
+    ).toBe('Direct')
   })
 })
