@@ -1,18 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
-import {
-  Check,
-  Download,
-  ExternalLink,
-  FileText,
-  Loader2,
-  Pencil,
-  Plus,
-  RefreshCcw,
-  Trash2,
-  Upload,
-  X,
-} from 'lucide-react'
+import { ExternalLink, FileText, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { cn } from '@/lib/utils'
@@ -26,7 +14,6 @@ import { useCoverLetterTokens } from '@/api/hooks/useCoverLetterTokens'
 import { useTokenState } from '@/hooks/useTokenState'
 import { useDownloadBubble } from '@/hooks/useDownloadBubble'
 import { TOKEN_ROLE, TOKEN_COMPANY } from '@/constants'
-import { PersistentScrollArea } from '@/components/ui/persistent-scroll-area'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +24,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { CoverLetterVariationList } from '@/components/cover-letter/CoverLetterVariationList'
+import {
+  COVER_LETTER_FALLBACK_LABEL,
+  getCoverLetterTemplatePath,
+  getNextCoverLetterPosition,
+} from '@/components/cover-letter/coverLetterVariationUtils'
 import { TokenTutorialDialog } from './TokenTutorialDialog'
 
 interface CoverLetterCardProps {
@@ -52,29 +45,6 @@ interface CoverLetterCardProps {
   onLabelUpdated: (variation: string, label: string) => Promise<void> | void
 }
 
-function getFilename(path: string | null): string {
-  if (!path) return 'cover-letter.pdf'
-  return path.split('/').pop() ?? path
-}
-
-function getFallbackLabel(): string {
-  return 'Cover letter'
-}
-
-function getNextPosition(templates: CoverLetterTemplate[]): number | null {
-  const nextPosition = templates.length + 1
-  return nextPosition <= COVER_LETTER_VARIATION_LIMIT ? nextPosition : null
-}
-
-function getTemplatePath(
-  userId: string,
-  variation: string | null,
-  fileName: string,
-): string {
-  const folder = variation ?? crypto.randomUUID()
-  return `${userId}/${folder}/${crypto.randomUUID()}/${fileName}`
-}
-
 export function CoverLetterCard({
   templates,
   userId,
@@ -85,7 +55,6 @@ export function CoverLetterCard({
 }: CoverLetterCardProps) {
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const labelInputRef = useRef<HTMLInputElement>(null)
   const uploadTargetRef = useRef<{
     variation: string | null
     label: string
@@ -94,8 +63,6 @@ export function CoverLetterCard({
   const [removing, setRemoving] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] =
     useState<CoverLetterTemplate | null>(null)
-  const [editingVariation, setEditingVariation] = useState<string | null>(null)
-  const [labelDraft, setLabelDraft] = useState('')
   const [savingLabel, setSavingLabel] = useState<string | null>(null)
   const [tutorialOpen, setTutorialOpen] = useState(false)
   const [exportingVariation, setExportingVariation] = useState<string | null>(
@@ -127,31 +94,22 @@ export function CoverLetterCard({
     removing !== null ||
     savingLabel !== null ||
     exportingVariation !== null
-  const addingNewVariation =
-    uploading !== null &&
-    !sortedTemplates.some((template) => template.variation === uploading)
-
-  useEffect(() => {
-    if (editingVariation === null) return
-    const input = labelInputRef.current
-    input?.focus()
-    const cursorPosition = input?.value.length ?? 0
-    input?.setSelectionRange(cursorPosition, cursorPosition)
-  }, [editingVariation])
-
   async function handleOpenInEditor() {
     await flushTokenSaveAsync(role, company)
     navigate('/cover-letter')
   }
 
-  function openUploader(variation: string | null, label = getFallbackLabel()) {
+  function openUploader(
+    variation: string | null,
+    label = COVER_LETTER_FALLBACK_LABEL,
+  ) {
     if (locked || busy) return
     uploadTargetRef.current = { variation, label }
     fileInputRef.current?.click()
   }
 
   function handleAdd() {
-    if (!getNextPosition(sortedTemplates)) return
+    if (!getNextCoverLetterPosition(sortedTemplates.length)) return
     openUploader(null)
   }
 
@@ -165,7 +123,7 @@ export function CoverLetterCard({
       sortedTemplates.find((template) => template.variation === variation) ??
       null
     const uploadKey = variation ?? 'new'
-    const path = getTemplatePath(userId, variation, file.name)
+    const path = getCoverLetterTemplatePath(userId, variation, file.name)
 
     setUploading(uploadKey)
 
@@ -238,30 +196,18 @@ export function CoverLetterCard({
     setPendingDelete(null)
   }
 
-  function startLabelEdit(template: CoverLetterTemplate) {
-    if (locked || busy) return
-    setEditingVariation(template.variation)
-    setLabelDraft(template.label || getFallbackLabel())
-  }
-
-  function cancelLabelEdit() {
-    setEditingVariation(null)
-    setLabelDraft('')
-  }
-
-  async function saveLabel(template: CoverLetterTemplate) {
-    const nextLabel = labelDraft.trim()
+  async function handleLabelUpdated(
+    template: CoverLetterTemplate,
+    label: string,
+  ) {
+    const nextLabel = label.trim()
     if (!nextLabel) {
-      cancelLabelEdit()
       return
     }
 
     setSavingLabel(template.variation)
     try {
       await onLabelUpdated(template.variation, nextLabel)
-      cancelLabelEdit()
-    } catch {
-      // Parent shows the toast; keep the editor open for correction/retry.
     } finally {
       setSavingLabel(null)
     }
@@ -320,194 +266,26 @@ export function CoverLetterCard({
         />
         {downloadBubble}
 
-        {sortedTemplates.length === 0 ? (
-          <button
-            type="button"
-            disabled={locked || busy}
-            onClick={handleAdd}
-            className="flex h-full min-h-0 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border-strong bg-secondary px-4 py-6 text-center transition-colors hover:border-brand-border hover:bg-surface-selected disabled:pointer-events-none disabled:opacity-60"
-          >
-            <span className="flex size-10 items-center justify-center rounded-lg bg-surface-selected text-text-faint">
-              {uploading ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <Upload size={20} />
-              )}
-            </span>
-            <span className="text-[13px] font-semibold text-foreground">
-              Upload a file
-            </span>
-            <span className="max-w-[28ch] text-[12px] text-text-faint">
-              Add up to {COVER_LETTER_VARIATION_LIMIT} variations. Each becomes
-              a one-click download.
-            </span>
-          </button>
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <PersistentScrollArea
-              className="flex min-h-0 flex-1"
-              viewportClassName="flex min-h-0 flex-1"
-              contentClassName="flex min-h-0 flex-1 flex-col gap-2"
-            >
-              {sortedTemplates.map((template) => {
-                const label = template.label || getFallbackLabel()
-                const filename = getFilename(template.file_url)
-                const rowUploading = uploading === template.variation
-                const rowRemoving = removing === template.variation
-                const rowSavingLabel = savingLabel === template.variation
-                const rowExporting = exportingVariation === template.variation
-                const rowEditing = editingVariation === template.variation
-                const rowBusy =
-                  rowUploading || rowRemoving || rowSavingLabel || rowExporting
-
-                return (
-                  <div
-                    key={template.id}
-                    className={cn(
-                      'group/cover-row relative grid h-[62px] min-h-0 w-full shrink-0 grid-cols-[34px_1fr_auto] content-center items-center gap-3 rounded-lg border border-border bg-secondary px-3 py-2.5 transition-[background-color,border-color] hover:border-brand hover:bg-surface-selected',
-                      (rowBusy || busy) && 'opacity-70',
-                    )}
-                  >
-                    <button
-                      type="button"
-                      aria-label={`Download ${filename}`}
-                      title={`Download ${filename}`}
-                      disabled={busy || isOnCooldown || rowEditing}
-                      onClick={() => handleDownload(template)}
-                      className="absolute inset-0 z-0 cursor-pointer rounded-lg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-border disabled:cursor-default"
-                    />
-                    <span className="pointer-events-none relative z-10 flex size-[34px] items-center justify-center rounded-lg bg-brand-soft text-brand">
-                      {rowUploading || rowRemoving || rowExporting ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <FileText size={16} />
-                      )}
-                    </span>
-                    <span className="pointer-events-none relative z-10 min-w-0">
-                      {rowEditing ? (
-                        <span className="pointer-events-auto flex h-7 max-w-[275px] min-w-0 items-center gap-1.5">
-                          <input
-                            ref={labelInputRef}
-                            value={labelDraft}
-                            autoComplete="off"
-                            aria-label={`Rename ${label}`}
-                            onChange={(event) =>
-                              setLabelDraft(event.target.value)
-                            }
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault()
-                                void saveLabel(template)
-                              }
-                              if (event.key === 'Escape') {
-                                cancelLabelEdit()
-                              }
-                            }}
-                            className="h-7 min-w-0 flex-1 rounded-[5px] border border-brand-border bg-card px-2 text-[13px] font-semibold text-foreground outline-none focus:ring-2 focus:ring-brand-border/50"
-                          />
-                          <button
-                            type="button"
-                            aria-label="Save cover letter label"
-                            disabled={rowSavingLabel}
-                            onClick={() => void saveLabel(template)}
-                            className="flex size-6 cursor-pointer items-center justify-center rounded-md bg-success-soft-strong text-success transition-colors hover:bg-success/25 disabled:pointer-events-none disabled:opacity-50"
-                          >
-                            {rowSavingLabel ? (
-                              <Loader2 size={12} className="animate-spin" />
-                            ) : (
-                              <Check size={12} />
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            aria-label="Cancel cover letter label edit"
-                            disabled={rowSavingLabel}
-                            onClick={cancelLabelEdit}
-                            className="flex size-6 cursor-pointer items-center justify-center rounded-md bg-danger-soft-fill text-danger transition-colors hover:bg-danger/25 disabled:pointer-events-none disabled:opacity-50"
-                          >
-                            <X size={12} />
-                          </button>
-                        </span>
-                      ) : (
-                        <span className="flex h-7 min-w-0 items-center gap-1">
-                          <span className="block truncate text-[13px] font-semibold text-foreground">
-                            {label}
-                          </span>
-                          {!locked && (
-                            <button
-                              type="button"
-                              aria-label={`Edit ${label} label`}
-                              title="Edit label"
-                              disabled={busy}
-                              onClick={() => startLabelEdit(template)}
-                              className="pointer-events-auto flex size-5 flex-shrink-0 cursor-pointer items-center justify-center rounded-md text-text-faint transition-colors hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-50"
-                            >
-                              <Pencil size={11} strokeWidth={2.4} />
-                            </button>
-                          )}
-                        </span>
-                      )}
-                      <span className="mt-0.5 block truncate text-[12px] text-text-faint">
-                        {filename}
-                      </span>
-                    </span>
-                    <span className="pointer-events-none relative z-10 flex items-center gap-1">
-                      <span className="flex size-[30px] items-center justify-center rounded-md text-text-faint transition-colors group-hover/cover-row:bg-brand-soft group-hover/cover-row:text-brand">
-                        <Download size={15} />
-                      </span>
-                      <button
-                        type="button"
-                        aria-label={`Replace ${label}`}
-                        title="Replace file"
-                        disabled={locked || busy}
-                        onClick={() => openUploader(template.variation, label)}
-                        className="pointer-events-auto flex size-7 cursor-pointer items-center justify-center rounded-md text-text-faint transition-colors hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-50"
-                      >
-                        <RefreshCcw size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Remove ${label}`}
-                        title="Remove"
-                        disabled={locked || busy}
-                        onClick={() => setPendingDelete(template)}
-                        className="pointer-events-auto flex size-7 cursor-pointer items-center justify-center rounded-md text-text-faint transition-colors hover:bg-danger-soft-fill hover:text-danger disabled:pointer-events-none disabled:opacity-50"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </span>
-                  </div>
-                )
-              })}
-            </PersistentScrollArea>
-            <div className="flex-shrink-0 pt-2">
-              {maxReached ? (
-                <div className="px-2 py-1 text-center text-[11px] text-text-faint">
-                  Maximum of {COVER_LETTER_VARIATION_LIMIT} variations reached
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  disabled={locked || busy}
-                  onClick={handleAdd}
-                  className="flex h-[41px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border-strong bg-transparent px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-brand-border hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-60"
-                >
-                  {addingNewVariation ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <>
-                      <Plus size={14} />
-                      Add variation
-                      <span className="font-normal text-text-faint">
-                        · {filledCount}/{COVER_LETTER_VARIATION_LIMIT}
-                      </span>
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+        <CoverLetterVariationList
+          templates={sortedTemplates}
+          locked={locked}
+          busy={busy}
+          uploadingVariation={uploading}
+          removingVariation={removing}
+          downloadingVariation={exportingVariation}
+          savingLabelVariation={savingLabel}
+          downloadDisabled={isOnCooldown}
+          onAdd={handleAdd}
+          onReplace={(template) =>
+            openUploader(
+              template.variation,
+              template.label || COVER_LETTER_FALLBACK_LABEL,
+            )
+          }
+          onRemove={setPendingDelete}
+          onDownload={handleDownload}
+          onLabelUpdated={handleLabelUpdated}
+        />
 
         <div className="flex min-h-0 flex-col gap-2 rounded-lg border border-border bg-secondary p-3">
           <div className="flex flex-col gap-1.5">
