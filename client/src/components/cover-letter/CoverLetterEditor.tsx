@@ -35,6 +35,7 @@ import {
   CoverLetterConfirmDialog,
   type PendingAction,
 } from './CoverLetterConfirmDialog'
+import { DiscardChangesDialog } from './DiscardChangesDialog'
 import { getCoverLetterTokenValidation } from './tokenValidation'
 import {
   COVER_LETTER_FALLBACK_LABEL,
@@ -143,6 +144,9 @@ export function CoverLetterEditor() {
     string | null
   >(null)
   const [pendingAction, setPendingAction] = useState<PendingAction>(null)
+  const [pendingDiscard, setPendingDiscard] = useState<{
+    run: () => void
+  } | null>(null)
   const uploadInputRef = useRef<HTMLInputElement>(null)
   const uploadTargetRef = useRef<string | null>(null)
 
@@ -393,15 +397,34 @@ export function CoverLetterEditor() {
     }
   }
 
-  const handleVariationRename = (targetTemplate: CoverLetterTemplate) => {
-    if (targetTemplate.variation === variation) {
-      titleInputRef.current?.focus()
-      titleInputRef.current?.select()
+  // Any action that switches away from (or replaces) the active variation runs
+  // through here so unsaved edits prompt a discard confirmation first.
+  const guardUnsavedChanges = (action: () => void) => {
+    if (isDirty) {
+      setPendingDiscard({ run: action })
       return
     }
-    pendingTitleFocus.current = true
-    setSearchParams({ v: targetTemplate.variation }, { replace: true })
+    action()
   }
+
+  const switchVariation = (target: string, focusTitle: boolean) => {
+    if (focusTitle) pendingTitleFocus.current = true
+    setSearchParams({ v: target }, { replace: true })
+  }
+
+  const requestVariationSwitch = (target: string, focusTitle = false) => {
+    if (target === variation) {
+      if (focusTitle) {
+        titleInputRef.current?.focus()
+        titleInputRef.current?.select()
+      }
+      return
+    }
+    guardUnsavedChanges(() => switchVariation(target, focusTitle))
+  }
+
+  const handleVariationRename = (targetTemplate: CoverLetterTemplate) =>
+    requestVariationSwitch(targetTemplate.variation, true)
 
   const handleDownload = () => {
     if (!variation) return
@@ -495,7 +518,10 @@ export function CoverLetterEditor() {
     if (wouldOverwrite) {
       setPendingAction({ type: 'upload', variation: targetVariation, file })
     } else {
-      void handleVariationUpload(targetVariation, file)
+      // A new-variation upload switches away from the active one — guard edits.
+      guardUnsavedChanges(
+        () => void handleVariationUpload(targetVariation, file),
+      )
     }
   }
 
@@ -640,12 +666,14 @@ export function CoverLetterEditor() {
           variation={variation}
           template={template}
           onVariationChange={(nextVariation) =>
-            setSearchParams({ v: nextVariation }, { replace: true })
+            requestVariationSwitch(nextVariation)
           }
           onVariationRename={handleVariationRename}
           onRequestUpload={() => openUploader(template ? variation : null)}
           onRequestAddVariation={() => openUploader(null)}
-          onRequestCreateEmpty={handleCreateEmptyVariation}
+          onRequestCreateEmpty={() =>
+            guardUnsavedChanges(() => void handleCreateEmptyVariation())
+          }
           onRequestRemove={requestRemove}
           onRequestRestore={requestRestore}
           onDownload={handleDownload}
@@ -683,6 +711,15 @@ export function CoverLetterEditor() {
         pendingAction={pendingAction}
         onConfirm={handleConfirmAction}
         onCancel={() => setPendingAction(null)}
+      />
+
+      <DiscardChangesDialog
+        open={pendingDiscard !== null}
+        onKeepEditing={() => setPendingDiscard(null)}
+        onDiscard={() => {
+          pendingDiscard?.run()
+          setPendingDiscard(null)
+        }}
       />
     </div>
   )
