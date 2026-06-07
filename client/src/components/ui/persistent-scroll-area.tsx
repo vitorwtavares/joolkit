@@ -6,6 +6,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type RefObject,
 } from 'react'
 import { cn } from '@/lib/utils'
 
@@ -14,6 +15,7 @@ interface PersistentScrollAreaProps {
   className?: string
   viewportClassName?: string
   contentClassName?: string
+  scrollViewportRef?: RefObject<HTMLDivElement | null>
 }
 
 const MIN_THUMB_HEIGHT = 32
@@ -23,6 +25,7 @@ export function PersistentScrollArea({
   className,
   viewportClassName,
   contentClassName,
+  scrollViewportRef,
 }: PersistentScrollAreaProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -176,7 +179,10 @@ export function PersistentScrollArea({
   return (
     <div className={cn('relative', className)}>
       <div
-        ref={viewportRef}
+        ref={(node) => {
+          viewportRef.current = node
+          if (scrollViewportRef) scrollViewportRef.current = node
+        }}
         onScroll={updateThumb}
         className={cn(
           'persistent-scroll-area-viewport min-h-0 overflow-y-auto',
