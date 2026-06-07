@@ -37,7 +37,7 @@ import {
 } from './CoverLetterConfirmDialog'
 import { DiscardChangesDialog } from './DiscardChangesDialog'
 import { getCoverLetterTokenValidation } from './tokenValidation'
-import { getTokenValueMap } from './tokenUtils'
+import { getTokenValueMap, normalizeTokenKey } from './tokenUtils'
 import {
   COVER_LETTER_FALLBACK_LABEL,
   COVER_LETTER_LABEL_MAX_LENGTH,
@@ -48,6 +48,10 @@ import {
 
 // Editor toasts sit bottom-center so they don't cover the header toolbar.
 const TOAST_POSITION = { position: 'bottom-center' } as const
+
+const editorTokenClickBridge: { current: (key: string) => void } = {
+  current: () => {},
+}
 
 const PAGE_CONTENT_HEIGHT = 1123 - 80 * 2
 const MAX_PAGES = 3
@@ -156,10 +160,12 @@ export function CoverLetterEditor() {
     tokens,
     updateToken,
     addToken,
+    ensureTokenByKey,
     deleteToken,
     flushTokenSave,
     flushTokenSaveAsync,
   } = useTokenState(tokenData)
+  const [focusTokenKey, setFocusTokenKey] = useState<string | null>(null)
 
   const { data: templates = [], isLoading: templatesLoading } =
     useCoverLetters()
@@ -194,10 +200,29 @@ export function CoverLetterEditor() {
       PageHeightLimit.configure({
         onPasteRejected: () => setIsDirty(false),
       }),
-      TokenHighlight,
+      TokenHighlight.configure({
+        onTokenClick: (key) => editorTokenClickBridge.current(key),
+      }),
     ],
     onUpdate: () => setIsDirty(true),
   })
+
+  useEffect(() => {
+    editorTokenClickBridge.current = (key: string) => {
+      const normalized = normalizeTokenKey(key)
+      if (!normalized) return
+
+      editor?.commands.blur()
+
+      const exists = tokens.some(
+        (token) => normalizeTokenKey(token.key) === normalized,
+      )
+      if (!exists) {
+        ensureTokenByKey(normalized)
+      }
+      setFocusTokenKey(normalized)
+    }
+  }, [editor, ensureTokenByKey, tokens])
 
   // Load content on mount and variation switch.
   // Wait for templates to finish loading before committing lastVariation so that
@@ -686,6 +711,8 @@ export function CoverLetterEditor() {
           onTokenDelete={deleteToken}
           onTokenAdd={addToken}
           onTokenBlur={handleTokenBlur}
+          focusTokenKey={focusTokenKey}
+          onFocusTokenKeyHandled={() => setFocusTokenKey(null)}
           isRestoring={restoreMutation.isPending}
           isDownloading={exportPDF.isPending}
           isUploading={isUploading}

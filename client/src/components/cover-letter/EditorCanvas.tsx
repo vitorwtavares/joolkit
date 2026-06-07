@@ -19,7 +19,10 @@ export function EditorCanvas({ isLoading, editor }: EditorCanvasProps) {
   return (
     <div
       className="editor-canvas min-h-0 flex-1 cursor-text overflow-y-auto py-5"
-      onClick={() => editor?.commands.focus()}
+      onClick={(event) => {
+        if ((event.target as Element).closest('[data-token-key]')) return
+        editor?.commands.focus()
+      }}
     >
       <div
         className="mx-auto rounded-md border border-border-subtle"

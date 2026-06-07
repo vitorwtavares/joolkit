@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Plus, Tag, Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { PersistentScrollArea } from '@/components/ui/persistent-scroll-area'
@@ -25,6 +25,8 @@ interface CoverLetterTokenPanelProps {
   onTokenDelete: (id: string) => void
   onTokenAdd: () => void
   onTokenBlur: () => void
+  focusTokenKey?: string | null
+  onFocusTokenKeyHandled?: () => void
 }
 
 export function CoverLetterTokenPanel({
@@ -37,6 +39,8 @@ export function CoverLetterTokenPanel({
   onTokenDelete,
   onTokenAdd,
   onTokenBlur,
+  focusTokenKey = null,
+  onFocusTokenKeyHandled,
 }: CoverLetterTokenPanelProps) {
   const unresolvedKeys = new Set(
     unresolvedTokens.map((token) => normalizeTokenKey(token)),
@@ -45,7 +49,69 @@ export function CoverLetterTokenPanel({
   const isSection = variant === 'section'
   const scrollViewportRef = useRef<HTMLDivElement>(null)
   const keyInputRefs = useRef(new Map<string, HTMLInputElement>())
+  const valueInputRefs = useRef(new Map<string, HTMLInputElement>())
+  const tokenRowRefs = useRef(new Map<string, HTMLDivElement>())
   const pendingNewTokenRef = useRef(false)
+  const onFocusTokenKeyHandledRef = useRef(onFocusTokenKeyHandled)
+
+  useEffect(() => {
+    onFocusTokenKeyHandledRef.current = onFocusTokenKeyHandled
+  }, [onFocusTokenKeyHandled])
+
+  useLayoutEffect(() => {
+    if (!focusTokenKey) return
+
+    const normalized = normalizeTokenKey(focusTokenKey)
+    const token = tokens.find(
+      (item) => normalizeTokenKey(item.key) === normalized,
+    )
+    if (!token) return
+
+    const tokenId = token.id
+    const viewport = scrollViewportRef.current
+    const row = tokenRowRefs.current.get(token.id)
+    if (row && viewport) {
+      const rowRect = row.getBoundingClientRect()
+      const viewportRect = viewport.getBoundingClientRect()
+
+      if (rowRect.top < viewportRect.top) {
+        viewport.scrollBy({
+          top: rowRect.top - viewportRect.top,
+          behavior: 'smooth',
+        })
+      } else if (rowRect.bottom > viewportRect.bottom) {
+        viewport.scrollBy({
+          top: rowRect.bottom - viewportRect.bottom,
+          behavior: 'smooth',
+        })
+      }
+    }
+
+    let cancelled = false
+
+    function tryFocus() {
+      if (cancelled) return false
+
+      const input = valueInputRefs.current.get(tokenId)
+      if (!input) return false
+
+      input.focus({ preventScroll: true })
+      onFocusTokenKeyHandledRef.current?.()
+      return true
+    }
+
+    // Defer past editor canvas click handlers that would steal focus back.
+    const timer = window.setTimeout(() => {
+      if (!tryFocus()) {
+        requestAnimationFrame(() => tryFocus())
+      }
+    }, 0)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [focusTokenKey, tokens])
 
   useLayoutEffect(() => {
     if (!pendingNewTokenRef.current) return
@@ -64,7 +130,7 @@ export function CoverLetterTokenPanel({
     if (lastToken) {
       keyInputRefs.current.get(lastToken.id)?.focus()
     }
-  }, [tokens.length])
+  }, [tokens])
 
   function handleTokenAdd() {
     pendingNewTokenRef.current = true
@@ -123,7 +189,17 @@ export function CoverLetterTokenPanel({
                 token.value.trim().length === 0
 
               return (
-                <div key={token.id} className="flex flex-col gap-1.5">
+                <div
+                  key={token.id}
+                  ref={(element) => {
+                    if (element) {
+                      tokenRowRefs.current.set(token.id, element)
+                    } else {
+                      tokenRowRefs.current.delete(token.id)
+                    }
+                  }}
+                  className="flex flex-col gap-1.5"
+                >
                   <label
                     className={cn(
                       'flex w-fit max-w-full min-w-0 items-center gap-0 rounded-[5px] pt-[3px] pr-[3px] pb-[2px] pl-[3px] font-mono text-[12.35px] leading-none font-medium',
@@ -172,6 +248,13 @@ export function CoverLetterTokenPanel({
 
                   <div className="flex min-w-0 items-center gap-1.5">
                     <Input
+                      ref={(element) => {
+                        if (element) {
+                          valueInputRefs.current.set(token.id, element)
+                        } else {
+                          valueInputRefs.current.delete(token.id)
+                        }
+                      }}
                       value={token.value}
                       aria-label={`Value for ${formatToken(key)}`}
                       aria-invalid={unresolved}

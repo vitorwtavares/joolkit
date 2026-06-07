@@ -34,6 +34,8 @@ interface EditorSidePanelProps {
   onTokenDelete: (id: string) => void
   onTokenAdd: () => void
   onTokenBlur: () => void
+  focusTokenKey?: string | null
+  onFocusTokenKeyHandled?: () => void
   isRestoring: boolean
   isDownloading: boolean
   isUploading: boolean
@@ -81,6 +83,8 @@ export function EditorSidePanel({
   onTokenDelete,
   onTokenAdd,
   onTokenBlur,
+  focusTokenKey,
+  onFocusTokenKeyHandled,
   isRestoring,
   isDownloading,
   isUploading,
@@ -150,6 +154,8 @@ export function EditorSidePanel({
             onTokenDelete={onTokenDelete}
             onTokenAdd={onTokenAdd}
             onTokenBlur={onTokenBlur}
+            focusTokenKey={focusTokenKey}
+            onFocusTokenKeyHandled={onFocusTokenKeyHandled}
           />
         </div>
       </div>

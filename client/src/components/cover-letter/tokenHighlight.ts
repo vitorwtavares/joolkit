@@ -30,7 +30,11 @@ function findTokenRanges(doc: Node): TokenRange[] {
   return ranges
 }
 
-function buildDecorations(doc: Node, tokens: TokenValues): DecorationSet {
+function buildDecorations(
+  doc: Node,
+  tokens: TokenValues,
+  onTokenClick?: (key: string) => void,
+): DecorationSet {
   const decorations: Decoration[] = []
 
   doc.descendants((node: Node, pos: number) => {
@@ -63,6 +67,7 @@ function buildDecorations(doc: Node, tokens: TokenValues): DecorationSet {
           () => {
             const el = document.createElement('span')
             el.className = className
+            el.dataset.tokenKey = displayText
             const open = document.createElement('span')
             open.textContent = '{{'
             const text = document.createElement('span')
@@ -72,6 +77,19 @@ function buildDecorations(doc: Node, tokens: TokenValues): DecorationSet {
             const close = document.createElement('span')
             close.textContent = '}}'
             el.append(open, text, close)
+
+            if (onTokenClick) {
+              el.addEventListener('mousedown', (event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                onTokenClick(displayText)
+              })
+              el.addEventListener('click', (event) => {
+                event.preventDefault()
+                event.stopPropagation()
+              })
+            }
+
             return el
           },
           {
@@ -99,10 +117,18 @@ function buildDecorations(doc: Node, tokens: TokenValues): DecorationSet {
   return DecorationSet.create(doc, decorations)
 }
 
-export const TokenHighlight = Extension.create({
+export const TokenHighlight = Extension.create<{
+  onTokenClick?: (key: string) => void
+}>({
   name: 'tokenHighlight',
 
+  addOptions() {
+    return { onTokenClick: undefined }
+  },
+
   addProseMirrorPlugins() {
+    const onTokenClick = this.options.onTokenClick
+
     return [
       new Plugin({
         key: pluginKey,
@@ -120,7 +146,7 @@ export const TokenHighlight = Extension.create({
         props: {
           decorations(state) {
             const tokens = pluginKey.getState(state)!
-            return buildDecorations(state.doc, tokens)
+            return buildDecorations(state.doc, tokens, onTokenClick)
           },
 
           handleKeyDown(view: EditorView, event: KeyboardEvent) {

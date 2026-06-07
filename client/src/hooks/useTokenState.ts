@@ -6,6 +6,7 @@ import {
 import {
   type EditableCoverLetterToken,
   dedupeCoverLetterTokensByKey,
+  normalizeTokenKey,
   normalizeTokenKeyDraft,
   toEditableCoverLetterTokens,
 } from '@/components/cover-letter/tokenUtils'
@@ -125,6 +126,31 @@ export function useTokenState(tokenData: TokenData | null | undefined) {
     })
   }
 
+  function ensureTokenByKey(key: string) {
+    const normalized = normalizeTokenKey(key)
+    if (!normalized) return
+
+    setTokenAndSave((current) => {
+      if (
+        current.some((token) => normalizeTokenKey(token.key) === normalized)
+      ) {
+        return current
+      }
+
+      const emptyIndex = current.findIndex(
+        (token) => !normalizeTokenKey(token.key),
+      )
+
+      if (emptyIndex !== -1) {
+        return current.map((token, index) =>
+          index === emptyIndex ? { ...token, key: normalized } : token,
+        )
+      }
+
+      return [...current, { ...createEmptyToken(), key: normalized }]
+    })
+  }
+
   function deleteToken(id: string) {
     setTokenAndSave((current) => current.filter((token) => token.id !== id))
   }
@@ -133,6 +159,7 @@ export function useTokenState(tokenData: TokenData | null | undefined) {
     tokens,
     updateToken,
     addToken,
+    ensureTokenByKey,
     deleteToken,
     flushTokenSave,
     flushTokenSaveAsync,
