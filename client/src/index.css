@@ -382,8 +382,8 @@ aside[data-collapsed='true']
   cursor: pointer;
 }
 
-.token-resolved,
-.token-unresolved {
+/* Brand pill shared with TokenPill (token tutorial dialog). */
+.token-resolved {
   display: inline-flex;
   align-items: center;
   padding: 3.5px 3px 2px;
@@ -395,35 +395,37 @@ aside[data-collapsed='true']
   font-weight: 500;
   line-height: 1;
   vertical-align: baseline;
-  cursor: pointer;
+  cursor: default;
   background: var(--brand-soft);
   color: var(--brand);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Editor token chip — no horizontal padding so the caret sits at its edge. */
+.token-chip {
+  border-radius: 5px;
+  padding: 2px 0;
+  margin: 0 2px;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.95em;
+  font-weight: 500;
+  cursor: pointer;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   transition: filter 0.12s;
 }
 
-.token-unresolved {
+.token-chip-resolved {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.token-chip-unresolved {
   background: var(--token-unresolved-soft);
   color: var(--token-unresolved);
 }
 
-.token-resolved:hover,
-.token-unresolved:hover {
+.token-chip:hover {
   filter: brightness(1.08);
-}
-
-.token-hidden {
-  font-size: 0;
-  color: transparent;
-  padding: 0;
-  margin: 0;
-}
-
-.token-caret-anchor {
-  display: inline;
-  font-size: inherit;
-  color: transparent;
-  user-select: none;
 }
 
 /* ── Notes Editor ── */

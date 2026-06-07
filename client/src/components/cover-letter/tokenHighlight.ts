@@ -12,6 +12,7 @@ const pluginKey = new PluginKey<TokenValues>('tokenHighlight')
 interface TokenRange {
   from: number
   to: number
+  key: string
 }
 
 function findTokenRanges(doc: Node): TokenRange[] {
@@ -24,17 +25,14 @@ function findTokenRanges(doc: Node): TokenRange[] {
       ranges.push({
         from: pos + match.index,
         to: pos + match.index + match[0].length,
+        key: normalizeTokenKey(match[1] ?? '') || 'token',
       })
     }
   })
   return ranges
 }
 
-function buildDecorations(
-  doc: Node,
-  tokens: TokenValues,
-  onTokenClick?: (key: string) => void,
-): DecorationSet {
+function buildDecorations(doc: Node, tokens: TokenValues): DecorationSet {
   const decorations: Decoration[] = []
 
   doc.descendants((node: Node, pos: number) => {
@@ -44,72 +42,20 @@ function buildDecorations(
     let match: RegExpExecArray | null
 
     while ((match = TOKEN_PATTERN.exec(node.text)) !== null) {
-      const token = match[0]
       const key = normalizeTokenKey(match[1] ?? '')
       const from = pos + match.index
-      const to = from + token.length
+      const to = from + match[0].length
       const value = tokens[key]
       const isResolved = !!value?.trim()
 
-      // Render the chip as a widget at `from` and hide the raw token text.
-      // side: 1 → widget is drawn AFTER the caret at `from`, so the caret at
-      // `from` sits to the LEFT of the chip, outside its outline/margin.
-      // The raw "{{token}}" text in [from, to] is hidden via `token-hidden`.
-      // An anchor widget at `to` with side: -1 forces the caret at `to` to
-      // land AFTER a real inline box (a zero-width space with normal font
-      // metrics), so the caret has non-zero height and is visible to the
-      // RIGHT of the chip, outside its outline/margin.
-      const displayText = key || 'token'
-      const className = isResolved ? 'token-resolved' : 'token-unresolved'
+      // Style the raw "{{token}}" text in place as a chip. Keeping it as real
+      // text (rather than a widget over hidden text) means it selects, deletes
+      // and carries its font marks like any other text.
       decorations.push(
-        Decoration.widget(
-          from,
-          () => {
-            const el = document.createElement('span')
-            el.className = className
-            el.dataset.tokenKey = displayText
-            const open = document.createElement('span')
-            open.textContent = '{{'
-            const text = document.createElement('span')
-            text.textContent = displayText
-            text.style.display = 'inline-block'
-            text.style.padding = '0 3px'
-            const close = document.createElement('span')
-            close.textContent = '}}'
-            el.append(open, text, close)
-
-            if (onTokenClick) {
-              el.addEventListener('mousedown', (event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                onTokenClick(displayText)
-              })
-              el.addEventListener('click', (event) => {
-                event.preventDefault()
-                event.stopPropagation()
-              })
-            }
-
-            return el
-          },
-          {
-            side: 1,
-            key: `token-widget-spaced-${from}-${displayText}-${isResolved ? 'resolved' : 'unresolved'}`,
-          },
-        ),
-      )
-      decorations.push(Decoration.inline(from, to, { class: 'token-hidden' }))
-      decorations.push(
-        Decoration.widget(
-          to,
-          () => {
-            const el = document.createElement('span')
-            el.className = 'token-caret-anchor'
-            el.textContent = '\u200B'
-            return el
-          },
-          { side: -1, key: `token-anchor-${to}` },
-        ),
+        Decoration.inline(from, to, {
+          class: `token-chip ${isResolved ? 'token-chip-resolved' : 'token-chip-unresolved'}`,
+          'data-token-key': key || 'token',
+        }),
       )
     }
   })
@@ -146,7 +92,21 @@ export const TokenHighlight = Extension.create<{
         props: {
           decorations(state) {
             const tokens = pluginKey.getState(state)!
-            return buildDecorations(state.doc, tokens, onTokenClick)
+            return buildDecorations(state.doc, tokens)
+          },
+
+          handleClick(view: EditorView, pos: number) {
+            if (!onTokenClick) return false
+            // Strict interior: a click resolving to `from`/`to` is the caret
+            // spot just before/after the chip (e.g. clicking the line past a
+            // token at line end), not a click on the token itself.
+            for (const range of findTokenRanges(view.state.doc)) {
+              if (pos > range.from && pos < range.to) {
+                onTokenClick(range.key)
+                return true
+              }
+            }
+            return false
           },
 
           handleKeyDown(view: EditorView, event: KeyboardEvent) {
@@ -182,10 +142,20 @@ export const TokenHighlight = Extension.create<{
               }
             }
 
+            // When deleting a whole token, carry its marks (e.g. font size)
+            // into the stored marks so an emptied line keeps its formatting
+            // instead of snapping back to the editor default.
+            const deleteToken = (range: TokenRange) => {
+              const marks = doc.nodeAt(range.from)?.marks
+              const tr = view.state.tr.delete(range.from, range.to)
+              if (marks?.length) tr.setStoredMarks(marks)
+              view.dispatch(tr)
+            }
+
             if (event.key === 'Backspace') {
               for (const range of ranges) {
                 if (from > range.from && from <= range.to) {
-                  view.dispatch(view.state.tr.delete(range.from, range.to))
+                  deleteToken(range)
                   return true
                 }
               }
@@ -194,7 +164,7 @@ export const TokenHighlight = Extension.create<{
             if (event.key === 'Delete') {
               for (const range of ranges) {
                 if (from >= range.from && from < range.to) {
-                  view.dispatch(view.state.tr.delete(range.from, range.to))
+                  deleteToken(range)
                   return true
                 }
               }
