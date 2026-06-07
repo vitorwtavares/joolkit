@@ -83,7 +83,7 @@ export function CoverLetterTokenPanel({
     >
       {!isSection && (
         <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2.5">
-          <div className="flex min-w-0 items-center gap-2 text-[11px] font-semibold tracking-[0.06em] text-text-faint uppercase">
+          <div className="flex min-w-0 items-center gap-2 text-[12px] font-semibold tracking-[0.06em] text-text-faint uppercase">
             <Tag size={13} />
             Tokens
           </div>

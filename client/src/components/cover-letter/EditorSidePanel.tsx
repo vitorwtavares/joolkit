@@ -104,7 +104,7 @@ export function EditorSidePanel({
     <div className="flex w-[370px] min-w-[290px] flex-col overflow-y-auto bg-surface-panel">
       {/* Variations */}
       <div className="border-b border-border-subtle p-3.5">
-        <div className="mb-3.5 text-[11px] font-medium tracking-[0.08em] text-text-faint uppercase">
+        <div className="mb-3.5 text-[12px] font-medium tracking-[0.08em] text-text-faint uppercase">
           Variations
         </div>
 
@@ -131,7 +131,7 @@ export function EditorSidePanel({
       {/* Tokens */}
       <div className="border-b border-border-subtle p-3.5">
         <div className="mb-3.5 flex items-center justify-between gap-3">
-          <div className="text-[11px] font-medium tracking-[0.08em] text-text-faint uppercase">
+          <div className="text-[12px] font-medium tracking-[0.08em] text-text-faint uppercase">
             Tokens
           </div>
           <UnresolvedTokensIndicator
@@ -156,7 +156,7 @@ export function EditorSidePanel({
 
       {/* Version */}
       <div className="border-b border-border-subtle p-4 pb-[18px]">
-        <div className="mb-3.5 text-[11px] font-medium tracking-[0.08em] text-text-faint uppercase">
+        <div className="mb-3.5 text-[12px] font-medium tracking-[0.08em] text-text-faint uppercase">
           Version
         </div>
 
@@ -254,7 +254,7 @@ export function EditorSidePanel({
 
       {/* Download */}
       <div className="p-4 pb-[18px]">
-        <div className="mb-3.5 text-[11px] font-medium tracking-[0.08em] text-text-faint uppercase">
+        <div className="mb-3.5 text-[12px] font-medium tracking-[0.08em] text-text-faint uppercase">
           Download
         </div>
 
