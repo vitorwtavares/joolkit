@@ -59,7 +59,10 @@ async function requestBlob(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.error ?? `Request failed: ${res.status}`)
+    throw new ApiError(
+      body.error ?? `Request failed: ${res.status}`,
+      res.status,
+    )
   }
 
   return res.blob()

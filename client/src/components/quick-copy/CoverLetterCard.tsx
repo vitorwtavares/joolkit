@@ -1,59 +1,85 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { FileText, Loader2, Trash2, Upload, ExternalLink } from 'lucide-react'
+import { ExternalLink, FileText, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import type { CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
+import {
+  COVER_LETTER_VARIATION_LIMIT,
+  type CoverLetterTemplate,
+} from '@/api/hooks/useCoverLetters'
 import { useExportCoverLetterPDF } from '@/api/hooks/useCoverLetters'
 import { useCoverLetterTokens } from '@/api/hooks/useCoverLetterTokens'
 import { useTokenState } from '@/hooks/useTokenState'
 import { useDownloadBubble } from '@/hooks/useDownloadBubble'
-import { TOKEN_ROLE, TOKEN_COMPANY } from '@/constants'
-import { TruncatedLabel } from '@/components/ui/truncated-label'
+import {
+  COVER_LETTER_TOKENS_DISABLED,
+  TOKEN_ROLE,
+  TOKEN_COMPANY,
+} from '@/constants'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { CoverLetterVariationList } from '@/components/cover-letter/CoverLetterVariationList'
+import {
+  COVER_LETTER_FALLBACK_LABEL,
+  getCoverLetterTemplatePath,
+  getNextCoverLetterPosition,
+} from '@/components/cover-letter/coverLetterVariationUtils'
 import { TokenTutorialDialog } from './TokenTutorialDialog'
 
 interface CoverLetterCardProps {
   templates: CoverLetterTemplate[]
   userId: string
-  onFileUploaded: (variation: 'formal' | 'light', path: string) => void
-  onFileRemoved: (variation: 'formal' | 'light') => Promise<void>
+  locked?: boolean
+  onUploaded: (
+    variation: string | null,
+    path: string,
+    label: string,
+  ) => Promise<void> | void
+  onRemoved: (variation: string) => Promise<void> | void
+  onLabelUpdated: (variation: string, label: string) => Promise<void> | void
 }
 
 export function CoverLetterCard({
   templates,
   userId,
-  onFileUploaded,
-  onFileRemoved,
+  locked = false,
+  onUploaded,
+  onRemoved,
+  onLabelUpdated,
 }: CoverLetterCardProps) {
   const navigate = useNavigate()
-  const formalInputRef = useRef<HTMLInputElement>(null)
-  const lightInputRef = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState<'formal' | 'light' | null>(null)
-  const [removing, setRemoving] = useState<'formal' | 'light' | null>(null)
-  const [iconPop, setIconPop] = useState<'formal' | 'light' | null>(null)
-  const [fallingSlot, setFallingSlot] = useState<'formal' | 'light' | null>(
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadTargetRef = useRef<{
+    variation: string | null
+    label: string
+  } | null>(null)
+  const [uploading, setUploading] = useState<string | null>(null)
+  const [removing, setRemoving] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] =
+    useState<CoverLetterTemplate | null>(null)
+  const [savingLabel, setSavingLabel] = useState<string | null>(null)
+  const [tutorialOpen, setTutorialOpen] = useState(false)
+  const [exportingVariation, setExportingVariation] = useState<string | null>(
     null,
   )
-  const [tutorialOpen, setTutorialOpen] = useState(false)
-  const [exportingVariation, setExportingVariation] = useState<
-    'formal' | 'light' | null
-  >(null)
-  const prevUploadingRef = useRef<'formal' | 'light' | null>(null)
+  const {
+    trigger: triggerDownload,
+    bubble: downloadBubble,
+    isOnCooldown,
+  } = useDownloadBubble()
 
   const { data: tokenData } = useCoverLetterTokens()
   const exportPDF = useExportCoverLetterPDF()
-  const {
-    trigger: triggerFormalDownload,
-    bubble: formalDownloadBubble,
-    isOnCooldown: formalOnCooldown,
-  } = useDownloadBubble()
-  const {
-    trigger: triggerLightDownload,
-    bubble: lightDownloadBubble,
-    isOnCooldown: lightOnCooldown,
-  } = useDownloadBubble()
   const {
     role,
     setRole,
@@ -64,106 +90,155 @@ export function CoverLetterCard({
     flushTokenSaveAsync,
   } = useTokenState(tokenData)
 
+  const sortedTemplates = [...templates].sort((a, b) => a.position - b.position)
+  const filledCount = sortedTemplates.length
+  const maxReached = filledCount >= COVER_LETTER_VARIATION_LIMIT
+  const busy =
+    uploading !== null ||
+    removing !== null ||
+    savingLabel !== null ||
+    exportingVariation !== null
   async function handleOpenInEditor() {
     await flushTokenSaveAsync(role, company)
     navigate('/cover-letter')
   }
 
-  const formal = templates.find((t) => t.variation === 'formal')
-  const light = templates.find((t) => t.variation === 'light')
-
-  useLayoutEffect(() => {
-    const wasUploading = prevUploadingRef.current
-    prevUploadingRef.current = uploading
-    if (!uploading && wasUploading) {
-      const uploaded =
-        wasUploading === 'formal' ? formal?.file_url : light?.file_url
-      if (uploaded) setIconPop(wasUploading)
-    }
-  }, [uploading, formal?.file_url, light?.file_url])
-
-  // This effect intentionally waits for the parent's file_url to change before
-  // clearing the local removing/uploading flags. Including them as deps would
-  // re-fire on setRemoving(...) and immediately clear it, killing the spinner
-  // mid-action.
-  useLayoutEffect(() => {
-    if (removing) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (removing === 'formal' && !formal?.file_url) setFallingSlot('formal')
-      if (removing === 'light' && !light?.file_url) setFallingSlot('light')
-      setRemoving(null)
-    }
-    if (uploading) setUploading(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formal?.file_url, light?.file_url])
-
-  async function handleUpload(
-    variation: 'formal' | 'light',
-    e: React.ChangeEvent<HTMLInputElement>,
+  function openUploader(
+    variation: string | null,
+    label = COVER_LETTER_FALLBACK_LABEL,
   ) {
+    if (locked || busy) return
+    uploadTargetRef.current = { variation, label }
+    fileInputRef.current?.click()
+  }
+
+  function handleAdd() {
+    if (!getNextCoverLetterPosition(sortedTemplates.length)) return
+    openUploader(null)
+  }
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file) return
+    const target = uploadTargetRef.current
+    if (!file || !target) return
 
-    const oldTemplate = variation === 'formal' ? formal : light
-    const path = `${userId}/${variation}/${file.name}`
+    const { variation, label } = target
+    const existingTemplate =
+      sortedTemplates.find((template) => template.variation === variation) ??
+      null
+    const uploadKey = variation ?? 'new'
+    const path = getCoverLetterTemplatePath(userId, variation, file.name)
 
-    setUploading(variation)
-
-    if (oldTemplate?.file_url && oldTemplate.file_url !== path) {
-      await supabase.storage
-        .from('cover-letters')
-        .remove([oldTemplate.file_url])
-        .catch(() => {})
-    }
+    setUploading(uploadKey)
 
     const { error } = await supabase.storage
       .from('cover-letters')
       .upload(path, file, { upsert: true })
-
     if (error) {
       setUploading(null)
       toast.error('Upload failed: ' + error.message)
       e.target.value = ''
+      uploadTargetRef.current = null
       return
     }
 
-    onFileUploaded(variation, path)
-    toast.success(
-      `${variation.charAt(0).toUpperCase() + variation.slice(1)} template uploaded`,
-    )
-    e.target.value = ''
+    try {
+      await onUploaded(variation, path, label)
+      if (existingTemplate?.file_url && existingTemplate.file_url !== path) {
+        await supabase.storage
+          .from('cover-letters')
+          .remove([existingTemplate.file_url])
+          .catch(() => {})
+      }
+      toast.success(`${label} uploaded`)
+    } catch {
+      await supabase.storage
+        .from('cover-letters')
+        .remove([path])
+        .catch(() => {})
+      setUploading(null)
+    } finally {
+      setUploading(null)
+      e.target.value = ''
+      uploadTargetRef.current = null
+    }
   }
 
-  function handleDownload(variation: 'formal' | 'light') {
+  function handleDownload(template: CoverLetterTemplate) {
+    if (busy || isOnCooldown) return
     if (!role || !company) {
       toast.error(
         `Fill in ${TOKEN_ROLE} and ${TOKEN_COMPANY} before downloading`,
       )
       return
     }
-    const triggerDownload =
-      variation === 'formal' ? triggerFormalDownload : triggerLightDownload
+
     triggerDownload()
-    setExportingVariation(variation)
-    exportPDF.mutate(variation, {
+    setExportingVariation(template.variation)
+    exportPDF.mutate(template.variation, {
       onSettled: () => setExportingVariation(null),
-      onError: () => toast.error('Failed to export PDF'),
+      onError: (error) => toast.error(error.message || 'Failed to export PDF'),
     })
   }
 
+  async function handleRemove(template: CoverLetterTemplate) {
+    if (locked || busy) return
+    setRemoving(template.variation)
+    try {
+      await onRemoved(template.variation)
+      if (template.file_url) {
+        await supabase.storage
+          .from('cover-letters')
+          .remove([template.file_url])
+          .catch(() => {})
+      }
+    } catch {
+      setRemoving(null)
+      return
+    }
+    setRemoving(null)
+    setPendingDelete(null)
+  }
+
+  async function handleLabelUpdated(
+    template: CoverLetterTemplate,
+    label: string,
+  ) {
+    const nextLabel = label.trim()
+    if (!nextLabel) {
+      return
+    }
+
+    setSavingLabel(template.variation)
+    try {
+      await onLabelUpdated(template.variation, nextLabel)
+    } finally {
+      setSavingLabel(null)
+    }
+  }
+
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
-      {/* Header */}
-      <header className="flex min-h-[80px] items-center gap-3 border-b border-border px-4">
-        <div className="flex size-[30px] flex-shrink-0 items-center justify-center rounded-md bg-secondary">
-          <FileText size={14} className="text-muted-foreground" />
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card">
+      <header className="flex min-h-[76px] items-center gap-3 border-b border-border px-4">
+        <div className="flex size-8 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+          <FileText size={16} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[14px] font-semibold text-foreground">
-            Cover letter
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="truncate text-[14px] font-semibold text-foreground">
+              Cover letter
+            </div>
+            <div
+              className={cn(
+                'rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] leading-none text-muted-foreground',
+                maxReached && 'border-brand-border bg-brand-soft text-brand',
+              )}
+            >
+              {filledCount}/{COVER_LETTER_VARIATION_LIMIT}
+            </div>
           </div>
-          <div className="text-[13px] whitespace-nowrap text-text-faint">
-            Upload up to 2 templates
+          <div className="mt-0.5 text-[13px] text-text-faint">
+            Up to {COVER_LETTER_VARIATION_LIMIT} variations
           </div>
         </div>
 
@@ -173,169 +248,130 @@ export function CoverLetterCard({
             Open in editor
           </Button>
           <button
+            type="button"
+            disabled={COVER_LETTER_TOKENS_DISABLED}
             onClick={() => setTutorialOpen(true)}
-            className="cursor-pointer rounded-md px-1.5 py-0.5 text-[13px] text-text-faint transition-colors hover:bg-secondary hover:text-foreground"
+            className="cursor-pointer rounded-md px-1.5 py-0.5 text-[13px] text-text-faint transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
           >
             How to use tokens
           </button>
         </div>
       </header>
 
-      {/* Body: slots + tokens panel */}
-      <div className="flex flex-wrap gap-3 p-3.5">
-        {(['formal', 'light'] as const).map((v) => {
-          const t = v === 'formal' ? formal : light
-          const ref = v === 'formal' ? formalInputRef : lightInputRef
-          const filename = t?.file_url?.split('/').pop()
-          const cap = v.charAt(0).toUpperCase() + v.slice(1)
-          const label = filename ? `${cap} — ${filename}` : cap
-          const showAsFilled = !!t || fallingSlot === v
-          const isExporting = exportingVariation === v
-          const downloadBubble =
-            v === 'formal' ? formalDownloadBubble : lightDownloadBubble
-          const onCooldown = v === 'formal' ? formalOnCooldown : lightOnCooldown
+      <div className="relative grid h-[325px] min-h-0 grid-cols-1 gap-3 p-3.5 min-[900px]:grid-cols-[minmax(0,1fr)_minmax(240px,280px)]">
+        <input
+          ref={fileInputRef}
+          id="quick-copy-cover-letter-upload"
+          name="quick-copy-cover-letter-upload"
+          type="file"
+          accept=".pdf"
+          autoComplete="off"
+          className="hidden"
+          onChange={handleUpload}
+        />
+        {downloadBubble}
 
-          return (
-            <div
-              key={v}
-              className="group/slot relative min-w-[180px] flex-[1_1_180px]"
-            >
-              <input
-                ref={ref}
-                id={`quick-copy-cover-letter-${v}-upload`}
-                name={`quick-copy-cover-letter-${v}-upload`}
-                type="file"
-                accept=".pdf"
-                autoComplete="off"
-                className="hidden"
-                onChange={(e) => handleUpload(v, e)}
-              />
-              {downloadBubble}
-              <button
-                disabled={
-                  uploading === v ||
-                  removing === v ||
-                  fallingSlot === v ||
-                  isExporting ||
-                  onCooldown
-                }
-                onClick={
-                  t ? () => handleDownload(v) : () => ref.current?.click()
-                }
-                className={cn(
-                  'flex h-full min-h-[132px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border px-3 py-5 transition-colors disabled:pointer-events-none',
-                  showAsFilled
-                    ? 'border-border bg-secondary hover:border-brand hover:bg-surface-selected'
-                    : 'border-dashed border-border-strong bg-secondary hover:border-brand hover:bg-surface-selected',
-                )}
-              >
-                {removing === v && (
-                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-popover/90">
-                    <Loader2
-                      size={16}
-                      className="animate-spin text-muted-foreground"
-                    />
-                  </div>
-                )}
-                <div
-                  className={cn(
-                    'mb-1 flex size-[42px] items-center justify-center rounded-lg',
-                    fallingSlot === v
-                      ? undefined
-                      : showAsFilled
-                        ? 'bg-brand-soft text-brand'
-                        : 'bg-card text-text-faint',
-                    iconPop === v && 'animate-icon-pop',
-                    fallingSlot === v && 'animate-icon-fall',
-                  )}
-                  onAnimationEnd={() => {
-                    if (iconPop === v) setIconPop(null)
-                    if (fallingSlot === v) setFallingSlot(null)
-                  }}
-                >
-                  {uploading === v || isExporting ? (
-                    <Loader2
-                      size={18}
-                      className="animate-spin text-text-faint"
-                    />
-                  ) : showAsFilled ? (
-                    <FileText size={20} />
-                  ) : (
-                    <Upload size={20} />
-                  )}
-                </div>
-                <TruncatedLabel
-                  text={label}
-                  className="text-[12.5px] font-medium text-foreground"
-                />
-                <span className="text-[12px] text-text-faint">
-                  {t ? 'Click to download' : 'Click to upload'}
-                </span>
-              </button>
-              {t && (
-                <button
-                  disabled={removing === v || fallingSlot === v}
-                  onClick={async (e) => {
-                    e.stopPropagation()
-                    setRemoving(v)
-                    try {
-                      await onFileRemoved(v)
-                    } catch {
-                      setRemoving(null)
-                    }
-                  }}
-                  aria-label={`Remove ${cap} template`}
-                  className="absolute top-2 right-2 z-10 flex size-[26px] cursor-pointer items-center justify-center rounded-md bg-secondary text-muted-foreground opacity-0 transition-[opacity,background-color,color] group-hover/slot:opacity-100 hover:bg-danger-soft-fill hover:text-danger disabled:pointer-events-none"
-                >
-                  {removing === v ? (
-                    <Loader2 size={13} className="animate-spin" />
-                  ) : (
-                    <Trash2 size={13} />
-                  )}
-                </button>
-              )}
-            </div>
-          )
-        })}
+        <CoverLetterVariationList
+          templates={sortedTemplates}
+          locked={locked}
+          busy={busy}
+          uploadingVariation={uploading}
+          removingVariation={removing}
+          downloadingVariation={exportingVariation}
+          savingLabelVariation={savingLabel}
+          downloadDisabled={isOnCooldown}
+          onAdd={handleAdd}
+          onReplace={(template) =>
+            openUploader(
+              template.variation,
+              template.label || COVER_LETTER_FALLBACK_LABEL,
+            )
+          }
+          onRemove={setPendingDelete}
+          onDownload={handleDownload}
+          onLabelUpdated={handleLabelUpdated}
+        />
 
-        {/* Tokens panel */}
-        <div className="flex min-w-[240px] flex-[1.5_1_240px] flex-col gap-2 rounded-lg border border-border bg-secondary p-3">
+        <div
+          className={cn(
+            'flex min-h-0 flex-col gap-2 rounded-lg border border-border bg-secondary p-3',
+            COVER_LETTER_TOKENS_DISABLED && 'opacity-60',
+          )}
+        >
           <div className="flex flex-col gap-1.5">
-            <div className="font-mono text-[13px] text-brand">{TOKEN_ROLE}</div>
+            <div className="font-mono text-[13px] text-muted-foreground">
+              {TOKEN_ROLE}
+            </div>
             <input
               id="quick-copy-cover-letter-role"
               name="quick-copy-cover-letter-role"
               value={role}
+              disabled={COVER_LETTER_TOKENS_DISABLED}
               onChange={(e) => {
                 setRole(e.target.value)
                 scheduleTokenSave(e.target.value, company)
               }}
               onBlur={() => flushTokenSave(role, company)}
               placeholder="e.g. Software Engineer"
-              className="w-full rounded-md border border-border bg-background px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-brand-border"
+              className="w-full rounded-md border border-border bg-background px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-brand-border disabled:cursor-not-allowed"
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <div className="font-mono text-[13px] text-brand">
+            <div className="font-mono text-[13px] text-muted-foreground">
               {TOKEN_COMPANY}
             </div>
             <input
               id="quick-copy-cover-letter-company"
               name="quick-copy-cover-letter-company"
               value={company}
+              disabled={COVER_LETTER_TOKENS_DISABLED}
               onChange={(e) => {
                 setCompany(e.target.value)
                 scheduleTokenSave(role, e.target.value)
               }}
               onBlur={() => flushTokenSave(role, company)}
               placeholder="e.g. Xiaomi"
-              className="w-full rounded-md border border-border bg-background px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-brand-border"
+              className="w-full rounded-md border border-border bg-background px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-brand-border disabled:cursor-not-allowed"
             />
           </div>
         </div>
       </div>
 
       <TokenTutorialDialog open={tutorialOpen} onOpenChange={setTutorialOpen} />
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open && !removing) setPendingDelete(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this cover letter?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove the uploaded file and any edited
+              content saved for this cover letter. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={!!removing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={!!removing || !pendingDelete}
+              onClick={(event) => {
+                event.preventDefault()
+                if (pendingDelete) void handleRemove(pendingDelete)
+              }}
+            >
+              {removing ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -5,12 +5,14 @@ import { createRateLimitMiddleware } from '../middleware/rateLimit'
 import { tiptapToHtml, TiptapDoc, Tokens } from '../utils/tiptapToHtml'
 
 const router = Router()
+const PDF_EXPORT_WINDOW_MS = 24 * 60 * 60 * 1000
 
 const pdfLimiter = createRateLimitMiddleware({
   keyPrefix: 'pdf-export',
-  windowMs: 60 * 60 * 1000,
+  windowMs: PDF_EXPORT_WINDOW_MS,
   limit: 10,
-  message: 'PDF export limit reached. Try again in an hour.',
+  message:
+    'PDF export limit reached. You can export up to 10 cover letters every 24 hours.',
   keyGenerator: (req) => {
     const userId = req.userId
     if (!userId) throw new Error('pdfLimiter reached before authMiddleware')
@@ -21,10 +23,6 @@ const pdfLimiter = createRateLimitMiddleware({
 // POST /api/export/cover-letter/:variation
 router.post('/cover-letter/:variation', pdfLimiter, async (req, res) => {
   const { variation } = req.params
-  if (variation !== 'formal' && variation !== 'light') {
-    res.status(400).json({ error: 'variation must be formal or light' })
-    return
-  }
 
   const supabase = getSupabase()
 

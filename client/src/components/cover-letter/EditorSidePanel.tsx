@@ -1,69 +1,45 @@
-import { useRef, useState } from 'react'
-import { capitalize } from '@/utils/capitalize'
-import { TOKEN_ROLE, TOKEN_COMPANY } from '@/constants'
-import { Download, RotateCcw, Upload, Trash2, Loader2 } from 'lucide-react'
-import type { CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+  COVER_LETTER_TOKENS_DISABLED,
+  TOKEN_ROLE,
+  TOKEN_COMPANY,
+} from '@/constants'
+import { Download, RotateCcw, Trash2, Upload } from 'lucide-react'
+import {
+  COVER_LETTER_VARIATION_LIMIT,
+  type CoverLetterTemplate,
+} from '@/api/hooks/useCoverLetters'
+import { Skeleton } from '@/components/ui/skeleton'
+import { CoverLetterVariationList } from './CoverLetterVariationList'
+import { CoverLetterActionButton } from './CoverLetterActionButton'
+import {
+  COVER_LETTER_FALLBACK_LABEL,
+  getCoverLetterFilename,
+} from './coverLetterVariationUtils'
 import { ErrorBanner } from './ErrorBanner'
 
-type PendingAction =
-  | { type: 'upload'; file: File }
-  | { type: 'remove' }
-  | { type: 'restore' }
-  | null
-
-const CONFIRM_COPY: Record<
-  Exclude<PendingAction, null>['type'],
-  { title: string; description: string; action: string }
-> = {
-  upload: {
-    title: 'Replace uploaded file?',
-    description:
-      'This will replace the current file and overwrite the editor content with the new file. This cannot be undone.',
-    action: 'Replace file',
-  },
-  remove: {
-    title: 'Remove this template?',
-    description:
-      'This removes the uploaded file and clears the editor content for this variation. This cannot be undone.',
-    action: 'Remove file',
-  },
-  restore: {
-    title: 'Restore original?',
-    description:
-      'This discards all edits and reloads the content from the original uploaded file. This cannot be undone.',
-    action: 'Restore original',
-  },
-}
-
-type Variation = 'formal' | 'light'
-
 interface EditorSidePanelProps {
-  variation: Variation
+  templates: CoverLetterTemplate[]
+  variation: string
   template: CoverLetterTemplate | undefined
+  onVariationChange: (variation: string) => void
+  onVariationRename: (template: CoverLetterTemplate) => void
+  onRequestUpload: () => void
+  onRequestAddVariation: () => void
+  onRequestCreateEmpty: () => void
+  onRequestRemove: (template: CoverLetterTemplate) => void
+  onRequestRestore: () => void
+  onDownload: () => void
   role: string
   company: string
   onRoleChange: (v: string) => void
   onCompanyChange: (v: string) => void
   onTokenBlur: () => void
-  onRestore: () => void
-  onDownload: () => void
-  onUpload: (file: File) => void
-  onRemove: () => void
   isRestoring: boolean
   isDownloading: boolean
   isUploading: boolean
+  uploadingVariation: string | null
+  removingVariation: string | null
+  savingLabelVariation: string | null
   isRemoving: boolean
   isEditorEmpty: boolean
   isLoadingTokens: boolean
@@ -71,6 +47,7 @@ interface EditorSidePanelProps {
   isRoleUnresolved: boolean
   isCompanyUnresolved: boolean
   unresolvedTokens: string[]
+  downloadDisabled: boolean
 }
 
 function formatLastSaved(dateStr: string | undefined): string {
@@ -86,24 +63,32 @@ function formatLastSaved(dateStr: string | undefined): string {
 
 function extractFilename(url: string | null): string {
   if (!url) return '-'
-  return url.split('/').pop() ?? '-'
+  return getCoverLetterFilename(url)
 }
 
 export function EditorSidePanel({
+  templates,
   variation,
   template,
+  onVariationChange,
+  onVariationRename,
+  onRequestUpload,
+  onRequestAddVariation,
+  onRequestCreateEmpty,
+  onRequestRemove,
+  onRequestRestore,
+  onDownload,
   role,
   company,
   onRoleChange,
   onCompanyChange,
   onTokenBlur,
-  onRestore,
-  onDownload,
-  onUpload,
-  onRemove,
   isRestoring,
   isDownloading,
   isUploading,
+  uploadingVariation,
+  removingVariation,
+  savingLabelVariation,
   isRemoving,
   isEditorEmpty,
   isLoadingTokens,
@@ -111,45 +96,47 @@ export function EditorSidePanel({
   isRoleUnresolved,
   isCompanyUnresolved,
   unresolvedTokens,
+  downloadDisabled,
 }: EditorSidePanelProps) {
-  const uploadInputRef = useRef<HTMLInputElement>(null)
-  const [pendingAction, setPendingAction] = useState<PendingAction>(null)
   const hasUnresolved = unresolvedTokens.length > 0
   const unresolvedCount = unresolvedTokens.length
-  const label = capitalize(variation)
+  const label = template?.label ?? COVER_LETTER_FALLBACK_LABEL
   const isLoadingDownload = isLoadingTokens || isLoadingTemplates
-  const hasFile = !!template?.file_url
-
-  function handleFileSelected(file: File) {
-    if (hasFile) {
-      setPendingAction({ type: 'upload', file })
-    } else {
-      onUpload(file)
-    }
-  }
-
-  function handleRemoveClick() {
-    setPendingAction({ type: 'remove' })
-  }
-
-  function handleRestoreClick() {
-    setPendingAction({ type: 'restore' })
-  }
-
-  function handleConfirm() {
-    if (!pendingAction) return
-    if (pendingAction.type === 'upload') onUpload(pendingAction.file)
-    else if (pendingAction.type === 'remove') onRemove()
-    else if (pendingAction.type === 'restore') onRestore()
-    setPendingAction(null)
-  }
-
-  const confirmCopy = pendingAction ? CONFIRM_COPY[pendingAction.type] : null
+  const variationsBusy =
+    isUploading || isRemoving || savingLabelVariation !== null
 
   return (
-    <div className="flex w-80 min-w-60 flex-col overflow-y-auto bg-surface-panel">
+    <div className="flex w-[370px] min-w-[290px] flex-col overflow-y-auto bg-surface-panel">
+      {/* Variations */}
+      <div className="border-b border-border-subtle p-3.5">
+        <div className="mb-3.5 text-[11px] font-medium tracking-[0.08em] text-text-faint uppercase">
+          Variations
+        </div>
+
+        <div className="flex h-[300px] min-h-0 flex-col">
+          <CoverLetterVariationList
+            templates={templates}
+            activeVariation={variation}
+            busy={variationsBusy}
+            isLoading={isLoadingTemplates}
+            uploadingVariation={uploadingVariation}
+            removingVariation={removingVariation}
+            savingLabelVariation={savingLabelVariation}
+            skeletonRows={3}
+            emptyDescription={`Add up to ${COVER_LETTER_VARIATION_LIMIT} variations. Select one to edit it here.`}
+            onAdd={onRequestAddVariation}
+            onAddEmpty={onRequestCreateEmpty}
+            onSelect={(item) => onVariationChange(item.variation)}
+            onRemove={onRequestRemove}
+            onRename={onVariationRename}
+          />
+        </div>
+      </div>
+
       {/* Tokens */}
-      <div className="border-b border-border-subtle p-4 pb-[18px]">
+      <div
+        className={`border-b border-border-subtle p-4 pb-[18px] ${COVER_LETTER_TOKENS_DISABLED ? 'opacity-60' : ''}`}
+      >
         <div className="mb-3.5 text-[11px] font-medium tracking-[0.08em] text-text-faint uppercase">
           Tokens
         </div>
@@ -173,7 +160,7 @@ export function EditorSidePanel({
             <div className="mb-3 flex flex-col gap-1.5">
               <label
                 htmlFor="cover-letter-role"
-                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${isRoleUnresolved ? 'text-danger' : 'text-muted-foreground'}`}
+                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${!COVER_LETTER_TOKENS_DISABLED && isRoleUnresolved ? 'text-danger' : 'text-muted-foreground'}`}
               >
                 {TOKEN_ROLE}
               </label>
@@ -181,13 +168,14 @@ export function EditorSidePanel({
                 id="cover-letter-role"
                 name="cover-letter-role"
                 value={role}
+                disabled={COVER_LETTER_TOKENS_DISABLED}
                 onChange={(e) => onRoleChange(e.target.value)}
                 onBlur={onTokenBlur}
                 placeholder="e.g. Software Engineer"
                 className={`h-8 w-full rounded-md px-2.5 font-sans text-[13px] transition-[border-color,box-shadow] outline-none ${
-                  isRoleUnresolved
+                  !COVER_LETTER_TOKENS_DISABLED && isRoleUnresolved
                     ? 'border border-danger-border bg-danger-soft text-danger placeholder:text-danger-muted'
-                    : 'border border-border bg-card text-foreground focus:border-brand-border focus:ring-3 focus:ring-brand-soft'
+                    : 'border border-border bg-card text-foreground focus:border-brand-border focus:ring-3 focus:ring-brand-soft disabled:cursor-not-allowed'
                 }`}
               />
             </div>
@@ -195,7 +183,7 @@ export function EditorSidePanel({
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="cover-letter-company"
-                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${isCompanyUnresolved ? 'text-danger' : 'text-muted-foreground'}`}
+                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${!COVER_LETTER_TOKENS_DISABLED && isCompanyUnresolved ? 'text-danger' : 'text-muted-foreground'}`}
               >
                 {TOKEN_COMPANY}
               </label>
@@ -203,13 +191,14 @@ export function EditorSidePanel({
                 id="cover-letter-company"
                 name="cover-letter-company"
                 value={company}
+                disabled={COVER_LETTER_TOKENS_DISABLED}
                 onChange={(e) => onCompanyChange(e.target.value)}
                 onBlur={onTokenBlur}
                 placeholder="e.g. Xiaomi"
                 className={`h-8 w-full rounded-md px-2.5 font-sans text-[13px] transition-[border-color,box-shadow] outline-none ${
-                  isCompanyUnresolved
+                  !COVER_LETTER_TOKENS_DISABLED && isCompanyUnresolved
                     ? 'border border-danger-border bg-danger-soft text-danger placeholder:text-danger-muted'
-                    : 'border border-border bg-card text-foreground focus:border-brand-border focus:ring-3 focus:ring-brand-soft'
+                    : 'border border-border bg-card text-foreground focus:border-brand-border focus:ring-3 focus:ring-brand-soft disabled:cursor-not-allowed'
                 }`}
               />
             </div>
@@ -217,22 +206,28 @@ export function EditorSidePanel({
             <div className="mt-3 flex items-center gap-2 text-[12px] leading-normal">
               <span
                 className={`size-1.5 shrink-0 rounded-full ${
-                  hasUnresolved
-                    ? 'bg-danger shadow-[0_0_0_3px_var(--danger-soft-fill)]'
-                    : 'bg-success shadow-[0_0_0_3px_rgba(95,191,129,0.16)]'
+                  COVER_LETTER_TOKENS_DISABLED
+                    ? 'bg-muted-foreground/50'
+                    : hasUnresolved
+                      ? 'bg-danger shadow-[0_0_0_3px_var(--danger-soft-fill)]'
+                      : 'bg-success shadow-[0_0_0_3px_rgba(95,191,129,0.16)]'
                 }`}
               />
               <span
                 className={
-                  hasUnresolved ? 'text-danger' : 'text-muted-foreground'
+                  !COVER_LETTER_TOKENS_DISABLED && hasUnresolved
+                    ? 'text-danger'
+                    : 'text-muted-foreground'
                 }
               >
-                {hasUnresolved
-                  ? `${unresolvedCount} unresolved token${unresolvedCount > 1 ? 's' : ''}`
-                  : 'All tokens resolved'}
+                {COVER_LETTER_TOKENS_DISABLED
+                  ? 'Token editing disabled'
+                  : hasUnresolved
+                    ? `${unresolvedCount} unresolved token${unresolvedCount > 1 ? 's' : ''}`
+                    : 'All tokens resolved'}
               </span>
             </div>
-            {hasUnresolved && (
+            {!COVER_LETTER_TOKENS_DISABLED && hasUnresolved && (
               <div className="mt-3 w-full">
                 <ErrorBanner unresolvedTokens={unresolvedTokens} />
               </div>
@@ -274,17 +269,22 @@ export function EditorSidePanel({
         ) : (
           <>
             <dl className="mb-3 flex flex-col gap-1.5">
-              <div className="grid grid-cols-[92px_1fr] items-baseline gap-2.5 text-[12.5px]">
+              <div className="grid min-w-0 grid-cols-[92px_minmax(0,1fr)] items-baseline gap-2.5 text-[12.5px]">
                 <dt className="text-text-faint">Editing</dt>
-                <dd className="m-0 font-medium text-foreground">{label}</dd>
+                <dd
+                  title={label}
+                  className="m-0 truncate font-medium text-foreground"
+                >
+                  {label}
+                </dd>
               </div>
-              <div className="grid grid-cols-[92px_1fr] items-baseline gap-2.5 text-[12.5px]">
+              <div className="grid min-w-0 grid-cols-[92px_minmax(0,1fr)] items-baseline gap-2.5 text-[12.5px]">
                 <dt className="text-text-faint">Uploaded</dt>
                 <dd className="m-0 truncate font-medium text-foreground">
                   {extractFilename(template?.file_url ?? null)}
                 </dd>
               </div>
-              <div className="grid grid-cols-[92px_1fr] items-baseline gap-2.5 text-[12.5px]">
+              <div className="grid min-w-0 grid-cols-[92px_minmax(0,1fr)] items-baseline gap-2.5 text-[12.5px]">
                 <dt className="text-text-faint">Last saved</dt>
                 <dd className="m-0 font-medium text-foreground">
                   {formatLastSaved(template?.updated_at)}
@@ -292,63 +292,44 @@ export function EditorSidePanel({
               </div>
             </dl>
 
-            <input
-              ref={uploadInputRef}
-              id="cover-letter-template-upload"
-              name="cover-letter-template-upload"
-              type="file"
-              accept=".pdf"
-              autoComplete="off"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) handleFileSelected(file)
-                e.target.value = ''
-              }}
-            />
-
-            <Button
-              onClick={() => uploadInputRef.current?.click()}
-              disabled={isUploading || isRestoring || isRemoving}
-              className="mb-2 h-[34px] w-full cursor-pointer"
-            >
-              {isUploading ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Upload className="size-3.5" />
-              )}
-              Upload file — {label}
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={handleRemoveClick}
-              disabled={isRemoving || isUploading || !template?.file_url}
-              className="mb-2 h-[34px] w-full cursor-pointer"
-            >
-              {isRemoving ? (
-                <Loader2 className="size-3 animate-spin" />
-              ) : (
-                <Trash2 className="size-3" />
-              )}
-              Remove file
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={handleRestoreClick}
-              disabled={
-                isRestoring || isUploading || isRemoving || !template?.file_url
-              }
-              className="h-[34px] w-full cursor-pointer"
-            >
-              {isRestoring ? (
-                <Loader2 className="size-3 animate-spin" />
-              ) : (
-                <RotateCcw className="size-3" />
-              )}
-              Restore original file
-            </Button>
+            <div className="flex flex-col gap-2">
+              <CoverLetterActionButton
+                layout="panel"
+                variant="outline"
+                icon={Upload}
+                label={`Upload file — ${label}`}
+                compactLabel="Upload"
+                truncate
+                onClick={onRequestUpload}
+                loading={isUploading}
+                disabled={isUploading || isRestoring || isRemoving}
+              />
+              <CoverLetterActionButton
+                layout="panel"
+                variant="outline"
+                icon={Trash2}
+                label="Remove"
+                compactLabel="Remove"
+                onClick={() => template && onRequestRemove(template)}
+                loading={isRemoving}
+                disabled={isRemoving || isUploading || !template}
+              />
+              <CoverLetterActionButton
+                layout="panel"
+                variant="outline"
+                icon={RotateCcw}
+                label="Restore original file"
+                compactLabel="Restore"
+                onClick={onRequestRestore}
+                loading={isRestoring}
+                disabled={
+                  isRestoring ||
+                  isUploading ||
+                  isRemoving ||
+                  !template?.file_url
+                }
+              />
+            </div>
           </>
         )}
       </div>
@@ -373,47 +354,17 @@ export function EditorSidePanel({
           </p>
         )}
 
-        <Button
+        <CoverLetterActionButton
+          layout="panel"
+          icon={Download}
+          label={`Download PDF — ${label}`}
+          compactLabel="Download"
+          truncate
           onClick={onDownload}
-          disabled={
-            isLoadingTokens ||
-            isLoadingTemplates ||
-            hasUnresolved ||
-            isEditorEmpty ||
-            isDownloading
-          }
-          className="h-[34px] w-full cursor-pointer"
-        >
-          {isDownloading ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <Download className="size-3.5" />
-          )}
-          Download PDF — {label}
-        </Button>
+          loading={isDownloading}
+          disabled={downloadDisabled || isDownloading}
+        />
       </div>
-
-      <AlertDialog
-        open={!!pendingAction}
-        onOpenChange={(open) => {
-          if (!open) setPendingAction(null)
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{confirmCopy?.title}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {confirmCopy?.description}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm}>
-              {confirmCopy?.action}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
