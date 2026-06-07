@@ -34,7 +34,7 @@ interface CoverLetterRow {
   variation: string
   position: number
   label: string
-  file_url: string
+  file_url: string | null
 }
 
 function coverLetter(overrides: Partial<CoverLetterRow> = {}): CoverLetterRow {
@@ -115,11 +115,32 @@ describe('POST /api/cover-letters', () => {
     vi.clearAllMocks()
   })
 
-  it('returns 400 when file_url is missing', async () => {
+  it('creates an empty variation when no file_url is provided', async () => {
+    const existingSelect = createSelectBuilder({ data: [], error: null })
+    const insert = createInsertBuilder({
+      data: { ...coverLetter({ position: 1 }), file_url: null },
+      error: null,
+    })
+    const mockFrom = vi
+      .fn()
+      .mockReturnValueOnce(existingSelect.builder)
+      .mockReturnValueOnce(insert.builder)
+    mockGetSupabase.mockReturnValue({
+      from: mockFrom,
+      storage: createStorage(),
+    } as never)
+
     const res = await request(buildApp()).post('/api/cover-letters').send({})
 
-    expect(res.status).toBe(400)
-    expect(res.body).toEqual({ error: 'file_url is required' })
+    expect(res.status).toBe(200)
+    const insertPayload = insert.mockInsert.mock.calls[0][0]
+    expect(insertPayload).toMatchObject({
+      user_id: USER_ID,
+      position: 1,
+      file_url: null,
+    })
+    expect(insertPayload).not.toHaveProperty('content')
+    expect(insertPayload.variation).toMatch(/^variation-/)
   })
 
   it('returns 400 when file_url is outside the current user folder', async () => {
@@ -173,6 +194,37 @@ describe('POST /api/cover-letters', () => {
     })
     expect(insertPayload.variation).toMatch(/^variation-/)
     expect(insertPayload).toHaveProperty('updated_at')
+  })
+
+  it('caps cover letter labels at 40 characters on create', async () => {
+    const existingSelect = createSelectBuilder({ data: [], error: null })
+    const insert = createInsertBuilder({
+      data: coverLetter({
+        label: 'Senior front-end engineering manager rol',
+        file_url: `${USER_ID}/cover-letter.pdf`,
+      }),
+      error: null,
+    })
+    const mockFrom = vi
+      .fn()
+      .mockReturnValueOnce(existingSelect.builder)
+      .mockReturnValueOnce(insert.builder)
+    mockGetSupabase.mockReturnValue({
+      from: mockFrom,
+      storage: createStorage(),
+    } as never)
+
+    const res = await request(buildApp())
+      .post('/api/cover-letters')
+      .send({
+        label: 'Senior front-end engineering manager role plus extra',
+        file_url: `${USER_ID}/cover-letter.pdf`,
+      })
+
+    expect(res.status).toBe(200)
+    expect(insert.mockInsert.mock.calls[0][0]).toMatchObject({
+      label: 'Senior front-end engineering manager rol',
+    })
   })
 
   it('returns 400 when the maximum is reached', async () => {
@@ -281,6 +333,28 @@ describe('PUT /api/cover-letters/:variation', () => {
       label: 'Formal',
     })
     expect(update.mockUpdate.mock.calls[0][0]).toHaveProperty('updated_at')
+  })
+
+  it('caps cover letter labels at 40 characters on update', async () => {
+    const update = createUpdateBuilder({
+      data: coverLetter({
+        variation: 'formal',
+        label: 'Senior front-end engineering manager rol',
+      }),
+      error: null,
+    })
+    mockGetSupabase.mockReturnValue({
+      from: vi.fn().mockReturnValue(update.builder),
+    } as never)
+
+    const res = await request(buildApp())
+      .put('/api/cover-letters/formal')
+      .send({ label: 'Senior front-end engineering manager role plus extra' })
+
+    expect(res.status).toBe(200)
+    expect(update.mockUpdate.mock.calls[0][0]).toMatchObject({
+      label: 'Senior front-end engineering manager rol',
+    })
   })
 })
 

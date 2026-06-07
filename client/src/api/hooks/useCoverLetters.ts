@@ -109,7 +109,13 @@ export function useExportCoverLetterPDF() {
 export function useCreateCoverLetterVariation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ file_url, label }: { file_url: string; label?: string }) =>
+    mutationFn: ({
+      file_url,
+      label,
+    }: {
+      file_url?: string | null
+      label?: string
+    }) =>
       api.post<CoverLetterTemplate>('/api/cover-letters', {
         file_url,
         label,

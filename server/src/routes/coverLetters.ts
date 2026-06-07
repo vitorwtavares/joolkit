@@ -5,6 +5,7 @@ import { pdfToTiptap, PageLimitError } from '../utils/pdfToTiptap'
 
 const MAX_PAGES = 3
 const MAX_COVER_LETTER_VARIATIONS = 10
+const MAX_COVER_LETTER_LABEL_LENGTH = 40
 
 const router = Router()
 
@@ -13,9 +14,11 @@ function getDefaultLabel(): string {
 }
 
 function getLabel(value: unknown): string {
-  return typeof value === 'string' && value.trim().length > 0
-    ? value.trim()
-    : getDefaultLabel()
+  const label =
+    typeof value === 'string' && value.trim().length > 0
+      ? value.trim()
+      : getDefaultLabel()
+  return label.slice(0, MAX_COVER_LETTER_LABEL_LENGTH)
 }
 
 function getFileUrl(value: unknown): string | null {
@@ -165,11 +168,7 @@ router.put('/tokens', async (req, res) => {
 // POST /api/cover-letters
 router.post('/', async (req, res) => {
   const fileUrl = getFileUrl(req.body.file_url)
-  if (!fileUrl) {
-    res.status(400).json({ error: 'file_url is required' })
-    return
-  }
-  if (!isUserStoragePath(fileUrl, req.userId!)) {
+  if (fileUrl && !isUserStoragePath(fileUrl, req.userId!)) {
     res.status(400).json({ error: 'file_url must belong to the current user' })
     return
   }
@@ -188,10 +187,15 @@ router.post('/', async (req, res) => {
     return
   }
 
-  const parsed = await parseCoverLetterContent(fileUrl)
-  if (!parsed.ok) {
-    res.status(parsed.status).json({ error: parsed.error })
-    return
+  // No file_url means an empty variation started from scratch in the editor.
+  let content: object | null = null
+  if (fileUrl) {
+    const parsed = await parseCoverLetterContent(fileUrl)
+    if (!parsed.ok) {
+      res.status(parsed.status).json({ error: parsed.error })
+      return
+    }
+    content = parsed.content
   }
 
   const { data, error } = await getSupabase()
@@ -202,7 +206,7 @@ router.post('/', async (req, res) => {
       position,
       label: getLabel(req.body.label),
       file_url: fileUrl,
-      ...(parsed.content ? { content: parsed.content } : {}),
+      ...(content ? { content } : {}),
       updated_at: new Date().toISOString(),
     })
     .select()
@@ -287,7 +291,7 @@ router.put('/:variation', async (req, res) => {
       res.status(400).json({ error: 'label is required' })
       return
     }
-    updates.label = label.trim()
+    updates.label = label.trim().slice(0, MAX_COVER_LETTER_LABEL_LENGTH)
   }
 
   const { data, error } = await getSupabase()
