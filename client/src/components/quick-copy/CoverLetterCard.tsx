@@ -13,11 +13,7 @@ import { useExportCoverLetterPDF } from '@/api/hooks/useCoverLetters'
 import { useCoverLetterTokens } from '@/api/hooks/useCoverLetterTokens'
 import { useTokenState } from '@/hooks/useTokenState'
 import { useDownloadBubble } from '@/hooks/useDownloadBubble'
-import {
-  COVER_LETTER_TOKENS_DISABLED,
-  TOKEN_ROLE,
-  TOKEN_COMPANY,
-} from '@/constants'
+import { TOKEN_ROLE, TOKEN_COMPANY } from '@/constants'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -249,9 +245,8 @@ export function CoverLetterCard({
           </Button>
           <button
             type="button"
-            disabled={COVER_LETTER_TOKENS_DISABLED}
             onClick={() => setTutorialOpen(true)}
-            className="cursor-pointer rounded-md px-1.5 py-0.5 text-[13px] text-text-faint transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+            className="cursor-pointer rounded-md px-1.5 py-0.5 text-[13px] text-text-faint transition-colors hover:bg-secondary hover:text-foreground"
           >
             How to use tokens
           </button>
@@ -292,46 +287,37 @@ export function CoverLetterCard({
           onLabelUpdated={handleLabelUpdated}
         />
 
-        <div
-          className={cn(
-            'flex min-h-0 flex-col gap-2 rounded-lg border border-border bg-secondary p-3',
-            COVER_LETTER_TOKENS_DISABLED && 'opacity-60',
-          )}
-        >
+        <div className="flex min-h-0 flex-col gap-2 rounded-lg border border-border bg-secondary p-3">
           <div className="flex flex-col gap-1.5">
-            <div className="font-mono text-[13px] text-muted-foreground">
-              {TOKEN_ROLE}
-            </div>
+            <div className="font-mono text-[13px] text-brand">{TOKEN_ROLE}</div>
             <input
               id="quick-copy-cover-letter-role"
               name="quick-copy-cover-letter-role"
               value={role}
-              disabled={COVER_LETTER_TOKENS_DISABLED}
               onChange={(e) => {
                 setRole(e.target.value)
                 scheduleTokenSave(e.target.value, company)
               }}
               onBlur={() => flushTokenSave(role, company)}
               placeholder="e.g. Software Engineer"
-              className="w-full rounded-md border border-border bg-background px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-brand-border disabled:cursor-not-allowed"
+              className="w-full rounded-md border border-border bg-background px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-brand-border"
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <div className="font-mono text-[13px] text-muted-foreground">
+            <div className="font-mono text-[13px] text-brand">
               {TOKEN_COMPANY}
             </div>
             <input
               id="quick-copy-cover-letter-company"
               name="quick-copy-cover-letter-company"
               value={company}
-              disabled={COVER_LETTER_TOKENS_DISABLED}
               onChange={(e) => {
                 setCompany(e.target.value)
                 scheduleTokenSave(role, e.target.value)
               }}
               onBlur={() => flushTokenSave(role, company)}
               placeholder="e.g. Xiaomi"
-              className="w-full rounded-md border border-border bg-background px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-brand-border disabled:cursor-not-allowed"
+              className="w-full rounded-md border border-border bg-background px-2.5 py-[6px] font-sans text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-brand-border"
             />
           </div>
         </div>

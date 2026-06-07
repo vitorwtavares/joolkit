@@ -1,8 +1,4 @@
-import {
-  COVER_LETTER_TOKENS_DISABLED,
-  TOKEN_ROLE,
-  TOKEN_COMPANY,
-} from '@/constants'
+import { TOKEN_ROLE, TOKEN_COMPANY } from '@/constants'
 import { Download, RotateCcw, Trash2, Upload } from 'lucide-react'
 import {
   COVER_LETTER_VARIATION_LIMIT,
@@ -134,9 +130,7 @@ export function EditorSidePanel({
       </div>
 
       {/* Tokens */}
-      <div
-        className={`border-b border-border-subtle p-4 pb-[18px] ${COVER_LETTER_TOKENS_DISABLED ? 'opacity-60' : ''}`}
-      >
+      <div className="border-b border-border-subtle p-4 pb-[18px]">
         <div className="mb-3.5 text-[11px] font-medium tracking-[0.08em] text-text-faint uppercase">
           Tokens
         </div>
@@ -160,7 +154,7 @@ export function EditorSidePanel({
             <div className="mb-3 flex flex-col gap-1.5">
               <label
                 htmlFor="cover-letter-role"
-                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${!COVER_LETTER_TOKENS_DISABLED && isRoleUnresolved ? 'text-danger' : 'text-muted-foreground'}`}
+                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${isRoleUnresolved ? 'text-danger' : 'text-muted-foreground'}`}
               >
                 {TOKEN_ROLE}
               </label>
@@ -168,14 +162,13 @@ export function EditorSidePanel({
                 id="cover-letter-role"
                 name="cover-letter-role"
                 value={role}
-                disabled={COVER_LETTER_TOKENS_DISABLED}
                 onChange={(e) => onRoleChange(e.target.value)}
                 onBlur={onTokenBlur}
                 placeholder="e.g. Software Engineer"
                 className={`h-8 w-full rounded-md px-2.5 font-sans text-[13px] transition-[border-color,box-shadow] outline-none ${
-                  !COVER_LETTER_TOKENS_DISABLED && isRoleUnresolved
+                  isRoleUnresolved
                     ? 'border border-danger-border bg-danger-soft text-danger placeholder:text-danger-muted'
-                    : 'border border-border bg-card text-foreground focus:border-brand-border focus:ring-3 focus:ring-brand-soft disabled:cursor-not-allowed'
+                    : 'border border-border bg-card text-foreground focus:border-brand-border focus:ring-3 focus:ring-brand-soft'
                 }`}
               />
             </div>
@@ -183,7 +176,7 @@ export function EditorSidePanel({
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="cover-letter-company"
-                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${!COVER_LETTER_TOKENS_DISABLED && isCompanyUnresolved ? 'text-danger' : 'text-muted-foreground'}`}
+                className={`font-mono text-[11px] font-medium tracking-[0.04em] ${isCompanyUnresolved ? 'text-danger' : 'text-muted-foreground'}`}
               >
                 {TOKEN_COMPANY}
               </label>
@@ -191,14 +184,13 @@ export function EditorSidePanel({
                 id="cover-letter-company"
                 name="cover-letter-company"
                 value={company}
-                disabled={COVER_LETTER_TOKENS_DISABLED}
                 onChange={(e) => onCompanyChange(e.target.value)}
                 onBlur={onTokenBlur}
                 placeholder="e.g. Xiaomi"
                 className={`h-8 w-full rounded-md px-2.5 font-sans text-[13px] transition-[border-color,box-shadow] outline-none ${
-                  !COVER_LETTER_TOKENS_DISABLED && isCompanyUnresolved
+                  isCompanyUnresolved
                     ? 'border border-danger-border bg-danger-soft text-danger placeholder:text-danger-muted'
-                    : 'border border-border bg-card text-foreground focus:border-brand-border focus:ring-3 focus:ring-brand-soft disabled:cursor-not-allowed'
+                    : 'border border-border bg-card text-foreground focus:border-brand-border focus:ring-3 focus:ring-brand-soft'
                 }`}
               />
             </div>
@@ -206,28 +198,22 @@ export function EditorSidePanel({
             <div className="mt-3 flex items-center gap-2 text-[12px] leading-normal">
               <span
                 className={`size-1.5 shrink-0 rounded-full ${
-                  COVER_LETTER_TOKENS_DISABLED
-                    ? 'bg-muted-foreground/50'
-                    : hasUnresolved
-                      ? 'bg-danger shadow-[0_0_0_3px_var(--danger-soft-fill)]'
-                      : 'bg-success shadow-[0_0_0_3px_rgba(95,191,129,0.16)]'
+                  hasUnresolved
+                    ? 'bg-danger shadow-[0_0_0_3px_var(--danger-soft-fill)]'
+                    : 'bg-success shadow-[0_0_0_3px_rgba(95,191,129,0.16)]'
                 }`}
               />
               <span
                 className={
-                  !COVER_LETTER_TOKENS_DISABLED && hasUnresolved
-                    ? 'text-danger'
-                    : 'text-muted-foreground'
+                  hasUnresolved ? 'text-danger' : 'text-muted-foreground'
                 }
               >
-                {COVER_LETTER_TOKENS_DISABLED
-                  ? 'Token editing disabled'
-                  : hasUnresolved
-                    ? `${unresolvedCount} unresolved token${unresolvedCount > 1 ? 's' : ''}`
-                    : 'All tokens resolved'}
+                {hasUnresolved
+                  ? `${unresolvedCount} unresolved token${unresolvedCount > 1 ? 's' : ''}`
+                  : 'All tokens resolved'}
               </span>
             </div>
-            {!COVER_LETTER_TOKENS_DISABLED && hasUnresolved && (
+            {hasUnresolved && (
               <div className="mt-3 w-full">
                 <ErrorBanner unresolvedTokens={unresolvedTokens} />
               </div>
