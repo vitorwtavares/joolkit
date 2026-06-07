@@ -13,16 +13,25 @@ type TiptapNode = {
 
 export type TiptapDoc = TiptapNode
 
-export type Tokens = {
-  role?: string | null
-  company?: string | null
+export type Tokens = Record<string, string | null | undefined>
+
+const TOKEN_PATTERN = /\{\{\s*([^{}]+?)\s*\}\}/g
+
+export function normalizeTokenKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }
 
 function applyTokens(text: string, tokens: Tokens): string {
-  let result = text
-  if (tokens.role) result = result.split('$ROLE$').join(tokens.role)
-  if (tokens.company) result = result.split('$COMPANY$').join(tokens.company)
-  return result
+  return text.replace(TOKEN_PATTERN, (token, key: string) => {
+    const value = tokens[normalizeTokenKey(key)]
+    return value?.trim() ? value : token
+  })
 }
 
 function escapeHtml(text: string): string {
@@ -111,7 +120,7 @@ function nodeToHtml(node: TiptapNode, tokens: Tokens): string {
       return '<br>'
 
     case 'text': {
-      const raw = applyTokens(escapeHtml(node.text ?? ''), tokens)
+      const raw = escapeHtml(applyTokens(node.text ?? '', tokens))
       if (node.marks && node.marks.length > 0) {
         return marksToHtml(raw, node.marks)
       }
