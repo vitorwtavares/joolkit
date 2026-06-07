@@ -436,7 +436,8 @@ export function CoverLetterEditor() {
       return
     }
     exportPDF.mutate(variation, {
-      onError: () => toast.error('Failed to export PDF', TOAST_POSITION),
+      onError: (error) =>
+        toast.error(error.message || 'Failed to export PDF', TOAST_POSITION),
     })
   }
 

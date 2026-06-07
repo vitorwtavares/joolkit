@@ -173,7 +173,7 @@ export function CoverLetterCard({
     setExportingVariation(template.variation)
     exportPDF.mutate(template.variation, {
       onSettled: () => setExportingVariation(null),
-      onError: () => toast.error('Failed to export PDF'),
+      onError: (error) => toast.error(error.message || 'Failed to export PDF'),
     })
   }
 
