@@ -83,12 +83,21 @@ function nodeToHtml(node: TiptapNode, tokens: Tokens): string {
       return (node.content ?? []).map((n) => nodeToHtml(n, tokens)).join('')
 
     case 'paragraph': {
-      const align = node.attrs?.textAlign
-      const style =
-        align && align !== 'left' ? ` style="text-align: ${align}"` : ''
       const inner = (node.content ?? [])
         .map((n) => nodeToHtml(n, tokens))
         .join('')
+      const align = node.attrs?.textAlign
+      const styleProps: string[] = []
+      if (align && align !== 'left') styleProps.push(`text-align: ${align}`)
+      // An empty line has no text mark to carry its font, so it lives on the
+      // paragraph node — apply it here so blank-line height matches the editor.
+      if (!inner) {
+        if (node.attrs?.fontFamily)
+          styleProps.push(`font-family: ${node.attrs.fontFamily}`)
+        if (node.attrs?.fontSize)
+          styleProps.push(`font-size: ${node.attrs.fontSize}`)
+      }
+      const style = styleProps.length ? ` style="${styleProps.join('; ')}"` : ''
       return `<p${style}>${inner || '<br>'}</p>\n`
     }
 
