@@ -30,7 +30,7 @@ type TextNode = { type: 'text'; text: string; marks?: Mark[] }
 type ParagraphNode = { type: 'paragraph'; content?: TextNode[] }
 type TiptapDoc = { type: 'doc'; content: ParagraphNode[] }
 
-interface Segment {
+export interface Segment {
   text: string
   x: number
   y: number
@@ -158,7 +158,7 @@ export async function pdfToTiptap(
       return { type: 'doc', content: [{ type: 'paragraph' }] }
     }
 
-    return buildDoc(segments)
+    return buildDocFromSegments(segments)
   } catch (err) {
     throw new Error(
       `Failed to parse PDF: ${err instanceof Error ? err.message : String(err)}`,
@@ -227,7 +227,7 @@ function resolveFontMeta(page: any, tc: any, fontName: string): FontMeta {
 
 // ── Document reconstruction ───────────────────────────────────────────────────
 
-function buildDoc(segments: Segment[]): TiptapDoc {
+export function buildDocFromSegments(segments: Segment[]): TiptapDoc {
   // Sort: page asc → y desc (PDF origin is bottom-left) → x asc
   segments.sort((a, b) => a.page - b.page || b.y - a.y || a.x - b.x)
 
@@ -257,9 +257,14 @@ function buildDoc(segments: Segment[]): TiptapDoc {
   lineGaps.sort((a, b) => a - b)
   // Median gap = normal line spacing in this document
   const medLineGap = lineGaps[Math.floor(lineGaps.length / 2)] || 14
+  const normalLineGap =
+    lineGaps[Math.floor(lineGaps.length * 0.25)] || medLineGap
 
   // A gap larger than 1.5× the normal line spacing signals a new paragraph.
-  const PARA_GAP = medLineGap * 1.5
+  // Use a lower-quartile gap instead of the median so documents with many
+  // single-line paragraphs don't teach the parser that paragraph gaps are the
+  // normal line height.
+  const PARA_GAP = normalLineGap * 1.5
 
   // ── Compute text right margin for "short line" detection ────────────────
   // A line that ends well before the document's max right edge is an intentional
@@ -290,28 +295,29 @@ function buildDoc(segments: Segment[]): TiptapDoc {
     const prevRightEdge = prevLastSeg.x + prevLastSeg.width
     const isShortLine = maxRight - prevRightEdge > SHORT_LINE_SLACK
 
-    // Font-height guard: a gap > 2.5× the previous line's font height is always
+    // Font-height guard: a gap > 1.8× the previous line's font height is always
     // a paragraph break. This handles sparse documents (few lines, single-line
     // paragraphs) where medLineGap ends up being a paragraph-level gap itself,
     // making PARA_GAP too large to detect any break.
     const prevLineMaxH = Math.max(...prevLine.map((s) => s.h), 0)
-    const isLargeGap = prevLineMaxH > 0 && gap > prevLineMaxH * 2.5
+    const isLargeGap = prevLineMaxH > 0 && gap > prevLineMaxH * 1.8
 
     if (currPage !== prevPage || gap > PARA_GAP || isShortLine || isLargeGap) {
       paraGroups.push(curPara)
       // Insert an empty paragraph for a visible blank line (no text item in PDF).
-      // Use whichever threshold fires first: medLineGap ratio for dense docs,
-      // or 3× font height for sparse docs.
+      // Use whichever threshold fires first: normal line gap ratio for dense
+      // docs, or font height ratio for sparse docs.
       const isBlankLine =
         currPage === prevPage &&
-        (gap > medLineGap * 1.8 || (prevLineMaxH > 0 && gap > prevLineMaxH * 3))
+        (gap > normalLineGap * 1.6 ||
+          (prevLineMaxH > 0 && gap > prevLineMaxH * 1.8))
       if (isBlankLine) {
         // Count how many blank lines this gap represents. Clamp normalSpacing to
         // font height so medLineGap doesn't over-count in sparse documents.
         const normalSpacing =
           prevLineMaxH > 0
-            ? Math.min(medLineGap, prevLineMaxH * 1.6)
-            : medLineGap
+            ? Math.min(normalLineGap, prevLineMaxH * 1.6)
+            : normalLineGap
         const numBlanks = Math.max(1, Math.round(gap / normalSpacing) - 1)
         for (let b = 0; b < numBlanks; b++) paraGroups.push([])
       }
