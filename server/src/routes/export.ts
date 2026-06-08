@@ -15,9 +15,9 @@ const PDF_EXPORT_WINDOW_MS = 24 * 60 * 60 * 1000
 const pdfLimiter = createRateLimitMiddleware({
   keyPrefix: 'pdf-export',
   windowMs: PDF_EXPORT_WINDOW_MS,
-  limit: 10,
+  limit: 25,
   message:
-    'PDF export limit reached. You can export up to 10 cover letters every 24 hours.',
+    'PDF export limit reached. You can export up to 25 cover letters every 24 hours.',
   keyGenerator: (req) => {
     const userId = req.userId
     if (!userId) throw new Error('pdfLimiter reached before authMiddleware')

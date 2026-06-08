@@ -19,7 +19,7 @@ vi.mock('../utils/browser', () => ({
 }))
 
 describe('export route limits', () => {
-  it('limits cover letter PDF exports to 10 per rolling day', async () => {
+  it('limits cover letter PDF exports to 25 per rolling day', async () => {
     const router = await import('./export')
 
     expect(router.default).toBeDefined()
@@ -27,9 +27,9 @@ describe('export route limits', () => {
       expect.objectContaining({
         keyPrefix: 'pdf-export',
         windowMs: 24 * 60 * 60 * 1000,
-        limit: 10,
+        limit: 25,
         message:
-          'PDF export limit reached. You can export up to 10 cover letters every 24 hours.',
+          'PDF export limit reached. You can export up to 25 cover letters every 24 hours.',
       }),
     )
   })
