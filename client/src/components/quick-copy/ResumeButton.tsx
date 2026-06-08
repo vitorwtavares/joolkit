@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   Check,
   Download,
@@ -58,6 +58,7 @@ export function ResumeButton({
 }: ResumeButtonProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const labelInputRef = useRef<HTMLInputElement>(null)
+  const scrollViewportRef = useRef<HTMLDivElement>(null)
   const uploadTargetRef = useRef<{
     id: string | null
     position: number
@@ -83,6 +84,8 @@ export function ResumeButton({
     uploading !== null &&
     !sortedResumes.some((resume) => resume.position === uploading)
 
+  const prevResumeCountRef = useRef(sortedResumes.length)
+
   useEffect(() => {
     if (editingPosition === null) return
     const input = labelInputRef.current
@@ -90,6 +93,20 @@ export function ResumeButton({
     const cursorPosition = input?.value.length ?? 0
     input?.setSelectionRange(cursorPosition, cursorPosition)
   }, [editingPosition])
+
+  useLayoutEffect(() => {
+    const prevCount = prevResumeCountRef.current
+    prevResumeCountRef.current = sortedResumes.length
+    if (sortedResumes.length > prevCount) {
+      const viewport = scrollViewportRef.current
+      if (viewport) {
+        viewport.scrollTo({
+          top: viewport.scrollHeight - viewport.clientHeight,
+          behavior: 'smooth',
+        })
+      }
+    }
+  }, [sortedResumes])
 
   function openUploader(
     position: number,
@@ -280,6 +297,7 @@ export function ResumeButton({
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
             <PersistentScrollArea
+              scrollViewportRef={scrollViewportRef}
               className="flex min-h-0 flex-1"
               viewportClassName="flex min-h-0 flex-1"
               contentClassName="flex min-h-0 flex-1 flex-col gap-2"

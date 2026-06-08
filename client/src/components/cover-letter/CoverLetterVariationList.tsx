@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import {
   Check,
   Download,
@@ -83,6 +89,7 @@ export function CoverLetterVariationList({
   onLabelUpdated,
 }: CoverLetterVariationListProps) {
   const labelInputRef = useRef<HTMLInputElement>(null)
+  const scrollViewportRef = useRef<HTMLDivElement>(null)
   const [editingVariation, setEditingVariation] = useState<string | null>(null)
   const [labelDraft, setLabelDraft] = useState('')
 
@@ -94,6 +101,8 @@ export function CoverLetterVariationList({
       (template) => template.variation === uploadingVariation,
     )
 
+  const prevTemplateCountRef = useRef(sortedTemplates.length)
+
   useEffect(() => {
     if (editingVariation === null) return
     const input = labelInputRef.current
@@ -101,6 +110,20 @@ export function CoverLetterVariationList({
     const cursorPosition = input?.value.length ?? 0
     input?.setSelectionRange(cursorPosition, cursorPosition)
   }, [editingVariation])
+
+  useLayoutEffect(() => {
+    const prevCount = prevTemplateCountRef.current
+    prevTemplateCountRef.current = sortedTemplates.length
+    if (sortedTemplates.length > prevCount) {
+      const viewport = scrollViewportRef.current
+      if (viewport) {
+        viewport.scrollTo({
+          top: viewport.scrollHeight - viewport.clientHeight,
+          behavior: 'smooth',
+        })
+      }
+    }
+  }, [sortedTemplates])
 
   function startLabelEdit(template: CoverLetterTemplate) {
     if (locked || busy) return
@@ -192,6 +215,7 @@ export function CoverLetterVariationList({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <PersistentScrollArea
+        scrollViewportRef={scrollViewportRef}
         className="flex min-h-0 flex-1"
         viewportClassName="flex min-h-0 flex-1"
         contentClassName="flex min-h-0 flex-1 flex-col gap-2"

@@ -1,37 +1,40 @@
-import { TOKEN_COMPANY, TOKEN_ROLE } from '@/constants'
+import {
+  type EditableCoverLetterToken,
+  extractTokenKeys,
+  formatToken,
+  getTokenValueMap,
+} from './tokenUtils'
 
 interface CoverLetterTokenValidationInput {
   text: string
-  role: string
-  company: string
-}
-
-export interface CoverLetterTokenValidation {
-  hasRoleToken: boolean
-  hasCompanyToken: boolean
-  isRoleUnresolved: boolean
-  isCompanyUnresolved: boolean
-  unresolvedTokens: string[]
+  tokens: EditableCoverLetterToken[]
 }
 
 export function getCoverLetterTokenValidation({
   text,
-  role,
-  company,
-}: CoverLetterTokenValidationInput): CoverLetterTokenValidation {
-  const hasRoleToken = text.includes(TOKEN_ROLE)
-  const hasCompanyToken = text.includes(TOKEN_COMPANY)
-  const isRoleUnresolved = hasRoleToken && role.trim().length === 0
-  const isCompanyUnresolved = hasCompanyToken && company.trim().length === 0
+  tokens,
+}: CoverLetterTokenValidationInput): { unresolvedTokens: string[] } {
+  const usedTokenKeys = extractTokenKeys(text)
+  const tokenValues = getTokenValueMap(tokens)
+  const unresolvedTokens = usedTokenKeys
+    .filter((key) => (tokenValues[key] ?? '').trim().length === 0)
+    .map(formatToken)
 
-  return {
-    hasRoleToken,
-    hasCompanyToken,
-    isRoleUnresolved,
-    isCompanyUnresolved,
-    unresolvedTokens: [
-      ...(isRoleUnresolved ? [TOKEN_ROLE] : []),
-      ...(isCompanyUnresolved ? [TOKEN_COMPANY] : []),
-    ],
+  return { unresolvedTokens }
+}
+
+export function getCoverLetterUnresolvedTokensAcrossTexts(
+  texts: string[],
+  tokens: EditableCoverLetterToken[],
+): string[] {
+  const unresolved = new Set<string>()
+
+  for (const text of texts) {
+    for (const token of getCoverLetterTokenValidation({ text, tokens })
+      .unresolvedTokens) {
+      unresolved.add(token)
+    }
   }
+
+  return [...unresolved]
 }

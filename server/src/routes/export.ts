@@ -2,7 +2,12 @@ import { Router } from 'express'
 import { getBrowser } from '../utils/browser'
 import { getSupabase } from '../middleware/auth'
 import { createRateLimitMiddleware } from '../middleware/rateLimit'
-import { tiptapToHtml, TiptapDoc, Tokens } from '../utils/tiptapToHtml'
+import {
+  normalizeTokenKey,
+  tiptapToHtml,
+  TiptapDoc,
+  Tokens,
+} from '../utils/tiptapToHtml'
 
 const router = Router()
 const PDF_EXPORT_WINDOW_MS = 24 * 60 * 60 * 1000
@@ -10,9 +15,9 @@ const PDF_EXPORT_WINDOW_MS = 24 * 60 * 60 * 1000
 const pdfLimiter = createRateLimitMiddleware({
   keyPrefix: 'pdf-export',
   windowMs: PDF_EXPORT_WINDOW_MS,
-  limit: 10,
+  limit: 25,
   message:
-    'PDF export limit reached. You can export up to 10 cover letters every 24 hours.',
+    'PDF export limit reached. You can export up to 25 cover letters every 24 hours.',
   keyGenerator: (req) => {
     const userId = req.userId
     if (!userId) throw new Error('pdfLimiter reached before authMiddleware')
@@ -38,9 +43,9 @@ router.post('/cover-letter/:variation', pdfLimiter, async (req, res) => {
       .maybeSingle(),
     supabase
       .from('cover_letter_tokens')
-      .select('role, company')
+      .select('token_key, token_value')
       .eq('user_id', req.userId!)
-      .maybeSingle(),
+      .order('position', { ascending: true }),
   ])
 
   if (templateError) {
@@ -58,10 +63,12 @@ router.post('/cover-letter/:variation', pdfLimiter, async (req, res) => {
     return
   }
 
-  const resolvedTokens: Tokens = {
-    role: tokens?.role ?? null,
-    company: tokens?.company ?? null,
-  }
+  const resolvedTokens: Tokens = Object.fromEntries(
+    (tokens ?? []).map((token) => [
+      normalizeTokenKey(token.token_key),
+      token.token_value ?? null,
+    ]),
+  )
 
   const bodyHtml = tiptapToHtml(template.content as TiptapDoc, resolvedTokens)
 

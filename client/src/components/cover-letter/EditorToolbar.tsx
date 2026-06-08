@@ -17,6 +17,8 @@ import {
   AlignCenter,
   AlignRight,
   AlignJustify,
+  Eye,
+  Clipboard,
 } from 'lucide-react'
 
 const FONT_FAMILIES = [
@@ -44,9 +46,10 @@ const FONT_SIZE_PRESETS = [
 interface FontSizeInputProps {
   editor: Editor
   activeSize: string
+  disabled?: boolean
 }
 
-function FontSizeInput({ editor, activeSize }: FontSizeInputProps) {
+function FontSizeInput({ editor, activeSize, disabled }: FontSizeInputProps) {
   const [inputVal, setInputVal] = useState(activeSize)
   const [open, setOpen] = useState(false)
 
@@ -67,11 +70,12 @@ function FontSizeInput({ editor, activeSize }: FontSizeInputProps) {
   }
 
   return (
-    <div className="relative ml-1 flex h-8 w-[52px] items-center rounded-md border border-border-subtle bg-secondary shadow-none focus-within:border-brand-border">
+    <div className="relative ml-1 flex h-8 w-[52px] items-center rounded-md border border-border-subtle bg-secondary shadow-none focus-within:border-brand-border has-[:disabled]:opacity-50">
       <input
         id="cover-letter-font-size"
         name="cover-letter-font-size"
-        className="w-full bg-transparent px-1.5 text-center text-sm text-foreground outline-none"
+        disabled={disabled}
+        className="w-full bg-transparent px-1.5 text-center text-sm text-foreground outline-none disabled:pointer-events-none"
         value={inputVal}
         onChange={(e) => setInputVal(e.target.value)}
         onFocus={() => setOpen(true)}
@@ -110,9 +114,17 @@ function FontSizeInput({ editor, activeSize }: FontSizeInputProps) {
 
 interface EditorToolbarProps {
   editor: Editor | null
+  isPreview: boolean
+  onTogglePreview: () => void
+  onCopy: () => void
 }
 
-export function EditorToolbar({ editor }: EditorToolbarProps) {
+export function EditorToolbar({
+  editor,
+  isPreview,
+  onTogglePreview,
+  onCopy,
+}: EditorToolbarProps) {
   const state = useEditorState({
     editor,
     selector: (ctx) => {
@@ -134,9 +146,11 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           | string
           | undefined) ??
         (ctx.editor.getAttributes('paragraph').fontFamily as string | undefined)
-      const fontSize = ctx.editor.getAttributes('textStyle').fontSize as
-        | string
-        | undefined
+      const fontSize =
+        (ctx.editor.getAttributes('textStyle').fontSize as
+          | string
+          | undefined) ??
+        (ctx.editor.getAttributes('paragraph').fontSize as string | undefined)
       return {
         activeFamily: fontFamily?.replace(/['"]/g, '') || 'Helvetica',
         activeSize: fontSize?.replace(/px|pt/g, '') || '12',
@@ -172,6 +186,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     <div className="flex flex-1 items-center gap-0.5 px-3.5 py-2">
       <Select
         value={activeFamily}
+        disabled={isPreview}
         onValueChange={(v) =>
           editor
             .chain()
@@ -201,13 +216,18 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         </SelectContent>
       </Select>
 
-      <FontSizeInput editor={editor} activeSize={activeSize} />
+      <FontSizeInput
+        editor={editor}
+        activeSize={activeSize}
+        disabled={isPreview}
+      />
 
       <div className="mx-1.5 h-[18px] w-px bg-border-subtle" />
 
       <Toggle
         size="sm"
         className={toolToggleClass}
+        disabled={isPreview}
         pressed={isBold}
         onPressedChange={() => editor.chain().focus().toggleBold().run()}
       >
@@ -216,6 +236,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       <Toggle
         size="sm"
         className={toolToggleClass}
+        disabled={isPreview}
         pressed={isItalic}
         onPressedChange={() => editor.chain().focus().toggleItalic().run()}
       >
@@ -224,6 +245,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       <Toggle
         size="sm"
         className={toolToggleClass}
+        disabled={isPreview}
         pressed={isUnderline}
         onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
       >
@@ -235,6 +257,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       <Toggle
         size="sm"
         className={toolToggleClass}
+        disabled={isPreview}
         pressed={isLeft}
         onPressedChange={() =>
           editor.chain().focus().setTextAlign('left').run()
@@ -245,6 +268,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       <Toggle
         size="sm"
         className={toolToggleClass}
+        disabled={isPreview}
         pressed={isCenter}
         onPressedChange={() =>
           editor.chain().focus().setTextAlign('center').run()
@@ -255,6 +279,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       <Toggle
         size="sm"
         className={toolToggleClass}
+        disabled={isPreview}
         pressed={isRight}
         onPressedChange={() =>
           editor.chain().focus().setTextAlign('right').run()
@@ -265,6 +290,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       <Toggle
         size="sm"
         className={toolToggleClass}
+        disabled={isPreview}
         pressed={isJustify}
         onPressedChange={() =>
           editor.chain().focus().setTextAlign('justify').run()
@@ -272,6 +298,33 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       >
         <AlignJustify className="size-3.5" />
       </Toggle>
+
+      <div className="mx-1.5 h-[18px] w-px bg-border-subtle" />
+
+      <Toggle
+        size="sm"
+        className="h-7 gap-1.5 rounded-md px-2 text-muted-foreground aria-pressed:bg-surface-selected aria-pressed:text-foreground"
+        pressed={isPreview}
+        onPressedChange={onTogglePreview}
+        aria-label="Toggle export preview"
+        title="Preview export"
+      >
+        <Eye className="size-3.5" />
+        <span className="text-sm">Preview</span>
+      </Toggle>
+
+      <div className="mx-1.5 h-[18px] w-px bg-border-subtle" />
+
+      <button
+        type="button"
+        onClick={onCopy}
+        aria-label="Copy to clipboard"
+        title="Copy to clipboard"
+        className="flex h-7 items-center gap-1.5 rounded-md px-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <Clipboard className="size-3.5" />
+        <span className="text-sm">Copy</span>
+      </button>
     </div>
   )
 }
