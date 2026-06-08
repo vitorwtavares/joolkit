@@ -6,6 +6,7 @@ import TextAlign from '@tiptap/extension-text-align'
 import FontFamily from '@tiptap/extension-font-family'
 import { Extension } from '@tiptap/core'
 import { Plugin } from '@tiptap/pm/state'
+import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { TextStyle, FontSize } from '@tiptap/extension-text-style'
 import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -38,6 +39,11 @@ import {
 import { DiscardChangesDialog } from './DiscardChangesDialog'
 import { getCoverLetterTokenValidation } from './tokenValidation'
 import {
+  getTokenValueMap,
+  normalizeTokenKey,
+  substituteTokensInDoc,
+} from './tokenUtils'
+import {
   COVER_LETTER_FALLBACK_LABEL,
   COVER_LETTER_LABEL_MAX_LENGTH,
   getCoverLetterFilename,
@@ -47,6 +53,10 @@ import {
 
 // Editor toasts sit bottom-center so they don't cover the header toolbar.
 const TOAST_POSITION = { position: 'bottom-center' } as const
+
+const editorTokenClickBridge: { current: (key: string) => void } = {
+  current: () => {},
+}
 
 const PAGE_CONTENT_HEIGHT = 1123 - 80 * 2
 const MAX_PAGES = 3
@@ -106,8 +116,12 @@ const PageHeightLimit = Extension.create<{ onPasteRejected?: () => void }>({
   },
 })
 
-const ParagraphFontFamily = Extension.create({
-  name: 'paragraphFontFamily',
+// A textStyle mark only styles text, so an empty line — which has no text —
+// loses its font size/family and collapses to the editor default. The
+// paragraph node stores the active size/family (stamped below) so the empty
+// line and caret can keep them.
+const ParagraphFontStyles = Extension.create({
+  name: 'paragraphFontStyles',
 
   addGlobalAttributes() {
     return [
@@ -124,8 +138,70 @@ const ParagraphFontFamily = Extension.create({
               return { style: `font-family: ${attributes.fontFamily}` }
             },
           },
+          fontSize: {
+            default: null,
+            parseHTML: (element) =>
+              (element as HTMLElement).style.fontSize || null,
+            // Never rendered on the <p> directly — only via the decoration
+            // below while the line is empty. Otherwise a stored size would
+            // inflate a line whose text has since been made smaller.
+            renderHTML: () => ({}),
+          },
         },
       },
+    ]
+  },
+
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        // Stamp the active font size/family onto a paragraph once it becomes
+        // empty, so the empty line and caret keep them.
+        appendTransaction(_transactions, _oldState, newState) {
+          const { selection, storedMarks } = newState
+          if (!selection.empty) return null
+          const { $from } = selection
+          const paragraph = $from.parent
+          if (paragraph.type.name !== 'paragraph' || paragraph.content.size > 0)
+            return null
+          const textStyle = (storedMarks ?? $from.marks()).find(
+            (m) => m.type.name === 'textStyle',
+          )
+          const next = { ...paragraph.attrs }
+          let changed = false
+          for (const attr of ['fontSize', 'fontFamily'] as const) {
+            const value = textStyle?.attrs[attr] as string | undefined
+            if (value && next[attr] !== value) {
+              next[attr] = value
+              changed = true
+            }
+          }
+          if (!changed) return null
+          return newState.tr.setNodeMarkup($from.before(), undefined, next)
+        },
+
+        props: {
+          // Apply the stored font size to the <p> only while it is empty, so a
+          // line with text is always sized by its text spans instead.
+          decorations(state) {
+            const decorations: Decoration[] = []
+            state.doc.descendants((node, pos) => {
+              if (
+                node.type.name === 'paragraph' &&
+                node.content.size === 0 &&
+                node.attrs.fontSize
+              ) {
+                decorations.push(
+                  Decoration.node(pos, pos + node.nodeSize, {
+                    style: `font-size: ${node.attrs.fontSize}`,
+                  }),
+                )
+              }
+            })
+            return DecorationSet.create(state.doc, decorations)
+          },
+        },
+      }),
     ]
   },
 })
@@ -152,13 +228,15 @@ export function CoverLetterEditor() {
 
   const { data: tokenData, isLoading: tokensLoading } = useCoverLetterTokens()
   const {
-    role,
-    setRole,
-    company,
-    setCompany,
-    scheduleTokenSave,
+    tokens,
+    updateToken,
+    addToken,
+    ensureTokenByKey,
+    deleteToken,
     flushTokenSave,
+    flushTokenSaveAsync,
   } = useTokenState(tokenData)
+  const [focusTokenKey, setFocusTokenKey] = useState<string | null>(null)
 
   const { data: templates = [], isLoading: templatesLoading } =
     useCoverLetters()
@@ -189,14 +267,50 @@ export function CoverLetterEditor() {
       TextStyle,
       FontFamily,
       FontSize,
-      ParagraphFontFamily,
+      ParagraphFontStyles,
       PageHeightLimit.configure({
         onPasteRejected: () => setIsDirty(false),
       }),
-      TokenHighlight,
+      TokenHighlight.configure({
+        onTokenClick: (key) => editorTokenClickBridge.current(key),
+      }),
     ],
     onUpdate: () => setIsDirty(true),
   })
+
+  const [isPreview, setIsPreview] = useState(false)
+
+  // Read-only mirror of the document used for preview mode. It shares the same
+  // formatting extensions as the editor (so styles match) but drops the token
+  // highlight/page-limit plugins — tokens are substituted into its content.
+  const previewEditor = useEditor({
+    editable: false,
+    extensions: [
+      StarterKit,
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      TextStyle,
+      FontFamily,
+      FontSize,
+      ParagraphFontStyles,
+    ],
+  })
+
+  useEffect(() => {
+    editorTokenClickBridge.current = (key: string) => {
+      const normalized = normalizeTokenKey(key)
+      if (!normalized) return
+
+      editor?.commands.blur()
+
+      const exists = tokens.some(
+        (token) => normalizeTokenKey(token.key) === normalized,
+      )
+      if (!exists) {
+        ensureTokenByKey(normalized)
+      }
+      setFocusTokenKey(normalized)
+    }
+  }, [editor, ensureTokenByKey, tokens])
 
   // Load content on mount and variation switch.
   // Wait for templates to finish loading before committing lastVariation so that
@@ -238,11 +352,24 @@ export function CoverLetterEditor() {
   // Sync token decorations
   useEffect(() => {
     if (!editor?.view) return
-    setTokenHighlight(editor.view, {
-      role: role || null,
-      company: company || null,
-    })
-  }, [editor, role, company])
+    setTokenHighlight(editor.view, getTokenValueMap(tokens))
+  }, [editor, tokens])
+
+  // Reset preview when switching variations.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsPreview(false)
+  }, [variation])
+
+  // Refresh preview content when preview is toggled or tokens change.
+  useEffect(() => {
+    if (!isPreview || !editor || !previewEditor) return
+    const doc = substituteTokensInDoc(
+      editor.getJSON(),
+      getTokenValueMap(tokens),
+    )
+    previewEditor.commands.setContent(doc, { emitUpdate: false })
+  }, [isPreview, editor, previewEditor, tokens])
 
   const { isEmpty: isEditorEmpty, text: editorText } = useEditorState({
     editor,
@@ -254,12 +381,11 @@ export function CoverLetterEditor() {
 
   const tokenValidation = getCoverLetterTokenValidation({
     text: editorText,
-    role,
-    company,
+    tokens,
   })
   const hasUnresolved = tokenValidation.unresolvedTokens.length > 0
 
-  const handleTokenBlur = () => flushTokenSave(role, company)
+  const handleTokenBlur = () => flushTokenSave()
 
   const handleSave = () => {
     if (!editor || !variation) return
@@ -426,13 +552,58 @@ export function CoverLetterEditor() {
   const handleVariationRename = (targetTemplate: CoverLetterTemplate) =>
     requestVariationSwitch(targetTemplate.variation, true)
 
-  const handleDownload = () => {
+  const handleCopyToClipboard = async () => {
+    if (!editor || !previewEditor) return
+    const doc = substituteTokensInDoc(
+      editor.getJSON(),
+      getTokenValueMap(tokens),
+    )
+    previewEditor.commands.setContent(doc, { emitUpdate: false })
+
+    // Post-process HTML for cross-app paste compatibility (Google Docs, Word):
+    // zero block margins to prevent host-app default spacing, and replace empty
+    // paragraphs with &nbsp; so they retain line height without extra characters.
+    // Full HTML wrapper needed for Google Docs to handle text/html faithfully.
+    const rawHtml = previewEditor.getHTML()
+    const domDoc = new DOMParser().parseFromString(rawHtml, 'text/html')
+    for (const el of domDoc.querySelectorAll(
+      'p, h1, h2, h3, h4, h5, h6, ul, ol, li',
+    )) {
+      ;(el as HTMLElement).style.margin = '0'
+      ;(el as HTMLElement).style.padding = '0'
+    }
+    for (const p of domDoc.querySelectorAll('p')) {
+      if (!p.textContent?.trim()) p.innerHTML = '&nbsp;'
+    }
+    const html = `<html><head><meta charset="utf-8"></head><body>${domDoc.body.innerHTML}</body></html>`
+
+    const text = previewEditor.getText({ blockSeparator: '\n' })
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+        }),
+      ])
+      toast.success('Copied to clipboard', TOAST_POSITION)
+    } catch {
+      toast.error('Failed to copy to clipboard', TOAST_POSITION)
+    }
+  }
+
+  const handleDownload = async () => {
     if (!variation) return
     if (hasUnresolved) {
       toast.error(
         `Fill in ${tokenValidation.unresolvedTokens.join(' and ')} before downloading`,
         TOAST_POSITION,
       )
+      return
+    }
+    try {
+      await flushTokenSaveAsync()
+    } catch {
+      toast.error('Failed to save tokens before downloading', TOAST_POSITION)
       return
     }
     exportPDF.mutate(variation, {
@@ -629,7 +800,12 @@ export function CoverLetterEditor() {
           {/* Toolbar */}
           <div className="flex shrink-0 border-b border-border-subtle">
             <div className="flex flex-1 items-center border-r border-border-subtle">
-              <EditorToolbar editor={editor} />
+              <EditorToolbar
+                editor={editor}
+                isPreview={isPreview}
+                onTogglePreview={() => setIsPreview((prev) => !prev)}
+                onCopy={() => void handleCopyToClipboard()}
+              />
               {isDirty && (
                 <span className="mr-3 text-[14px] text-destructive/60">
                   Unsaved changes
@@ -656,6 +832,8 @@ export function CoverLetterEditor() {
                   deleteTemplate.isPending
                 }
                 editor={editor}
+                previewEditor={previewEditor}
+                isPreview={isPreview}
               />
             </div>
           </div>
@@ -678,17 +856,13 @@ export function CoverLetterEditor() {
           onRequestRemove={requestRemove}
           onRequestRestore={requestRestore}
           onDownload={handleDownload}
-          role={role}
-          company={company}
-          onRoleChange={(v) => {
-            setRole(v)
-            scheduleTokenSave(v, company)
-          }}
-          onCompanyChange={(v) => {
-            setCompany(v)
-            scheduleTokenSave(role, v)
-          }}
+          tokens={tokens}
+          onTokenChange={updateToken}
+          onTokenDelete={deleteToken}
+          onTokenAdd={addToken}
           onTokenBlur={handleTokenBlur}
+          focusTokenKey={focusTokenKey}
+          onFocusTokenKeyHandled={() => setFocusTokenKey(null)}
           isRestoring={restoreMutation.isPending}
           isDownloading={exportPDF.isPending}
           isUploading={isUploading}
@@ -699,8 +873,6 @@ export function CoverLetterEditor() {
           isEditorEmpty={isEditorEmpty}
           isLoadingTokens={tokensLoading}
           isLoadingTemplates={templatesLoading}
-          isRoleUnresolved={tokenValidation.isRoleUnresolved}
-          isCompanyUnresolved={tokenValidation.isCompanyUnresolved}
           unresolvedTokens={tokenValidation.unresolvedTokens}
           downloadDisabled={downloadDisabled}
         />

@@ -13,16 +13,25 @@ type TiptapNode = {
 
 export type TiptapDoc = TiptapNode
 
-export type Tokens = {
-  role?: string | null
-  company?: string | null
+export type Tokens = Record<string, string | null | undefined>
+
+const TOKEN_PATTERN = /\{\{\s*([^{}]+?)\s*\}\}/g
+
+export function normalizeTokenKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }
 
 function applyTokens(text: string, tokens: Tokens): string {
-  let result = text
-  if (tokens.role) result = result.split('$ROLE$').join(tokens.role)
-  if (tokens.company) result = result.split('$COMPANY$').join(tokens.company)
-  return result
+  return text.replace(TOKEN_PATTERN, (token, key: string) => {
+    const value = tokens[normalizeTokenKey(key)]
+    return value?.trim() ? value : token
+  })
 }
 
 function escapeHtml(text: string): string {
@@ -74,12 +83,21 @@ function nodeToHtml(node: TiptapNode, tokens: Tokens): string {
       return (node.content ?? []).map((n) => nodeToHtml(n, tokens)).join('')
 
     case 'paragraph': {
-      const align = node.attrs?.textAlign
-      const style =
-        align && align !== 'left' ? ` style="text-align: ${align}"` : ''
       const inner = (node.content ?? [])
         .map((n) => nodeToHtml(n, tokens))
         .join('')
+      const align = node.attrs?.textAlign
+      const styleProps: string[] = []
+      if (align && align !== 'left') styleProps.push(`text-align: ${align}`)
+      // An empty line has no text mark to carry its font, so it lives on the
+      // paragraph node — apply it here so blank-line height matches the editor.
+      if (!inner) {
+        if (node.attrs?.fontFamily)
+          styleProps.push(`font-family: ${node.attrs.fontFamily}`)
+        if (node.attrs?.fontSize)
+          styleProps.push(`font-size: ${node.attrs.fontSize}`)
+      }
+      const style = styleProps.length ? ` style="${styleProps.join('; ')}"` : ''
       return `<p${style}>${inner || '<br>'}</p>\n`
     }
 
@@ -111,7 +129,7 @@ function nodeToHtml(node: TiptapNode, tokens: Tokens): string {
       return '<br>'
 
     case 'text': {
-      const raw = applyTokens(escapeHtml(node.text ?? ''), tokens)
+      const raw = escapeHtml(applyTokens(node.text ?? '', tokens))
       if (node.marks && node.marks.length > 0) {
         return marksToHtml(raw, node.marks)
       }

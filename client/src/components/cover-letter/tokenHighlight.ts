@@ -1,22 +1,18 @@
 import { Extension } from '@tiptap/core'
-import { TOKEN_ROLE } from '@/constants'
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import type { EditorView } from '@tiptap/pm/view'
-import type { Node } from '@tiptap/pm/model'
+import type { Node, Mark } from '@tiptap/pm/model'
+import { normalizeTokenKey, TOKEN_PATTERN } from './tokenUtils'
 
-export type TokenValues = {
-  role: string | null
-  company: string | null
-}
+type TokenValues = Record<string, string | null | undefined>
 
 const pluginKey = new PluginKey<TokenValues>('tokenHighlight')
-
-const TOKEN_PATTERN = /\$ROLE\$|\$COMPANY\$/g
 
 interface TokenRange {
   from: number
   to: number
+  key: string
 }
 
 function findTokenRanges(doc: Node): TokenRange[] {
@@ -29,6 +25,7 @@ function findTokenRanges(doc: Node): TokenRange[] {
       ranges.push({
         from: pos + match.index,
         to: pos + match.index + match[0].length,
+        key: normalizeTokenKey(match[1] ?? '') || 'token',
       })
     }
   })
@@ -45,46 +42,20 @@ function buildDecorations(doc: Node, tokens: TokenValues): DecorationSet {
     let match: RegExpExecArray | null
 
     while ((match = TOKEN_PATTERN.exec(node.text)) !== null) {
-      const token = match[0]
+      const key = normalizeTokenKey(match[1] ?? '')
       const from = pos + match.index
-      const to = from + token.length
-      const value = token === TOKEN_ROLE ? tokens.role : tokens.company
-      const isResolved = !!value
+      const to = from + match[0].length
+      const value = tokens[key]
+      const isResolved = !!value?.trim()
 
-      // Render the chip as a widget at `from` and hide the raw token text.
-      // side: 1 → widget is drawn AFTER the caret at `from`, so the caret at
-      // `from` sits to the LEFT of the chip, outside its outline/margin.
-      // The raw "$ROLE$" text in [from, to] is hidden via `token-hidden`.
-      // An anchor widget at `to` with side: -1 forces the caret at `to` to
-      // land AFTER a real inline box (a zero-width space with normal font
-      // metrics), so the caret has non-zero height and is visible to the
-      // RIGHT of the chip, outside its outline/margin.
-      const displayText = isResolved ? value! : token
-      const className = isResolved ? 'token-resolved' : 'token-unresolved'
+      // Style the raw "{{token}}" text in place as a chip. Keeping it as real
+      // text (rather than a widget over hidden text) means it selects, deletes
+      // and carries its font marks like any other text.
       decorations.push(
-        Decoration.widget(
-          from,
-          () => {
-            const el = document.createElement('span')
-            el.className = className
-            el.textContent = displayText
-            return el
-          },
-          { side: 1, key: `token-widget-${from}-${displayText}` },
-        ),
-      )
-      decorations.push(Decoration.inline(from, to, { class: 'token-hidden' }))
-      decorations.push(
-        Decoration.widget(
-          to,
-          () => {
-            const el = document.createElement('span')
-            el.className = 'token-caret-anchor'
-            el.textContent = '\u200B'
-            return el
-          },
-          { side: -1, key: `token-anchor-${to}` },
-        ),
+        Decoration.inline(from, to, {
+          class: `token-chip ${isResolved ? 'token-chip-resolved' : 'token-chip-unresolved'}`,
+          'data-token-key': key || 'token',
+        }),
       )
     }
   })
@@ -92,17 +63,25 @@ function buildDecorations(doc: Node, tokens: TokenValues): DecorationSet {
   return DecorationSet.create(doc, decorations)
 }
 
-export const TokenHighlight = Extension.create({
+export const TokenHighlight = Extension.create<{
+  onTokenClick?: (key: string) => void
+}>({
   name: 'tokenHighlight',
 
+  addOptions() {
+    return { onTokenClick: undefined }
+  },
+
   addProseMirrorPlugins() {
+    const onTokenClick = this.options.onTokenClick
+
     return [
       new Plugin({
         key: pluginKey,
 
         state: {
           init() {
-            return { role: null, company: null } as TokenValues
+            return {} as TokenValues
           },
           apply(tr, prev) {
             const meta = tr.getMeta(pluginKey) as TokenValues | undefined
@@ -110,10 +89,66 @@ export const TokenHighlight = Extension.create({
           },
         },
 
+        // Normalize a token's text in place once it is complete, so the editor
+        // shows the same cleaned key as the panel/export (trimmed, spaces to
+        // dashes, special characters stripped).
+        appendTransaction(transactions, _oldState, newState) {
+          if (!transactions.some((t) => t.docChanged)) return null
+
+          const replacements: {
+            from: number
+            text: string
+            length: number
+            marks: readonly Mark[]
+          }[] = []
+
+          newState.doc.descendants((node: Node, pos: number) => {
+            if (!node.isText || !node.text) return
+            TOKEN_PATTERN.lastIndex = 0
+            let match: RegExpExecArray | null
+            while ((match = TOKEN_PATTERN.exec(node.text)) !== null) {
+              const key = normalizeTokenKey(match[1] ?? '')
+              if (!key) continue
+              const normalized = `{{${key}}}`
+              if (match[0] === normalized) continue
+              replacements.push({
+                from: pos + match.index,
+                length: match[0].length,
+                text: normalized,
+                marks: node.marks,
+              })
+            }
+          })
+
+          if (replacements.length === 0) return null
+
+          const tr = newState.tr
+          for (const r of replacements) {
+            const from = tr.mapping.map(r.from)
+            const to = tr.mapping.map(r.from + r.length)
+            tr.replaceWith(from, to, newState.schema.text(r.text, r.marks))
+          }
+          return tr
+        },
+
         props: {
           decorations(state) {
             const tokens = pluginKey.getState(state)!
             return buildDecorations(state.doc, tokens)
+          },
+
+          handleClick(view: EditorView, pos: number) {
+            if (!onTokenClick) return false
+            // Strict interior: a click resolving to `from`/`to` is the caret
+            // spot just before/after the chip (e.g. clicking the line past a
+            // token at line end), not a click on the token itself.
+            for (const range of findTokenRanges(view.state.doc)) {
+              if (pos > range.from && pos < range.to) {
+                onTokenClick(range.key)
+                return true
+              }
+            }
+            return false
           },
 
           handleKeyDown(view: EditorView, event: KeyboardEvent) {
@@ -149,10 +184,20 @@ export const TokenHighlight = Extension.create({
               }
             }
 
+            // When deleting a whole token, carry its marks (e.g. font size)
+            // into the stored marks so an emptied line keeps its formatting
+            // instead of snapping back to the editor default.
+            const deleteToken = (range: TokenRange) => {
+              const marks = doc.nodeAt(range.from)?.marks
+              const tr = view.state.tr.delete(range.from, range.to)
+              if (marks?.length) tr.setStoredMarks(marks)
+              view.dispatch(tr)
+            }
+
             if (event.key === 'Backspace') {
               for (const range of ranges) {
                 if (from > range.from && from <= range.to) {
-                  view.dispatch(view.state.tr.delete(range.from, range.to))
+                  deleteToken(range)
                   return true
                 }
               }
@@ -161,7 +206,7 @@ export const TokenHighlight = Extension.create({
             if (event.key === 'Delete') {
               for (const range of ranges) {
                 if (from >= range.from && from < range.to) {
-                  view.dispatch(view.state.tr.delete(range.from, range.to))
+                  deleteToken(range)
                   return true
                 }
               }
@@ -169,6 +214,26 @@ export const TokenHighlight = Extension.create({
 
             return false
           },
+        },
+      }),
+
+      // Expand any selection whose edge lands inside a token out to the token's
+      // boundaries, so styling (bold/italic/…) always covers the whole token.
+      // A partial mark splits the "{{...}}" text and breaks the chip.
+      new Plugin({
+        appendTransaction(_transactions, _oldState, newState) {
+          const { selection } = newState
+          if (selection.empty || !(selection instanceof TextSelection))
+            return null
+          let { from, to } = selection
+          for (const range of findTokenRanges(newState.doc)) {
+            if (from > range.from && from < range.to) from = range.from
+            if (to > range.from && to < range.to) to = range.to
+          }
+          if (from === selection.from && to === selection.to) return null
+          return newState.tr.setSelection(
+            TextSelection.create(newState.doc, from, to),
+          )
         },
       }),
     ]

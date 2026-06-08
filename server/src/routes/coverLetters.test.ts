@@ -97,6 +97,23 @@ function createDeleteBuilder(response: { error: unknown }) {
   return { builder: { delete: mockDelete }, mockDelete, mockEq1, mockEq2 }
 }
 
+function createUpsertBuilder(response: { error: unknown }) {
+  const mockUpsert = vi.fn().mockResolvedValue(response)
+  return { builder: { upsert: mockUpsert }, mockUpsert }
+}
+
+function createOrphanDeleteBuilder(response: { error: unknown }) {
+  const mockNot = vi.fn().mockResolvedValue(response)
+  const mockEq = vi.fn().mockReturnValue({ not: mockNot })
+  const mockDelete = vi.fn().mockReturnValue({ eq: mockEq })
+  return {
+    builder: { delete: mockDelete },
+    mockDelete,
+    mockEq,
+    mockNot,
+  }
+}
+
 function createStorage() {
   return {
     from: vi.fn().mockReturnValue({
@@ -109,6 +126,160 @@ function createStorage() {
     }),
   }
 }
+
+describe('cover letter token routes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns user-defined tokens ordered by position', async () => {
+    const select = createSelectBuilder({
+      data: [
+        {
+          id: 'token-1',
+          user_id: USER_ID,
+          token_key: 'company',
+          token_value: 'Joolkit',
+          position: 1,
+          created_at: '2026-06-07T00:00:00.000Z',
+          updated_at: '2026-06-07T00:00:00.000Z',
+        },
+      ],
+      error: null,
+    })
+    mockGetSupabase.mockReturnValue({
+      from: vi.fn().mockReturnValue(select.builder),
+    } as never)
+
+    const res = await request(buildApp()).get('/api/cover-letters/tokens')
+
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual([
+      {
+        id: 'token-1',
+        user_id: USER_ID,
+        key: 'company',
+        value: 'Joolkit',
+        position: 1,
+        created_at: '2026-06-07T00:00:00.000Z',
+        updated_at: '2026-06-07T00:00:00.000Z',
+      },
+    ])
+    expect(select.mockEq).toHaveBeenCalledWith('user_id', USER_ID)
+    expect(select.mockOrder).toHaveBeenCalledWith('position', {
+      ascending: true,
+    })
+  })
+
+  it('replaces tokens with normalized key-value rows', async () => {
+    const upsert = createUpsertBuilder({ error: null })
+    const orphanDelete = createOrphanDeleteBuilder({ error: null })
+    const select = createSelectBuilder({
+      data: [
+        {
+          id: 'token-1',
+          user_id: USER_ID,
+          token_key: 'hiring-manager',
+          token_value: 'Jane',
+          position: 1,
+          created_at: '2026-06-07T00:00:00.000Z',
+          updated_at: '2026-06-07T00:00:00.000Z',
+        },
+      ],
+      error: null,
+    })
+    const mockFrom = vi
+      .fn()
+      .mockReturnValueOnce(upsert.builder)
+      .mockReturnValueOnce(orphanDelete.builder)
+      .mockReturnValueOnce(select.builder)
+    mockGetSupabase.mockReturnValue({ from: mockFrom } as never)
+
+    const res = await request(buildApp())
+      .put('/api/cover-letters/tokens')
+      .send({
+        tokens: [
+          { key: 'Hiring Manager', value: 'Jane' },
+          { key: '', value: 'ignored' },
+        ],
+      })
+
+    expect(res.status).toBe(200)
+    expect(upsert.mockUpsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          user_id: USER_ID,
+          token_key: 'hiring-manager',
+          token_value: 'Jane',
+          position: 1,
+        }),
+      ],
+      { onConflict: 'user_id,token_key' },
+    )
+    expect(orphanDelete.mockEq).toHaveBeenCalledWith('user_id', USER_ID)
+    expect(orphanDelete.mockNot).toHaveBeenCalledWith(
+      'token_key',
+      'in',
+      '("hiring-manager")',
+    )
+    expect(res.body).toEqual([
+      {
+        id: 'token-1',
+        user_id: USER_ID,
+        key: 'hiring-manager',
+        value: 'Jane',
+        position: 1,
+        created_at: '2026-06-07T00:00:00.000Z',
+        updated_at: '2026-06-07T00:00:00.000Z',
+      },
+    ])
+  })
+
+  it('keeps the first value when duplicate keys are sent in one payload', async () => {
+    const upsert = createUpsertBuilder({ error: null })
+    const orphanDelete = createOrphanDeleteBuilder({ error: null })
+    const select = createSelectBuilder({
+      data: [
+        {
+          id: 'token-1',
+          user_id: USER_ID,
+          token_key: 'role',
+          token_value: 'Engineer',
+          position: 1,
+          created_at: '2026-06-07T00:00:00.000Z',
+          updated_at: '2026-06-07T00:00:00.000Z',
+        },
+      ],
+      error: null,
+    })
+    const mockFrom = vi
+      .fn()
+      .mockReturnValueOnce(upsert.builder)
+      .mockReturnValueOnce(orphanDelete.builder)
+      .mockReturnValueOnce(select.builder)
+    mockGetSupabase.mockReturnValue({ from: mockFrom } as never)
+
+    const res = await request(buildApp())
+      .put('/api/cover-letters/tokens')
+      .send({
+        tokens: [
+          { key: 'role', value: 'Engineer' },
+          { key: 'role', value: '' },
+        ],
+      })
+
+    expect(res.status).toBe(200)
+    expect(upsert.mockUpsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          token_key: 'role',
+          token_value: 'Engineer',
+        }),
+      ],
+      { onConflict: 'user_id,token_key' },
+    )
+  })
+})
 
 describe('POST /api/cover-letters', () => {
   beforeEach(() => {
