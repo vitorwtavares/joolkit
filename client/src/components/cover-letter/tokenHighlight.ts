@@ -2,7 +2,7 @@ import { Extension } from '@tiptap/core'
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import type { EditorView } from '@tiptap/pm/view'
-import type { Node } from '@tiptap/pm/model'
+import type { Node, Mark } from '@tiptap/pm/model'
 import { normalizeTokenKey, TOKEN_PATTERN } from './tokenUtils'
 
 type TokenValues = Record<string, string | null | undefined>
@@ -87,6 +87,48 @@ export const TokenHighlight = Extension.create<{
             const meta = tr.getMeta(pluginKey) as TokenValues | undefined
             return meta ?? prev
           },
+        },
+
+        // Normalize a token's text in place once it is complete, so the editor
+        // shows the same cleaned key as the panel/export (trimmed, spaces to
+        // dashes, special characters stripped).
+        appendTransaction(transactions, _oldState, newState) {
+          if (!transactions.some((t) => t.docChanged)) return null
+
+          const replacements: {
+            from: number
+            text: string
+            length: number
+            marks: readonly Mark[]
+          }[] = []
+
+          newState.doc.descendants((node: Node, pos: number) => {
+            if (!node.isText || !node.text) return
+            TOKEN_PATTERN.lastIndex = 0
+            let match: RegExpExecArray | null
+            while ((match = TOKEN_PATTERN.exec(node.text)) !== null) {
+              const key = normalizeTokenKey(match[1] ?? '')
+              if (!key) continue
+              const normalized = `{{${key}}}`
+              if (match[0] === normalized) continue
+              replacements.push({
+                from: pos + match.index,
+                length: match[0].length,
+                text: normalized,
+                marks: node.marks,
+              })
+            }
+          })
+
+          if (replacements.length === 0) return null
+
+          const tr = newState.tr
+          for (const r of replacements) {
+            const from = tr.mapping.map(r.from)
+            const to = tr.mapping.map(r.from + r.length)
+            tr.replaceWith(from, to, newState.schema.text(r.text, r.marks))
+          }
+          return tr
         },
 
         props: {
