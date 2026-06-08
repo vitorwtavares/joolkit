@@ -38,7 +38,11 @@ import {
 } from './CoverLetterConfirmDialog'
 import { DiscardChangesDialog } from './DiscardChangesDialog'
 import { getCoverLetterTokenValidation } from './tokenValidation'
-import { getTokenValueMap, normalizeTokenKey } from './tokenUtils'
+import {
+  getTokenValueMap,
+  normalizeTokenKey,
+  substituteTokensInDoc,
+} from './tokenUtils'
 import {
   COVER_LETTER_FALLBACK_LABEL,
   COVER_LETTER_LABEL_MAX_LENGTH,
@@ -274,6 +278,23 @@ export function CoverLetterEditor() {
     onUpdate: () => setIsDirty(true),
   })
 
+  const [isPreview, setIsPreview] = useState(false)
+
+  // Read-only mirror of the document used for preview mode. It shares the same
+  // formatting extensions as the editor (so styles match) but drops the token
+  // highlight/page-limit plugins — tokens are substituted into its content.
+  const previewEditor = useEditor({
+    editable: false,
+    extensions: [
+      StarterKit,
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      TextStyle,
+      FontFamily,
+      FontSize,
+      ParagraphFontStyles,
+    ],
+  })
+
   useEffect(() => {
     editorTokenClickBridge.current = (key: string) => {
       const normalized = normalizeTokenKey(key)
@@ -333,6 +354,23 @@ export function CoverLetterEditor() {
     if (!editor?.view) return
     setTokenHighlight(editor.view, getTokenValueMap(tokens))
   }, [editor, tokens])
+
+  // Leaving a variation should drop preview so the next one opens in edit mode.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsPreview(false)
+  }, [variation])
+
+  // Snapshot the current document with tokens substituted whenever preview is
+  // (re)entered or the token values change while previewing.
+  useEffect(() => {
+    if (!isPreview || !editor || !previewEditor) return
+    const doc = substituteTokensInDoc(
+      editor.getJSON(),
+      getTokenValueMap(tokens),
+    )
+    previewEditor.commands.setContent(doc, { emitUpdate: false })
+  }, [isPreview, editor, previewEditor, tokens])
 
   const { isEmpty: isEditorEmpty, text: editorText } = useEditorState({
     editor,
@@ -724,7 +762,11 @@ export function CoverLetterEditor() {
           {/* Toolbar */}
           <div className="flex shrink-0 border-b border-border-subtle">
             <div className="flex flex-1 items-center border-r border-border-subtle">
-              <EditorToolbar editor={editor} />
+              <EditorToolbar
+                editor={editor}
+                isPreview={isPreview}
+                onTogglePreview={() => setIsPreview((prev) => !prev)}
+              />
               {isDirty && (
                 <span className="mr-3 text-[14px] text-destructive/60">
                   Unsaved changes
@@ -751,6 +793,8 @@ export function CoverLetterEditor() {
                   deleteTemplate.isPending
                 }
                 editor={editor}
+                previewEditor={previewEditor}
+                isPreview={isPreview}
               />
             </div>
           </div>

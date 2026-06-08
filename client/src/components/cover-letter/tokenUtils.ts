@@ -72,6 +72,41 @@ export function dedupeCoverLetterTokensByKey(
   }))
 }
 
+// Mirrors the server's token substitution (see server tiptapToHtml.ts): an
+// unresolved/empty token is left as its raw "{{token}}" text.
+export function applyTokensToText(
+  text: string,
+  tokenValues: Record<string, string>,
+): string {
+  return text.replace(TOKEN_PATTERN, (token, key: string) => {
+    const value = tokenValues[normalizeTokenKey(key)]
+    return value?.trim() ? value : token
+  })
+}
+
+// Returns a deep copy of a tiptap doc with token text replaced by its value,
+// matching the PDF export so the preview reflects the exported output.
+export function substituteTokensInDoc<T>(
+  node: T,
+  tokenValues: Record<string, string>,
+): T {
+  if (!node || typeof node !== 'object') return node
+  const source = node as {
+    text?: unknown
+    content?: unknown
+  }
+  const next: Record<string, unknown> = { ...source }
+  if (typeof source.text === 'string') {
+    next.text = applyTokensToText(source.text, tokenValues)
+  }
+  if (Array.isArray(source.content)) {
+    next.content = source.content.map((child) =>
+      substituteTokensInDoc(child, tokenValues),
+    )
+  }
+  return next as T
+}
+
 export function tiptapDocToText(value: unknown): string {
   if (!value || typeof value !== 'object') return ''
   const node = value as { text?: unknown; content?: unknown }
