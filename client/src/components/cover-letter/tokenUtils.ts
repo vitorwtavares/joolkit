@@ -72,8 +72,7 @@ export function dedupeCoverLetterTokensByKey(
   }))
 }
 
-// Mirrors the server's token substitution (see server tiptapToHtml.ts): an
-// unresolved/empty token is left as its raw "{{token}}" text.
+// Unresolved/empty tokens are left as raw "{{token}}" text, matching server behavior.
 export function applyTokensToText(
   text: string,
   tokenValues: Record<string, string>,
@@ -84,8 +83,7 @@ export function applyTokensToText(
   })
 }
 
-// Returns a deep copy of a tiptap doc with token text replaced by its value,
-// matching the PDF export so the preview reflects the exported output.
+// Deep-clones a tiptap doc JSON with tokens substituted, matching PDF export output.
 export function substituteTokensInDoc<T>(
   node: T,
   tokenValues: Record<string, string>,

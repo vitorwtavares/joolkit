@@ -18,6 +18,7 @@ import {
   AlignRight,
   AlignJustify,
   Eye,
+  Clipboard,
 } from 'lucide-react'
 
 const FONT_FAMILIES = [
@@ -115,12 +116,14 @@ interface EditorToolbarProps {
   editor: Editor | null
   isPreview: boolean
   onTogglePreview: () => void
+  onCopy: () => void
 }
 
 export function EditorToolbar({
   editor,
   isPreview,
   onTogglePreview,
+  onCopy,
 }: EditorToolbarProps) {
   const state = useEditorState({
     editor,
@@ -309,6 +312,19 @@ export function EditorToolbar({
         <Eye className="size-3.5" />
         <span className="text-sm">Preview</span>
       </Toggle>
+
+      <div className="mx-1.5 h-[18px] w-px bg-border-subtle" />
+
+      <button
+        type="button"
+        onClick={onCopy}
+        aria-label="Copy to clipboard"
+        title="Copy to clipboard"
+        className="flex h-7 items-center gap-1.5 rounded-md px-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <Clipboard className="size-3.5" />
+        <span className="text-sm">Copy</span>
+      </button>
     </div>
   )
 }

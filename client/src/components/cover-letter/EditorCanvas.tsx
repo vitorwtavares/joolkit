@@ -43,8 +43,6 @@ export function EditorCanvas({
           boxShadow: 'var(--canvas-shadow)',
         }}
       >
-        {/* Preview renders the read-only, token-substituted mirror with all
-            user interaction disabled so its text can't be selected or copied. */}
         {isPreview ? (
           <EditorContent
             editor={previewEditor}

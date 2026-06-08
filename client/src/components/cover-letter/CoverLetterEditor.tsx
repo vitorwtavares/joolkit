@@ -355,14 +355,13 @@ export function CoverLetterEditor() {
     setTokenHighlight(editor.view, getTokenValueMap(tokens))
   }, [editor, tokens])
 
-  // Leaving a variation should drop preview so the next one opens in edit mode.
+  // Reset preview when switching variations.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsPreview(false)
   }, [variation])
 
-  // Snapshot the current document with tokens substituted whenever preview is
-  // (re)entered or the token values change while previewing.
+  // Refresh preview content when preview is toggled or tokens change.
   useEffect(() => {
     if (!isPreview || !editor || !previewEditor) return
     const doc = substituteTokensInDoc(
@@ -552,6 +551,45 @@ export function CoverLetterEditor() {
 
   const handleVariationRename = (targetTemplate: CoverLetterTemplate) =>
     requestVariationSwitch(targetTemplate.variation, true)
+
+  const handleCopyToClipboard = async () => {
+    if (!editor || !previewEditor) return
+    const doc = substituteTokensInDoc(
+      editor.getJSON(),
+      getTokenValueMap(tokens),
+    )
+    previewEditor.commands.setContent(doc, { emitUpdate: false })
+
+    // Post-process HTML for cross-app paste compatibility (Google Docs, Word):
+    // zero block margins to prevent host-app default spacing, and replace empty
+    // paragraphs with &nbsp; so they retain line height without extra characters.
+    // Full HTML wrapper needed for Google Docs to handle text/html faithfully.
+    const rawHtml = previewEditor.getHTML()
+    const domDoc = new DOMParser().parseFromString(rawHtml, 'text/html')
+    for (const el of domDoc.querySelectorAll(
+      'p, h1, h2, h3, h4, h5, h6, ul, ol, li',
+    )) {
+      ;(el as HTMLElement).style.margin = '0'
+      ;(el as HTMLElement).style.padding = '0'
+    }
+    for (const p of domDoc.querySelectorAll('p')) {
+      if (!p.textContent?.trim()) p.innerHTML = '&nbsp;'
+    }
+    const html = `<html><head><meta charset="utf-8"></head><body>${domDoc.body.innerHTML}</body></html>`
+
+    const text = previewEditor.getText({ blockSeparator: '\n' })
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+        }),
+      ])
+      toast.success('Copied to clipboard', TOAST_POSITION)
+    } catch {
+      toast.error('Failed to copy to clipboard', TOAST_POSITION)
+    }
+  }
 
   const handleDownload = async () => {
     if (!variation) return
@@ -766,6 +804,7 @@ export function CoverLetterEditor() {
                 editor={editor}
                 isPreview={isPreview}
                 onTogglePreview={() => setIsPreview((prev) => !prev)}
+                onCopy={() => void handleCopyToClipboard()}
               />
               {isDirty && (
                 <span className="mr-3 text-[14px] text-destructive/60">
