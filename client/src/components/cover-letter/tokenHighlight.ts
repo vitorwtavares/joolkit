@@ -216,6 +216,26 @@ export const TokenHighlight = Extension.create<{
           },
         },
       }),
+
+      // Expand any selection whose edge lands inside a token out to the token's
+      // boundaries, so styling (bold/italic/…) always covers the whole token.
+      // A partial mark splits the "{{...}}" text and breaks the chip.
+      new Plugin({
+        appendTransaction(_transactions, _oldState, newState) {
+          const { selection } = newState
+          if (selection.empty || !(selection instanceof TextSelection))
+            return null
+          let { from, to } = selection
+          for (const range of findTokenRanges(newState.doc)) {
+            if (from > range.from && from < range.to) from = range.from
+            if (to > range.from && to < range.to) to = range.to
+          }
+          if (from === selection.from && to === selection.to) return null
+          return newState.tr.setSelection(
+            TextSelection.create(newState.doc, from, to),
+          )
+        },
+      }),
     ]
   },
 })
