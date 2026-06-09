@@ -1,23 +1,5 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
-import {
-  Check,
-  Download,
-  FilePlus,
-  FileText,
-  Loader2,
-  Pencil,
-  Plus,
-  RefreshCcw,
-  Trash2,
-  Upload,
-  X,
-} from 'lucide-react'
+import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { FilePlus, Loader2, Plus, Upload } from 'lucide-react'
 import {
   COVER_LETTER_VARIATION_LIMIT,
   type CoverLetterTemplate,
@@ -30,13 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-import { cn } from '@/lib/utils'
-import {
-  COVER_LETTER_FALLBACK_LABEL,
-  COVER_LETTER_LABEL_MAX_LENGTH,
-  getCoverLetterFilename,
-  getCoverLetterLabelValue,
-} from './coverLetterVariationUtils'
+import { VariationRow } from './VariationRow'
 
 interface CoverLetterVariationListProps {
   templates: CoverLetterTemplate[]
@@ -88,11 +64,8 @@ export function CoverLetterVariationList({
   onRename,
   onLabelUpdated,
 }: CoverLetterVariationListProps) {
-  const labelInputRef = useRef<HTMLInputElement>(null)
   const scrollViewportRef = useRef<HTMLDivElement>(null)
   const variationRefs = useRef(new Map<string, HTMLDivElement>())
-  const [editingVariation, setEditingVariation] = useState<string | null>(null)
-  const [labelDraft, setLabelDraft] = useState('')
 
   const sortedTemplates = [...templates].sort((a, b) => a.position - b.position)
   const maxReached = sortedTemplates.length >= COVER_LETTER_VARIATION_LIMIT
@@ -105,14 +78,6 @@ export function CoverLetterVariationList({
   const prevTemplateCountRef = useRef(sortedTemplates.length)
   const hasSettledRef = useRef(false)
   const prevActiveVariationRef = useRef<string | null>(null)
-
-  useEffect(() => {
-    if (editingVariation === null) return
-    const input = labelInputRef.current
-    input?.focus()
-    const cursorPosition = input?.value.length ?? 0
-    input?.setSelectionRange(cursorPosition, cursorPosition)
-  }, [editingVariation])
 
   // Marks the list as settled once data first arrives; after that, scrolls to
   // bottom when a new variation is added (count increases).
@@ -164,32 +129,6 @@ export function CoverLetterVariationList({
       })
     }
   }, [activeVariation])
-
-  function startLabelEdit(template: CoverLetterTemplate) {
-    if (locked || busy) return
-    setEditingVariation(template.variation)
-    setLabelDraft(template.label || COVER_LETTER_FALLBACK_LABEL)
-  }
-
-  function cancelLabelEdit() {
-    setEditingVariation(null)
-    setLabelDraft('')
-  }
-
-  async function saveLabel(template: CoverLetterTemplate) {
-    const nextLabel = getCoverLetterLabelValue(labelDraft)
-    if (!nextLabel) {
-      cancelLabelEdit()
-      return
-    }
-
-    try {
-      await onLabelUpdated?.(template, nextLabel)
-      cancelLabelEdit()
-    } catch {
-      // Parent mutation owns feedback; keep the editor open for correction.
-    }
-  }
 
   // Without onAddEmpty the trigger uploads directly; with it, the trigger opens
   // a menu to choose between uploading a file and starting from scratch.
@@ -260,180 +199,33 @@ export function CoverLetterVariationList({
         viewportClassName="flex min-h-0 flex-1"
         contentClassName="flex min-h-0 flex-1 flex-col gap-2"
       >
-        {sortedTemplates.map((template) => {
-          const label = template.label || COVER_LETTER_FALLBACK_LABEL
-          const filename = template.file_url
-            ? getCoverLetterFilename(template.file_url)
-            : 'No file uploaded'
-          const active = template.variation === activeVariation
-          const rowUploading = uploadingVariation === template.variation
-          const rowRemoving = removingVariation === template.variation
-          const rowDownloading = downloadingVariation === template.variation
-          const rowSavingLabel = savingLabelVariation === template.variation
-          const rowEditing = editingVariation === template.variation
-          const rowBusy =
-            rowUploading || rowRemoving || rowDownloading || rowSavingLabel
-          const rowDisabled = locked || busy || rowBusy
-
-          return (
-            <div
-              key={template.id}
-              ref={(node) => {
-                if (node) {
-                  variationRefs.current.set(template.variation, node)
-                } else {
-                  variationRefs.current.delete(template.variation)
-                }
-              }}
-              className={cn(
-                'group/cover-row relative grid h-[62px] min-h-0 w-full shrink-0 grid-cols-[34px_1fr_auto] content-center items-center gap-3 rounded-lg border border-border bg-secondary px-3 py-2.5 transition-[background-color,border-color] hover:border-brand hover:bg-surface-selected',
-                active && 'border-brand-border bg-surface-selected',
-                (rowBusy || busy) && 'opacity-70',
-              )}
-            >
-              <button
-                type="button"
-                aria-label={
-                  onSelect ? `Select ${label}` : `Download ${filename}`
-                }
-                title={onSelect ? `Select ${label}` : `Download ${filename}`}
-                disabled={
-                  rowDisabled || rowEditing || (!onSelect && downloadDisabled)
-                }
-                onClick={() => {
-                  if (onSelect) {
-                    onSelect(template)
-                  } else {
-                    onDownload?.(template)
-                  }
-                }}
-                className="absolute inset-0 z-0 cursor-pointer rounded-lg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-border disabled:cursor-default"
-              />
-              <span className="pointer-events-none relative z-10 flex size-[34px] items-center justify-center rounded-lg bg-brand-soft text-brand">
-                {rowUploading || rowRemoving || rowDownloading ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <FileText size={16} />
-                )}
-              </span>
-              <span className="pointer-events-none relative z-10 min-w-0">
-                {rowEditing ? (
-                  <span className="pointer-events-auto flex h-7 max-w-[275px] min-w-0 items-center gap-1.5">
-                    <input
-                      ref={labelInputRef}
-                      value={labelDraft}
-                      maxLength={COVER_LETTER_LABEL_MAX_LENGTH}
-                      autoComplete="off"
-                      aria-label={`Rename ${label}`}
-                      onChange={(event) => setLabelDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault()
-                          void saveLabel(template)
-                        }
-                        if (event.key === 'Escape') {
-                          cancelLabelEdit()
-                        }
-                      }}
-                      className="h-7 min-w-0 flex-1 rounded-[5px] border border-brand-border bg-card px-2 text-[13px] font-semibold text-foreground outline-none focus:ring-2 focus:ring-brand-border/50"
-                    />
-                    <button
-                      type="button"
-                      aria-label="Save cover letter label"
-                      disabled={rowSavingLabel}
-                      onClick={() => void saveLabel(template)}
-                      className="flex size-6 cursor-pointer items-center justify-center rounded-md bg-success-soft-strong text-success transition-colors hover:bg-success/25 disabled:pointer-events-none disabled:opacity-50"
-                    >
-                      {rowSavingLabel ? (
-                        <Loader2 size={12} className="animate-spin" />
-                      ) : (
-                        <Check size={12} />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Cancel cover letter label edit"
-                      disabled={rowSavingLabel}
-                      onClick={cancelLabelEdit}
-                      className="flex size-6 cursor-pointer items-center justify-center rounded-md bg-danger-soft-fill text-danger transition-colors hover:bg-danger/25 disabled:pointer-events-none disabled:opacity-50"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                ) : (
-                  <span className="flex h-7 min-w-0 items-center gap-0.5">
-                    <span className="min-w-0 truncate text-[13px] font-semibold text-foreground">
-                      {label}
-                    </span>
-                    {!locked && (onRename || onLabelUpdated) && (
-                      <button
-                        type="button"
-                        aria-label={`Edit ${label} label`}
-                        title="Edit label"
-                        disabled={rowDisabled}
-                        onClick={() => {
-                          if (onRename) {
-                            onRename(template)
-                          } else {
-                            startLabelEdit(template)
-                          }
-                        }}
-                        className="pointer-events-auto flex size-5 flex-shrink-0 cursor-pointer items-center justify-center rounded-md text-text-faint transition-colors hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-50"
-                      >
-                        <Pencil size={11} strokeWidth={2.4} />
-                      </button>
-                    )}
-                  </span>
-                )}
-                <span className="mt-0.5 block truncate text-[12px] text-text-faint">
-                  {filename}
-                </span>
-              </span>
-              <span className="pointer-events-none relative z-10 flex items-center gap-1">
-                {onSelect ? (
-                  onDownload && (
-                    <button
-                      type="button"
-                      aria-label={`Download ${label}`}
-                      title="Download"
-                      disabled={rowDisabled || downloadDisabled}
-                      onClick={() => onDownload(template)}
-                      className="pointer-events-auto flex size-7 cursor-pointer items-center justify-center rounded-md text-text-faint transition-colors hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-50"
-                    >
-                      <Download size={15} />
-                    </button>
-                  )
-                ) : (
-                  <span className="flex size-[30px] items-center justify-center rounded-md text-text-faint transition-colors group-hover/cover-row:bg-brand-soft group-hover/cover-row:text-brand">
-                    <Download size={15} />
-                  </span>
-                )}
-                {onReplace && (
-                  <button
-                    type="button"
-                    aria-label={`Replace ${label}`}
-                    title="Replace file"
-                    disabled={rowDisabled}
-                    onClick={() => onReplace(template)}
-                    className="pointer-events-auto flex size-7 cursor-pointer items-center justify-center rounded-md text-text-faint transition-colors hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-50"
-                  >
-                    <RefreshCcw size={15} />
-                  </button>
-                )}
-                <button
-                  type="button"
-                  aria-label={`Remove ${label}`}
-                  title="Remove"
-                  disabled={rowDisabled}
-                  onClick={() => onRemove(template)}
-                  className="pointer-events-auto flex size-7 cursor-pointer items-center justify-center rounded-md text-text-faint transition-colors hover:bg-danger-soft-fill hover:text-danger disabled:pointer-events-none disabled:opacity-50"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </span>
-            </div>
-          )
-        })}
+        {sortedTemplates.map((template) => (
+          <VariationRow
+            key={template.id}
+            template={template}
+            active={template.variation === activeVariation}
+            rowUploading={uploadingVariation === template.variation}
+            rowRemoving={removingVariation === template.variation}
+            rowDownloading={downloadingVariation === template.variation}
+            rowSavingLabel={savingLabelVariation === template.variation}
+            locked={locked}
+            busy={busy}
+            downloadDisabled={downloadDisabled}
+            rowRef={(node) => {
+              if (node) {
+                variationRefs.current.set(template.variation, node)
+              } else {
+                variationRefs.current.delete(template.variation)
+              }
+            }}
+            onSelect={onSelect}
+            onReplace={onReplace}
+            onRemove={onRemove}
+            onDownload={onDownload}
+            onRename={onRename}
+            onLabelUpdated={onLabelUpdated}
+          />
+        ))}
       </PersistentScrollArea>
 
       <div className="flex-shrink-0 pt-2">
