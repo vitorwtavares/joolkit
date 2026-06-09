@@ -202,8 +202,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@sparticuz/chromium':
-        specifier: ^148.0.0
-        version: 148.0.0
+        specifier: ^149.0.0
+        version: 149.0.0
       '@supabase/supabase-js':
         specifier: ^2.107.0
         version: 2.107.0
@@ -1774,9 +1774,9 @@ packages:
     resolution: {integrity: sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ==}
     engines: {node: '>=18'}
 
-  '@sparticuz/chromium@148.0.0':
-    resolution: {integrity: sha512-na5beDSZkrlcEWEMt+eHu4Xe+MLUgCtHBjHaXGsNaQu5tJWwXE+McxAcMtyumEM/JzXrxGpkO5vAPD9TWhil3g==}
-    engines: {node: '>=22.17.0'}
+  '@sparticuz/chromium@149.0.0':
+    resolution: {integrity: sha512-2NECBVKlUA9xIUXb4fT8OoGKdAJs+I2tNYscO8FwcxCKCWA7FmpPI0fdVxGJoIJglrFZYn+4YEJqChq4rdrxQg==}
+    engines: {node: ^22.17.0 || >=24.0.0}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -2470,16 +2470,16 @@ packages:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
     engines: {node: 18 || 20 || >=22}
 
-  bare-events@2.8.2:
-    resolution: {integrity: sha512-riJjyv1/mHLIPX4RwiK+oW9/4c3TEUeORHKefKAKnZ5kyslbN+HXowtbaVEqt4IMUB7OXlfixcs6gsFeo/jhiQ==}
+  bare-events@2.9.1:
+    resolution: {integrity: sha512-Z0oHEHAFDZkffN8Qc39zNZjQlMDkPJRyyyZieU1VH7u8c5S+qHZ2S8ixdKIAxEjfHO7FJxXmJWgteOghVanIsg==}
     peerDependencies:
       bare-abort-controller: '*'
     peerDependenciesMeta:
       bare-abort-controller:
         optional: true
 
-  bare-fs@4.7.1:
-    resolution: {integrity: sha512-WDRsyVN52eAx/lBamKD6uyw8H4228h/x0sGGGegOamM2cd7Pag88GfMQalobXI+HaEUxpCkbKQUDOQqt9wawRw==}
+  bare-fs@4.7.2:
+    resolution: {integrity: sha512-aTvMFUWkBmjzKtEQMDGGDNF8bkfpD5N1b/FCwt7A3wrU4t1o/e/85Wzkluh6JlODCjqVESYCkQCdTXqZ9G7VFg==}
     engines: {bare: '>=1.16.0'}
     peerDependencies:
       bare-buffer: '*'
@@ -2491,8 +2491,8 @@ packages:
     resolution: {integrity: sha512-6M5XjcnsygQNPMCMPXSK379xrJFiZ/AEMNBmFEmQW8d/789VQATvriyi5r0HYTL9TkQ26rn3kgdTG3aisbrXkQ==}
     engines: {bare: '>=1.14.0'}
 
-  bare-path@3.0.0:
-    resolution: {integrity: sha512-tyfW2cQcB5NN8Saijrhqn0Zh7AnFNsnczRcuWODH0eYAXBsJ5gVxAUuNr7tsHSC6IZ77cA0SitzT+s47kot8Mw==}
+  bare-path@3.0.1:
+    resolution: {integrity: sha512-ghj2DSK/2e99a1anTVPCV4m4YIYtrbXhfM7V3D7XZLOTsybnYyaJloymGqssQc8l/or0UoDyRtNQkmkEF/ysgQ==}
 
   bare-stream@2.13.1:
     resolution: {integrity: sha512-Vp0cnjYyrEC4whYTymQ+YZi6pBpfiICZO3cfRG8sy67ZNWe951urv1x4eW1BKNngw3U+3fPYb5JQvHbCtxH7Ow==}
@@ -2508,8 +2508,8 @@ packages:
       bare-events:
         optional: true
 
-  bare-url@2.4.3:
-    resolution: {integrity: sha512-Kccpc7ACfXaxfeInfqKcZtW4pT5YBn1mesc4sCsun6sRwtbJ4h+sNOaksUpYEJUKfN65YWC6Bw2OJEFiKxq8nQ==}
+  bare-url@2.4.5:
+    resolution: {integrity: sha512-K+y9xF1tN+CdPu4qWwr0QiK1Al07eFPGYK5M2pDXcmHdMdgC/tT/bpmMe1hrmRHaidKLkXrC+cRNYf3XVDUhSQ==}
 
   baseline-browser-mapping@2.10.27:
     resolution: {integrity: sha512-zEs/ufmZoUd7WftKpKyXaT6RFxpQ5Qm9xytKRHvJfxFV9DFJkZph9RvJ1LcOUi0Z1ZVijMte65JbILeV+8QQEA==}
@@ -4237,8 +4237,8 @@ packages:
     resolution: {integrity: sha512-UhDfHmA92YAlNnCfhmq0VeNL5bDbiZGg7sZ2IvPsXubGkiNa9EC+tUTsjBRsYUAz87btI6/1wf4XoVvQ3uRnmQ==}
     engines: {node: '>=18'}
 
-  streamx@2.25.0:
-    resolution: {integrity: sha512-0nQuG6jf1w+wddNEEXCF4nTg3LtufWINB5eFEN+5TNZW7KWJp6x87+JFL43vaAUPyCfH1wID+mNVyW6OHtFamg==}
+  streamx@2.27.0:
+    resolution: {integrity: sha512-WZ189TKnHoAokYHvwzaAQMpd55cgUmFIcJFzBSgGcb886jau5DL+XdDhTWV4ps3FLvk+OORp0dLRTPsLZ21CSA==}
 
   strict-event-emitter@0.5.1:
     resolution: {integrity: sha512-vMgjE/GGEPEFnhFub6pa4FmJBRBVOLpIII2hvCZ8Kzb7K0hlHo7mQv6xYrBvCL2LtAIBwFUK8wvuJgTVSQ5MFQ==}
@@ -6209,7 +6209,7 @@ snapshots:
 
   '@sindresorhus/merge-streams@4.0.0': {}
 
-  '@sparticuz/chromium@148.0.0':
+  '@sparticuz/chromium@149.0.0':
     dependencies:
       tar-fs: 3.1.2
     transitivePeerDependencies:
@@ -6931,14 +6931,14 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  bare-events@2.8.2: {}
+  bare-events@2.9.1: {}
 
-  bare-fs@4.7.1:
+  bare-fs@4.7.2:
     dependencies:
-      bare-events: 2.8.2
-      bare-path: 3.0.0
-      bare-stream: 2.13.1(bare-events@2.8.2)
-      bare-url: 2.4.3
+      bare-events: 2.9.1
+      bare-path: 3.0.1
+      bare-stream: 2.13.1(bare-events@2.9.1)
+      bare-url: 2.4.5
       fast-fifo: 1.3.2
     transitivePeerDependencies:
       - bare-abort-controller
@@ -6946,22 +6946,22 @@ snapshots:
 
   bare-os@3.9.1: {}
 
-  bare-path@3.0.0:
+  bare-path@3.0.1:
     dependencies:
       bare-os: 3.9.1
 
-  bare-stream@2.13.1(bare-events@2.8.2):
+  bare-stream@2.13.1(bare-events@2.9.1):
     dependencies:
-      streamx: 2.25.0
+      streamx: 2.27.0
       teex: 1.0.1
     optionalDependencies:
-      bare-events: 2.8.2
+      bare-events: 2.9.1
     transitivePeerDependencies:
       - react-native-b4a
 
-  bare-url@2.4.3:
+  bare-url@2.4.5:
     dependencies:
-      bare-path: 3.0.0
+      bare-path: 3.0.1
 
   baseline-browser-mapping@2.10.27: {}
 
@@ -7385,7 +7385,7 @@ snapshots:
 
   events-universal@1.0.1:
     dependencies:
-      bare-events: 2.8.2
+      bare-events: 2.9.1
     transitivePeerDependencies:
       - bare-abort-controller
 
@@ -8710,7 +8710,7 @@ snapshots:
 
   stdin-discarder@0.2.2: {}
 
-  streamx@2.25.0:
+  streamx@2.27.0:
     dependencies:
       events-universal: 1.0.1
       fast-fifo: 1.3.2
@@ -8809,8 +8809,8 @@ snapshots:
       pump: 3.0.4
       tar-stream: 3.2.0
     optionalDependencies:
-      bare-fs: 4.7.1
-      bare-path: 3.0.0
+      bare-fs: 4.7.2
+      bare-path: 3.0.1
     transitivePeerDependencies:
       - bare-abort-controller
       - bare-buffer
@@ -8819,9 +8819,9 @@ snapshots:
   tar-stream@3.2.0:
     dependencies:
       b4a: 1.8.1
-      bare-fs: 4.7.1
+      bare-fs: 4.7.2
       fast-fifo: 1.3.2
-      streamx: 2.25.0
+      streamx: 2.27.0
     transitivePeerDependencies:
       - bare-abort-controller
       - bare-buffer
@@ -8829,7 +8829,7 @@ snapshots:
 
   teex@1.0.1:
     dependencies:
-      streamx: 2.25.0
+      streamx: 2.27.0
     transitivePeerDependencies:
       - bare-abort-controller
       - react-native-b4a
