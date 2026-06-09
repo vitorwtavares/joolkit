@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import request from 'supertest'
 import express from 'express'
 
-vi.mock('./auth', () => ({
+vi.mock('../auth', () => ({
   getSupabase: vi.fn(),
 }))
 
-import { getSupabase } from './auth'
+import { getSupabase } from '../auth'
 import { createRateLimitMiddleware } from './rateLimit'
 
 const mockGetSupabase = vi.mocked(getSupabase)

@@ -1,5 +1,5 @@
 import type { Request, RequestHandler } from 'express'
-import { getSupabase } from './auth'
+import { getSupabase } from '../auth'
 
 interface RateLimitOptions {
   keyPrefix: string
