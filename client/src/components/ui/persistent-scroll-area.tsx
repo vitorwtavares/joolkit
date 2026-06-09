@@ -16,6 +16,7 @@ interface PersistentScrollAreaProps {
   viewportClassName?: string
   contentClassName?: string
   scrollViewportRef?: RefObject<HTMLDivElement | null>
+  fadeEdges?: boolean
 }
 
 const MIN_THUMB_HEIGHT = 32
@@ -26,6 +27,7 @@ export function PersistentScrollArea({
   viewportClassName,
   contentClassName,
   scrollViewportRef,
+  fadeEdges = false,
 }: PersistentScrollAreaProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -39,6 +41,7 @@ export function PersistentScrollArea({
     top: 0,
     height: MIN_THUMB_HEIGHT,
   })
+  const [edges, setEdges] = useState({ top: false, bottom: false })
 
   const updateThumb = useCallback(() => {
     const viewport = viewportRef.current
@@ -52,6 +55,7 @@ export function PersistentScrollArea({
           ? { visible: false, top: 0, height: MIN_THUMB_HEIGHT }
           : current,
       )
+      setEdges({ top: false, bottom: false })
       return
     }
 
@@ -66,6 +70,10 @@ export function PersistentScrollArea({
         : (scrollTop / (scrollHeight - clientHeight)) * maxTop
 
     setThumb({ visible, top, height })
+    setEdges({
+      top: scrollTop > 1,
+      bottom: scrollTop + clientHeight < scrollHeight - 1,
+    })
   }, [])
 
   useLayoutEffect(() => {
@@ -176,6 +184,10 @@ export function PersistentScrollArea({
     beginDrag(event.clientY, nextScrollTop)
   }
 
+  const maskImage = fadeEdges
+    ? `linear-gradient(to bottom, transparent, black ${edges.top ? '20px' : '0px'}, black ${edges.bottom ? 'calc(100% - 20px)' : '100%'}, transparent)`
+    : undefined
+
   return (
     <div className={cn('relative', className)}>
       <div
@@ -184,6 +196,9 @@ export function PersistentScrollArea({
           if (scrollViewportRef) scrollViewportRef.current = node
         }}
         onScroll={updateThumb}
+        style={
+          maskImage ? { maskImage, WebkitMaskImage: maskImage } : undefined
+        }
         className={cn(
           'persistent-scroll-area-viewport min-h-0 overflow-y-auto',
           viewportClassName,

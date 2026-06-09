@@ -179,6 +179,7 @@ export function CoverLetterTokenPanel({
               'flex flex-col gap-2.5',
               isSection ? 'pb-2.5 pr-0' : 'pt-3 pl-3 pb-2.5 pr-0',
             )}
+            fadeEdges
           >
             {tokens.map((token) => {
               const key = normalizeTokenKey(token.key)
