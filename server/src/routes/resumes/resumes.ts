@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getSupabase } from '../middleware/auth'
+import { getSupabase } from '../../middleware/auth'
 
 const MAX_RESUME_VARIATIONS = 10
 

@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import request from 'supertest'
 import express from 'express'
-vi.mock('../middleware/auth', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../middleware/auth')>()
+vi.mock('../../middleware/auth', async (importOriginal) => {
+  const original =
+    await importOriginal<typeof import('../../middleware/auth')>()
   return {
     ...original,
     getSupabase: vi.fn(),
@@ -17,8 +18,8 @@ vi.mock('../middleware/auth', async (importOriginal) => {
   }
 })
 
-import * as authModule from '../middleware/auth'
-import profileRouter from './profile'
+import * as authModule from '../../middleware/auth'
+import profileRouter from '.'
 
 function buildApp() {
   const app = express()

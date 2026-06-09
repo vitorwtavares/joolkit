@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { getSupabase } from '../middleware/auth'
-import { deleteUserStorage } from '../utils/deleteUserStorage'
+import { getSupabase } from '../../middleware/auth'
+import { deleteUserStorage } from '../../utils/deleteUserStorage'
 
 const router = Router()
 

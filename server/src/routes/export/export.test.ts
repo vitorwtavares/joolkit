@@ -6,21 +6,21 @@ const mocks = vi.hoisted(() => ({
   ),
 }))
 
-vi.mock('../middleware/rateLimit', () => ({
+vi.mock('../../middleware/rateLimit', () => ({
   createRateLimitMiddleware: mocks.createRateLimitMiddleware,
 }))
 
-vi.mock('../middleware/auth', () => ({
+vi.mock('../../middleware/auth', () => ({
   getSupabase: vi.fn(),
 }))
 
-vi.mock('../utils/browser', () => ({
+vi.mock('../../utils/browser', () => ({
   getBrowser: vi.fn(),
 }))
 
 describe('export route limits', () => {
   it('limits cover letter PDF exports to 25 per rolling day', async () => {
-    const router = await import('./export')
+    const router = await import('.')
 
     expect(router.default).toBeDefined()
     expect(mocks.createRateLimitMiddleware).toHaveBeenCalledWith(

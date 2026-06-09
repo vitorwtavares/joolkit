@@ -1,13 +1,13 @@
 import { Router } from 'express'
-import { getBrowser } from '../utils/browser'
-import { getSupabase } from '../middleware/auth'
-import { createRateLimitMiddleware } from '../middleware/rateLimit'
+import { getBrowser } from '../../utils/browser'
+import { getSupabase } from '../../middleware/auth'
+import { createRateLimitMiddleware } from '../../middleware/rateLimit'
 import {
   normalizeTokenKey,
   tiptapToHtml,
   TiptapDoc,
   Tokens,
-} from '../utils/tiptapToHtml'
+} from '../../utils/tiptapToHtml'
 
 const router = Router()
 const PDF_EXPORT_WINDOW_MS = 24 * 60 * 60 * 1000
