@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import request from 'supertest'
 import express from 'express'
+import {
+  createSelectBuilder,
+  createInsertBuilder,
+  createUpdateBuilder,
+  createCompactUpdateBuilder,
+  createDeleteBuilder,
+} from '../../test/test-utils/supabase-mock-builders'
 vi.mock('../../middleware/auth', async (importOriginal) => {
   const original =
     await importOriginal<typeof import('../../middleware/auth')>()
@@ -54,19 +61,10 @@ function buildApp() {
 const mockGetSupabase = vi.mocked(authModule.getSupabase)
 
 function mockSelectChain(response: { data: unknown; error: unknown }) {
-  const mockOrder = vi.fn().mockResolvedValue(response)
-  const mockEq = vi.fn().mockReturnValue({ order: mockOrder })
-  const mockSelect = vi.fn().mockReturnValue({ eq: mockEq })
-  const mockFrom = vi.fn().mockReturnValue({ select: mockSelect })
+  const { builder, mockEq, mockOrder } = createSelectBuilder(response)
+  const mockFrom = vi.fn().mockReturnValue(builder)
   mockGetSupabase.mockReturnValue({ from: mockFrom } as never)
   return { mockFrom, mockEq, mockOrder }
-}
-
-function mockInsertChain(response: { data: unknown; error: unknown }) {
-  const mockSingle = vi.fn().mockResolvedValue(response)
-  const mockSelect = vi.fn().mockReturnValue({ single: mockSingle })
-  const mockInsert = vi.fn().mockReturnValue({ select: mockSelect })
-  return { builder: { insert: mockInsert }, mockInsert }
 }
 
 function mockCreateChain({
@@ -80,7 +78,7 @@ function mockCreateChain({
     data: existingResumes,
     error: null,
   })
-  const insert = mockInsertChain(insertResponse)
+  const insert = createInsertBuilder(insertResponse)
   const mockFrom = vi
     .fn()
     .mockReturnValueOnce(existingSelect.builder)
@@ -90,26 +88,10 @@ function mockCreateChain({
 }
 
 function mockDeleteChain(response: { error: unknown }) {
-  const mockEq2 = vi.fn().mockResolvedValue(response)
-  const mockEq1 = vi.fn().mockReturnValue({ eq: mockEq2 })
-  const mockDelete = vi.fn().mockReturnValue({ eq: mockEq1 })
-  const mockFrom = vi.fn().mockReturnValue({ delete: mockDelete })
+  const { builder, mockEq1, mockEq2 } = createDeleteBuilder(response)
+  const mockFrom = vi.fn().mockReturnValue(builder)
   mockGetSupabase.mockReturnValue({ from: mockFrom } as never)
   return { mockFrom, mockEq1, mockEq2 }
-}
-
-function createSelectBuilder(response: { data: unknown; error: unknown }) {
-  const mockOrder = vi.fn().mockResolvedValue(response)
-  const mockEq = vi.fn().mockReturnValue({ order: mockOrder })
-  const mockSelect = vi.fn().mockReturnValue({ eq: mockEq })
-  return { builder: { select: mockSelect }, mockEq, mockOrder }
-}
-
-function createCompactUpdateBuilder(response: { error: unknown }) {
-  const mockEq2 = vi.fn().mockResolvedValue(response)
-  const mockEq1 = vi.fn().mockReturnValue({ eq: mockEq2 })
-  const mockUpdate = vi.fn().mockReturnValue({ eq: mockEq1 })
-  return { builder: { update: mockUpdate }, mockUpdate, mockEq1, mockEq2 }
 }
 
 function mockDeleteAndCompactChain({
@@ -121,11 +103,7 @@ function mockDeleteAndCompactChain({
   compactedResumes: unknown[]
   updateResponses?: { error: unknown }[]
 }) {
-  const mockEq2 = vi.fn().mockResolvedValue({ error: null })
-  const mockEq1 = vi.fn().mockReturnValue({ eq: mockEq2 })
-  const mockDelete = vi.fn().mockReturnValue({ eq: mockEq1 })
-  const deleteBuilder = { delete: mockDelete }
-
+  const deleteResult = createDeleteBuilder({ error: null })
   const remainingSelect = createSelectBuilder({
     data: remainingResumes,
     error: null,
@@ -140,7 +118,7 @@ function mockDeleteAndCompactChain({
 
   const mockFrom = vi
     .fn()
-    .mockReturnValueOnce(deleteBuilder)
+    .mockReturnValueOnce(deleteResult.builder)
     .mockReturnValueOnce(remainingSelect.builder)
   for (const updateBuilder of updateBuilders) {
     mockFrom.mockReturnValueOnce(updateBuilder.builder)
@@ -150,20 +128,17 @@ function mockDeleteAndCompactChain({
   mockGetSupabase.mockReturnValue({ from: mockFrom } as never)
   return {
     mockFrom,
-    mockDelete,
-    mockDeleteUserEq: mockEq1,
-    mockDeleteIdEq: mockEq2,
+    mockDelete: deleteResult.mockDelete,
+    mockDeleteUserEq: deleteResult.mockEq1,
+    mockDeleteIdEq: deleteResult.mockEq2,
     updateBuilders,
   }
 }
 
 function mockUpdateChain(response: { data: unknown; error: unknown }) {
-  const mockMaybeSingle = vi.fn().mockResolvedValue(response)
-  const mockSelect = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle })
-  const mockEq2 = vi.fn().mockReturnValue({ select: mockSelect })
-  const mockEq1 = vi.fn().mockReturnValue({ eq: mockEq2 })
-  const mockUpdate = vi.fn().mockReturnValue({ eq: mockEq1 })
-  const mockFrom = vi.fn().mockReturnValue({ update: mockUpdate })
+  const { builder, mockUpdate, mockEq1, mockEq2 } =
+    createUpdateBuilder(response)
+  const mockFrom = vi.fn().mockReturnValue(builder)
   mockGetSupabase.mockReturnValue({ from: mockFrom } as never)
   return { mockFrom, mockUpdate, mockEq1, mockEq2 }
 }
