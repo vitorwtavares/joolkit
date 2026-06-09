@@ -6,8 +6,8 @@ import {
 } from '@/components/ui/popover'
 import { useKeyboardNav } from '@/hooks/useKeyboardNav'
 import { CellTrigger } from './CellTrigger'
-import { StatusBadge } from '../StatusBadge'
-import { STATUS_CONFIG } from '../statusConfig'
+import { StatusBadge } from '../status/StatusBadge'
+import { STATUS_CONFIG } from '../status/statusConfig'
 import type { ApplicationStatus } from '@/api/hooks/useApplications'
 
 interface StatusCellProps {

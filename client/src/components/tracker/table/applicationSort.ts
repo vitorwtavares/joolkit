@@ -1,6 +1,6 @@
 import type { Application } from '@/api/hooks/useApplications'
 import type { SortConfig } from '@/api/hooks/useTrackerViews'
-import { STATUS_CONFIG } from './statusConfig'
+import { STATUS_CONFIG } from '../status/statusConfig'
 
 type SortType = 'text' | 'date' | 'status'
 

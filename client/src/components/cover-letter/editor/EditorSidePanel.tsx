@@ -4,15 +4,15 @@ import {
   type CoverLetterTemplate,
 } from '@/api/hooks/useCoverLetters'
 import { Skeleton } from '@/components/ui/skeleton'
-import { CoverLetterVariationList } from './CoverLetterVariationList'
-import { CoverLetterTokenPanel } from './CoverLetterTokenPanel'
-import { CoverLetterActionButton } from './CoverLetterActionButton'
-import { UnresolvedTokensIndicator } from './UnresolvedTokensIndicator'
-import type { EditableCoverLetterToken } from './tokenUtils'
+import { CoverLetterVariationList } from '../variations/CoverLetterVariationList'
+import { CoverLetterTokenPanel } from '../tokens/CoverLetterTokenPanel'
+import { CoverLetterActionButton } from '../variations/CoverLetterActionButton'
+import { UnresolvedTokensIndicator } from '../tokens/UnresolvedTokensIndicator'
+import type { EditableCoverLetterToken } from '../tokens/tokenUtils'
 import {
   COVER_LETTER_FALLBACK_LABEL,
   getCoverLetterFilename,
-} from './coverLetterVariationUtils'
+} from '../variations/coverLetterVariationUtils'
 
 interface EditorSidePanelProps {
   templates: CoverLetterTemplate[]

@@ -22,7 +22,7 @@ import {
   useCreateSkill,
   useDeleteSkill,
 } from '@/api/hooks/useSkills'
-import { Badge } from '../Badge'
+import { Badge } from '../status/Badge'
 
 interface SkillRef {
   id: string

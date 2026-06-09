@@ -9,7 +9,7 @@ import {
   normalizeTokenKey,
   normalizeTokenKeyDraft,
   toEditableCoverLetterTokens,
-} from '@/components/cover-letter/tokenUtils'
+} from '@/components/cover-letter/tokens/tokenUtils'
 
 type TokenData = CoverLetterTokens[]
 

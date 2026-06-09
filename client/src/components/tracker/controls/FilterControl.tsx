@@ -17,8 +17,8 @@ import {
 import { SegmentedToggle } from '@/components/ui/segmented-toggle'
 import type { ApplicationStatus } from '@/api/hooks/useApplications'
 import type { FilterConfig } from '@/api/hooks/useTrackerViews'
-import { STATUS_CONFIG } from './statusConfig'
-import { Badge } from './Badge'
+import { STATUS_CONFIG } from '../status/statusConfig'
+import { Badge } from '../status/Badge'
 
 interface FilterControlProps {
   value: FilterConfig | null

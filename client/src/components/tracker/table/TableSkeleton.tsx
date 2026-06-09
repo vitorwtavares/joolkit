@@ -1,5 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton'
-import { TD, FIRST_COL_PL, LAST_COL_PR } from './styles'
+import { TD, FIRST_COL_PL, LAST_COL_PR } from '../styles'
 
 interface SkeletonRowProps {
   hiddenColumns?: string[] | null

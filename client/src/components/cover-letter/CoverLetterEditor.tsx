@@ -26,30 +26,30 @@ import {
 } from '@/api/hooks/useCoverLetters'
 import { useCoverLetterTokens } from '@/api/hooks/useCoverLetterTokens'
 import { useTokenState } from '@/hooks/useTokenState'
-import { TokenHighlight, setTokenHighlight } from './tokenHighlight'
-import { EditorToolbar } from './EditorToolbar'
-import { EditorSidePanel } from './EditorSidePanel'
-import { EditorCanvas } from './EditorCanvas'
-import { EditorStatusBar } from './EditorStatusBar'
-import { CoverLetterToolbar } from './CoverLetterToolbar'
+import { TokenHighlight, setTokenHighlight } from './tokens/tokenHighlight'
+import { EditorToolbar } from './editor/EditorToolbar'
+import { EditorSidePanel } from './editor/EditorSidePanel'
+import { EditorCanvas } from './editor/EditorCanvas'
+import { EditorStatusBar } from './editor/EditorStatusBar'
+import { CoverLetterToolbar } from './editor/CoverLetterToolbar'
 import {
   CoverLetterConfirmDialog,
   type PendingAction,
-} from './CoverLetterConfirmDialog'
-import { DiscardChangesDialog } from './DiscardChangesDialog'
-import { getCoverLetterTokenValidation } from './tokenValidation'
+} from './dialogs/CoverLetterConfirmDialog'
+import { DiscardChangesDialog } from './dialogs/DiscardChangesDialog'
+import { getCoverLetterTokenValidation } from './tokens/tokenValidation'
 import {
   getTokenValueMap,
   normalizeTokenKey,
   substituteTokensInDoc,
-} from './tokenUtils'
+} from './tokens/tokenUtils'
 import {
   COVER_LETTER_FALLBACK_LABEL,
   COVER_LETTER_LABEL_MAX_LENGTH,
   getCoverLetterFilename,
   getCoverLetterLabelValue,
   getCoverLetterTemplatePath,
-} from './coverLetterVariationUtils'
+} from './variations/coverLetterVariationUtils'
 
 // Editor toasts sit bottom-center so they don't cover the header toolbar.
 const TOAST_POSITION = { position: 'bottom-center' } as const

@@ -13,7 +13,7 @@ import {
   SORTABLE_FIELDS,
   defaultDirection,
   directionLabels,
-} from './applicationSort'
+} from '../table/applicationSort'
 
 interface SortControlProps {
   value: SortConfig | null

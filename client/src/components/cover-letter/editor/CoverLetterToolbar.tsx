@@ -1,5 +1,5 @@
 import { Download, RotateCcw, Trash2, Upload } from 'lucide-react'
-import { CoverLetterActionButton } from './CoverLetterActionButton'
+import { CoverLetterActionButton } from '../variations/CoverLetterActionButton'
 
 interface CoverLetterToolbarProps {
   onUpload: () => void

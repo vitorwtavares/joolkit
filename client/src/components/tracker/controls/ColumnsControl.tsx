@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { TOGGLEABLE_COLUMNS, isColumnVisible } from './columns'
+import { TOGGLEABLE_COLUMNS, isColumnVisible } from '../table/columns'
 
 interface ColumnsControlProps {
   value: string[] | null

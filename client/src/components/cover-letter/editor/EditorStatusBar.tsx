@@ -1,5 +1,5 @@
 import { Info } from 'lucide-react'
-import { TokenTutorialTrigger } from './TokenTutorialTrigger'
+import { TokenTutorialTrigger } from '../tokens/TokenTutorialTrigger'
 
 interface EditorStatusBarProps {
   hasUnresolved: boolean

@@ -1,5 +1,5 @@
 import { Star } from 'lucide-react'
-import { TH, FIRST_COL_PL, LAST_COL_PR, COL_W } from './styles'
+import { TH, FIRST_COL_PL, LAST_COL_PR, COL_W } from '../styles'
 
 interface TableHeadProps {
   hiddenColumns?: string[] | null
