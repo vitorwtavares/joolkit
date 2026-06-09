@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import {
   Plus,
@@ -27,27 +20,22 @@ import type {
   ApplicationStatus,
   CreateApplicationPayload,
 } from '@/api/hooks/useApplications'
-import {
-  useCreateTrackerView,
-  useDeleteTrackerView,
-  useTrackerViews,
-  useUpdateTrackerView,
-  type FilterConfig,
-  type SortConfig,
-  type TrackerView,
-} from '@/api/hooks/useTrackerViews'
-import { ApplicationTable } from '@/components/tracker/ApplicationTable'
+import { useTrackerViews, type TrackerView } from '@/api/hooks/useTrackerViews'
+import { ApplicationTable } from '@/components/tracker/table/ApplicationTable'
 import { ApplicationDrawer } from '@/components/tracker/ApplicationDrawer'
-import { SortControl } from '@/components/tracker/SortControl'
-import { FilterControl } from '@/components/tracker/FilterControl'
-import { ColumnsControl } from '@/components/tracker/ColumnsControl'
-import { DEFAULT_ALL_VIEW_HIDDEN_COLUMNS } from '@/components/tracker/columns'
-import { sortApplications } from '@/components/tracker/applicationSort'
-import { ViewTab } from '@/components/tracker/ViewTab'
-import { ViewFormDialog } from '@/components/tracker/ViewFormDialog'
-import { DeleteViewDialog } from '@/components/tracker/DeleteViewDialog'
+import { SortControl } from '@/components/tracker/controls/SortControl'
+import { FilterControl } from '@/components/tracker/controls/FilterControl'
+import { ColumnsControl } from '@/components/tracker/controls/ColumnsControl'
+import { DEFAULT_ALL_VIEW_HIDDEN_COLUMNS } from '@/components/tracker/table/columns'
+import { sortApplications } from '@/components/tracker/table/applicationSort'
+import { ViewTab } from '@/components/tracker/views/ViewTab'
+import { ViewFormDialog } from '@/components/tracker/views/ViewFormDialog'
+import { DeleteViewDialog } from '@/components/tracker/views/DeleteViewDialog'
 import { TrackerDraftProvider } from '@/components/tracker/draft'
-import { STATUS_CONFIG } from '@/components/tracker/statusConfig'
+import { STATUS_CONFIG } from '@/components/tracker/status/statusConfig'
+import { useTabsScroll } from '@/components/tracker/useTabsScroll'
+import { useDrawerState } from '@/components/tracker/useDrawerState'
+import { useViewManagement } from '@/components/tracker/useViewManagement'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -119,26 +107,18 @@ function ApplicationTrackerInner() {
     (activeView?.is_permanent ? DEFAULT_ALL_VIEW_HIDDEN_COLUMNS : null)
 
   const [search, setSearch] = useState('')
-  const [selectedAppId, setSelectedAppId] = useState<string | null>(null)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [mountedAppId, setMountedAppId] = useState<string | null>(null)
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const tabsScrollRef = useRef<HTMLDivElement>(null)
-  const [tabsOverflowLeft, setTabsOverflowLeft] = useState(false)
-  const [tabsOverflowRight, setTabsOverflowRight] = useState(false)
+
+  const {
+    tabsScrollRef,
+    tabsOverflowLeft,
+    tabsOverflowRight,
+    scrollTabsToStart,
+    scrollTabsToEnd,
+  } = useTabsScroll()
+
   const tableScrollRef = useRef<HTMLDivElement>(null)
   const savedScrollTopRef = useRef<number>(0)
   const prevVisibleIdsRef = useRef<string[]>([])
-
-  const scrollTabsToStart = useCallback(() => {
-    tabsScrollRef.current?.scrollTo({ left: 0, behavior: 'smooth' })
-  }, [])
-
-  const scrollTabsToEnd = useCallback(() => {
-    const el = tabsScrollRef.current
-    if (!el) return
-    el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' })
-  }, [])
 
   // One shared fetch of the full dataset feeds every view. Filter, sort, and
   // search are all applied client-side below — consistent and instant, and it
@@ -177,69 +157,7 @@ function ApplicationTrackerInner() {
   }, [views, applications])
 
   const createApplication = useCreateApplication()
-  const createView = useCreateTrackerView()
-  const updateView = useUpdateTrackerView()
-  const deleteView = useDeleteTrackerView()
 
-  // View management dialogs. `viewForm` drives the create/rename dialog;
-  // `deleteTarget` drives the delete confirmation.
-  const [viewForm, setViewForm] = useState<
-    | { mode: 'create'; filterConfig?: FilterConfig }
-    | { mode: 'rename'; view: TrackerView }
-    | null
-  >(null)
-  const [deleteTarget, setDeleteTarget] = useState<TrackerView | null>(null)
-
-  useEffect(() => {
-    const el = tabsScrollRef.current
-    if (!el) return
-    const check = () => {
-      setTabsOverflowLeft(el.scrollLeft > 1)
-      setTabsOverflowRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
-    }
-    const horizontalWheelDelta = (event: WheelEvent) => {
-      if (event.deltaMode === WheelEvent.DOM_DELTA_LINE)
-        return event.deltaY * 16
-      if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE)
-        return event.deltaY * el.clientWidth
-      return event.deltaY
-    }
-    const scrollVerticalWheelHorizontally = (event: WheelEvent) => {
-      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
-      event.preventDefault()
-      event.stopPropagation()
-      el.scrollLeft -= horizontalWheelDelta(event)
-      check()
-    }
-
-    const resize = new ResizeObserver(check)
-    resize.observe(el)
-    for (const child of Array.from(el.children)) resize.observe(child)
-
-    // Track when tabs are added/removed (dynamic views in P7) and start
-    // observing their size too. ResizeObserver fires on existing children's
-    // size changes; MutationObserver picks up new children's existence.
-    const mutation = new MutationObserver((entries) => {
-      for (const e of entries) {
-        for (const node of e.addedNodes) {
-          if (node instanceof Element) resize.observe(node)
-        }
-      }
-      check()
-    })
-    mutation.observe(el, { childList: true })
-
-    el.addEventListener('scroll', check)
-    el.addEventListener('wheel', scrollVerticalWheelHorizontally, {
-      passive: false,
-    })
-    return () => {
-      el.removeEventListener('scroll', check)
-      el.removeEventListener('wheel', scrollVerticalWheelHorizontally)
-      resize.disconnect()
-      mutation.disconnect()
-    }
-  }, [])
   // Track scroll position so it can be restored after a sort reorder.
   useEffect(() => {
     const el = tableScrollRef.current
@@ -266,47 +184,29 @@ function ApplicationTrackerInner() {
     prevVisibleIdsRef.current = newIds
   }, [visibleApplications])
 
-  const [mountedApp, setMountedApp] = useState<(typeof applications)[0] | null>(
-    null,
-  )
+  const {
+    selectedAppId,
+    drawerOpen,
+    mountedApp,
+    forceCloseDrawer,
+    openDrawer,
+    closeDrawer,
+  } = useDrawerState(applications)
 
-  // Keep mountedApp in sync with live list changes, but never set it to null
-  // from here — that preserves the drawer content during an optimistic delete
-  // until forceCloseDrawer explicitly clears it.
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    if (!mountedAppId) {
-      setMountedApp(null)
-      return
-    }
-    const app = applications.find((a) => a.id === mountedAppId) ?? null
-    if (app) setMountedApp(app)
-  }, [applications, mountedAppId])
-  /* eslint-enable react-hooks/set-state-in-effect */
-
-  const forceCloseDrawer = useCallback(() => {
-    if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
-    setSelectedAppId(null)
-    setDrawerOpen(false)
-    setMountedAppId(null)
-  }, [])
-
-  const openDrawer = useCallback((id: string) => {
-    if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
-    setSelectedAppId(id)
-    setMountedAppId(id)
-    requestAnimationFrame(() => setDrawerOpen(true))
-  }, [])
-
-  const closeDrawer = useCallback(() => {
-    setSelectedAppId(null)
-    setDrawerOpen(false)
-    closeTimerRef.current = setTimeout(() => setMountedAppId(null), 150)
-  }, [])
-
-  function setView(id: string) {
-    setSearchParams({ view: id }, { replace: true })
-  }
+  const {
+    viewForm,
+    setViewForm,
+    deleteTarget,
+    setDeleteTarget,
+    setView,
+    handleSortChange,
+    handleApplyFilter,
+    handleColumnsChange,
+    handleSubmitView,
+    handleConfirmDelete,
+    isSubmittingView,
+    isDeletingView,
+  } = useViewManagement({ activeView, allView, setSearchParams })
 
   function handleNewEntry() {
     createApplication.mutate(newEntryDefaults(activeView), {
@@ -315,76 +215,6 @@ function ApplicationTrackerInner() {
         toast.error(
           error instanceof ApiError ? error.message : 'Failed to create entry',
         ),
-    })
-  }
-
-  function handleSortChange(next: SortConfig | null) {
-    if (!activeView) return
-    updateView.mutate(
-      { id: activeView.id, sort_config: next },
-      { onError: () => toast.error('Failed to update sort') },
-    )
-  }
-
-  function handleApplyFilter(next: FilterConfig | null) {
-    if (!activeView) return
-    // The permanent "All" view can't hold a filter — prompt the user to save
-    // the filter as a new view instead. Clearing (null) on "All" is a no-op.
-    if (activeView.is_permanent) {
-      if (next) setViewForm({ mode: 'create', filterConfig: next })
-      return
-    }
-    updateView.mutate(
-      { id: activeView.id, filter_config: next },
-      { onError: () => toast.error('Failed to update filter') },
-    )
-  }
-
-  function handleColumnsChange(next: string[] | null) {
-    if (!activeView) return
-    updateView.mutate(
-      {
-        id: activeView.id,
-        hidden_columns: activeView.is_permanent && next === null ? [] : next,
-      },
-      { onError: () => toast.error('Failed to update columns') },
-    )
-  }
-
-  function handleSubmitView(name: string) {
-    if (!viewForm) return
-    if (viewForm.mode === 'create') {
-      createView.mutate(
-        { name, filter_config: viewForm.filterConfig ?? null },
-        {
-          onSuccess: (view) => {
-            setViewForm(null)
-            setView(view.id)
-          },
-          onError: () => toast.error('Failed to create view'),
-        },
-      )
-    } else {
-      updateView.mutate(
-        { id: viewForm.view.id, name },
-        {
-          onSuccess: () => setViewForm(null),
-          onError: () => toast.error('Failed to rename view'),
-        },
-      )
-    }
-  }
-
-  function handleConfirmDelete() {
-    if (!deleteTarget) return
-    const target = deleteTarget
-    deleteView.mutate(target.id, {
-      onSuccess: () => {
-        setDeleteTarget(null)
-        // Fall back to the permanent "All" view if the active view was deleted.
-        if (activeView?.id === target.id && allView) setView(allView.id)
-      },
-      onError: () => toast.error('Failed to delete view'),
     })
   }
 
@@ -577,11 +407,7 @@ function ApplicationTrackerInner() {
             ? 'The "All" view can\'t be filtered. Save this filter as a new view instead.'
             : undefined
         }
-        isSubmitting={
-          viewForm?.mode === 'rename'
-            ? updateView.isPending
-            : createView.isPending
-        }
+        isSubmitting={isSubmittingView}
         onSubmit={handleSubmitView}
       />
 
@@ -591,7 +417,7 @@ function ApplicationTrackerInner() {
           if (!open) setDeleteTarget(null)
         }}
         viewName={deleteTarget?.name ?? null}
-        isDeleting={deleteView.isPending}
+        isDeleting={isDeletingView}
         onConfirm={handleConfirmDelete}
       />
     </div>

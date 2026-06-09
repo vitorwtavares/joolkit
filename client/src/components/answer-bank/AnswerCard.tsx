@@ -1,15 +1,6 @@
 import { useState } from 'react'
-import { Loader2, Pencil, Trash2 } from 'lucide-react'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { Pencil, Trash2 } from 'lucide-react'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useDeleteAnswer, useUpdateAnswer } from '@/api/hooks/useAnswers'
 import type { Answer } from '@/api/hooks/useAnswers'
 import { Snippet } from './Snippet'
@@ -82,40 +73,19 @@ export function AnswerCard({ answer, onEdit }: AnswerCardProps) {
         </footer>
       </article>
 
-      <AlertDialog
+      <ConfirmDialog
         open={confirmDelete}
-        onOpenChange={(v) => {
-          if (!deleteAnswer.isPending) setConfirmDelete(v)
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this answer?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This permanently removes the question and both answer variants.
-              This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteAnswer.isPending}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={deleteAnswer.isPending}
-              onClick={(e) => {
-                e.preventDefault()
-                deleteAnswer.mutate(answer.id, {
-                  onSettled: () => setConfirmDelete(false),
-                })
-              }}
-            >
-              {deleteAnswer.isPending && <Loader2 className="animate-spin" />}
-              Delete answer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onOpenChange={setConfirmDelete}
+        title="Delete this answer?"
+        description="This permanently removes the question and both answer variants. This cannot be undone."
+        confirmLabel="Delete answer"
+        isConfirming={deleteAnswer.isPending}
+        onConfirm={() =>
+          deleteAnswer.mutate(answer.id, {
+            onSettled: () => setConfirmDelete(false),
+          })
+        }
+      />
     </>
   )
 }
