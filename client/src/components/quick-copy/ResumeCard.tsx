@@ -253,6 +253,7 @@ export function ResumeCard({
               className="flex min-h-0 flex-1"
               viewportClassName="flex min-h-0 flex-1"
               contentClassName="flex min-h-0 flex-1 flex-col gap-2"
+              fadeEdges
             >
               {sortedResumes.map((resume) => (
                 <ResumeRow

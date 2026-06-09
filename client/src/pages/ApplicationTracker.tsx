@@ -206,7 +206,13 @@ function ApplicationTrackerInner() {
     handleConfirmDelete,
     isSubmittingView,
     isDeletingView,
-  } = useViewManagement({ activeView, allView, setSearchParams })
+  } = useViewManagement({
+    activeView,
+    allView,
+    setSearchParams,
+    onViewCreated: () => requestAnimationFrame(() => scrollTabsToEnd()),
+    onViewDeleted: () => scrollTabsToStart(),
+  })
 
   function handleNewEntry() {
     createApplication.mutate(newEntryDefaults(activeView), {
