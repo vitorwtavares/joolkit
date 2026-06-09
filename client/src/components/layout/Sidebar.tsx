@@ -135,7 +135,7 @@ export default function Sidebar() {
           </span>
         </button>
 
-        {isCollapsed && canRevealCollapsedToggle ? (
+        {(!isCollapsed || canRevealCollapsedToggle) && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -143,38 +143,28 @@ export default function Sidebar() {
                 variant="ghost"
                 size="icon-sm"
                 onClick={toggleSidebar}
-                aria-label="Open sidebar"
-                aria-expanded={false}
-                data-can-reveal
-                className="sidebar-toggle-button absolute top-0 left-0 z-10 border-transparent text-muted-foreground transition-[opacity,background-color,color] duration-200 ease-out hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:border-transparent focus-visible:ring-0 data-[state=delayed-open]:bg-sidebar-hover data-[state=delayed-open]:text-sidebar-foreground data-[state=instant-open]:bg-sidebar-hover data-[state=instant-open]:text-sidebar-foreground data-[state=open]:bg-sidebar-hover data-[state=open]:text-sidebar-foreground"
+                aria-label={isCollapsed ? 'Open sidebar' : 'Close sidebar'}
+                aria-expanded={!isCollapsed}
+                data-can-reveal={isCollapsed || undefined}
+                className={cn(
+                  'sidebar-toggle-button absolute top-0 z-10 border-transparent text-muted-foreground duration-200 ease-out hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:border-transparent focus-visible:ring-0 data-[state=delayed-open]:bg-sidebar-hover data-[state=delayed-open]:text-sidebar-foreground data-[state=instant-open]:bg-sidebar-hover data-[state=instant-open]:text-sidebar-foreground data-[state=open]:bg-sidebar-hover data-[state=open]:text-sidebar-foreground',
+                  isCollapsed
+                    ? 'left-0 transition-[opacity,background-color,color]'
+                    : 'right-0 opacity-100 transition-[background-color,color] aria-expanded:bg-transparent aria-expanded:text-muted-foreground hover:aria-expanded:bg-sidebar-hover hover:aria-expanded:text-sidebar-foreground',
+                )}
               >
-                <PanelLeftOpen data-icon="inline-start" />
+                {isCollapsed ? (
+                  <PanelLeftOpen data-icon="inline-start" />
+                ) : (
+                  <PanelLeftClose data-icon="inline-start" />
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={8}>
-              Open sidebar
+              {isCollapsed ? 'Open sidebar' : 'Close sidebar'}
             </TooltipContent>
           </Tooltip>
-        ) : !isCollapsed ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={toggleSidebar}
-                aria-label="Close sidebar"
-                aria-expanded
-                className="sidebar-toggle-button absolute top-0 right-0 z-10 border-transparent text-muted-foreground opacity-100 transition-[background-color,color] duration-200 ease-out hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:border-transparent focus-visible:ring-0 aria-expanded:bg-transparent aria-expanded:text-muted-foreground hover:aria-expanded:bg-sidebar-hover hover:aria-expanded:text-sidebar-foreground data-[state=delayed-open]:bg-sidebar-hover data-[state=delayed-open]:text-sidebar-foreground data-[state=instant-open]:bg-sidebar-hover data-[state=instant-open]:text-sidebar-foreground data-[state=open]:bg-sidebar-hover data-[state=open]:text-sidebar-foreground"
-              >
-                <PanelLeftClose data-icon="inline-start" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8}>
-              Close sidebar
-            </TooltipContent>
-          </Tooltip>
-        ) : null}
+        )}
       </div>
 
       {navItems.map(({ to, label, icon: Icon, disabled }) => {
