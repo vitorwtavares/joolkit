@@ -1,14 +1,4 @@
-import { Loader2 } from 'lucide-react'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface DeleteViewDialogProps {
   open: boolean
@@ -26,40 +16,14 @@ export function DeleteViewDialog({
   onConfirm,
 }: DeleteViewDialogProps) {
   return (
-    <AlertDialog
+    <ConfirmDialog
       open={open}
-      onOpenChange={(v) => {
-        if (!isDeleting) onOpenChange(v)
-      }}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete this view?</AlertDialogTitle>
-          <AlertDialogDescription>
-            {viewName
-              ? `This will remove the "${viewName}" view.`
-              : 'This will remove this view.'}{' '}
-            Your applications won't be affected.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            variant="destructive"
-            disabled={isDeleting}
-            onClick={(e) => {
-              e.preventDefault()
-              onConfirm()
-            }}
-          >
-            {isDeleting ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              'Delete'
-            )}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      onOpenChange={onOpenChange}
+      title="Delete this view?"
+      description={`${viewName ? `This will remove the "${viewName}" view.` : 'This will remove this view.'} Your applications won't be affected.`}
+      confirmLabel="Delete"
+      isConfirming={isDeleting}
+      onConfirm={onConfirm}
+    />
   )
 }

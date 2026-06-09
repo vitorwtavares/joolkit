@@ -1,13 +1,4 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface DiscardChangesDialogProps {
   open: boolean
@@ -21,27 +12,16 @@ export function DiscardChangesDialog({
   onDiscard,
 }: DiscardChangesDialogProps) {
   return (
-    <AlertDialog
+    <ConfirmDialog
       open={open}
       onOpenChange={(next) => {
         if (!next) onKeepEditing()
       }}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This variation has unsaved edits. Continuing will switch away and
-            discard them. This cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Keep editing</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={onDiscard}>
-            Discard changes
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      title="Discard unsaved changes?"
+      description="This variation has unsaved edits. Continuing will switch away and discard them. This cannot be undone."
+      cancelLabel="Keep editing"
+      confirmLabel="Discard changes"
+      onConfirm={onDiscard}
+    />
   )
 }

@@ -1,14 +1,4 @@
-import { Loader2 } from 'lucide-react'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface DeleteApplicationDialogProps {
   open: boolean
@@ -25,41 +15,19 @@ export function DeleteApplicationDialog({
   isDeleting,
   onConfirm,
 }: DeleteApplicationDialogProps) {
+  const description = companyName
+    ? `This will permanently remove ${companyName} from your tracker. This cannot be undone.`
+    : 'This will permanently remove this application from your tracker. This cannot be undone.'
+
   return (
-    <AlertDialog
+    <ConfirmDialog
       open={open}
-      onOpenChange={(v) => {
-        if (!isDeleting) onOpenChange(v)
-      }}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete this application?</AlertDialogTitle>
-          <AlertDialogDescription>
-            {companyName
-              ? `This will permanently remove ${companyName} from your tracker.`
-              : 'This will permanently remove this application from your tracker.'}{' '}
-            This cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            variant="destructive"
-            disabled={isDeleting}
-            onClick={(e) => {
-              e.preventDefault()
-              onConfirm()
-            }}
-          >
-            {isDeleting ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              'Delete'
-            )}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      onOpenChange={onOpenChange}
+      title="Delete this application?"
+      description={description}
+      confirmLabel="Delete"
+      isConfirming={isDeleting}
+      onConfirm={onConfirm}
+    />
   )
 }

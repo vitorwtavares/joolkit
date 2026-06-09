@@ -1,14 +1,5 @@
 import { type CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 export type PendingAction =
   | { type: 'upload'; variation: string | null; file: File }
@@ -51,34 +42,21 @@ export function CoverLetterConfirmDialog({
   onConfirm,
   onCancel,
 }: CoverLetterConfirmDialogProps) {
-  const confirmCopy = pendingAction ? CONFIRM_COPY[pendingAction.type] : null
+  const copy = pendingAction ? CONFIRM_COPY[pendingAction.type] : null
 
   return (
-    <AlertDialog
+    <ConfirmDialog
       open={!!pendingAction}
       onOpenChange={(open) => {
         if (!open) onCancel()
       }}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{confirmCopy?.title}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {confirmCopy?.description}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            variant={
-              pendingAction?.type === 'remove' ? 'destructive' : 'default'
-            }
-            onClick={onConfirm}
-          >
-            {confirmCopy?.action}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      title={copy?.title ?? ''}
+      description={copy?.description ?? ''}
+      confirmLabel={copy?.action ?? ''}
+      confirmVariant={
+        pendingAction?.type === 'remove' ? 'destructive' : 'default'
+      }
+      onConfirm={onConfirm}
+    />
   )
 }
