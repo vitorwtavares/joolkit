@@ -21,7 +21,7 @@ function getNextPosition(resumes: ResumeVariation[]): number | null {
   return nextPosition <= RESUME_VARIATION_LIMIT ? nextPosition : null
 }
 
-interface ResumeButtonProps {
+interface ResumeCardProps {
   resumes: ResumeVariation[]
   userId: string
   locked?: boolean
@@ -34,14 +34,14 @@ interface ResumeButtonProps {
   onLabelUpdated: (resumeId: string, label: string) => Promise<void> | void
 }
 
-export function ResumeButton({
+export function ResumeCard({
   resumes,
   userId,
   locked = false,
   onUploaded,
   onRemoved,
   onLabelUpdated,
-}: ResumeButtonProps) {
+}: ResumeCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollViewportRef = useRef<HTMLDivElement>(null)
   const uploadTargetRef = useRef<{

@@ -19,7 +19,7 @@ import {
   useUpdateResumeLabel,
 } from '@/api/hooks/useResumes'
 import { CopyButton } from '@/components/quick-copy/CopyButton'
-import { ResumeButton } from '@/components/quick-copy/ResumeButton'
+import { ResumeCard } from '@/components/quick-copy/ResumeCard'
 import { CoverLetterCard } from '@/components/quick-copy/CoverLetterCard'
 import type { UpdateProfilePayload } from '@/api/hooks/useProfile'
 import { LinkedInIcon } from '@/icons/LinkedInIcon'
@@ -196,7 +196,7 @@ export default function QuickCopy() {
           Files
         </h2>
         <div className="grid grid-cols-1 gap-3 min-[1250px]:grid-cols-[minmax(380px,1.8fr)_minmax(0,3fr)]">
-          <ResumeButton
+          <ResumeCard
             resumes={resumes}
             userId={user.id}
             locked={locked || resumesLoading}
