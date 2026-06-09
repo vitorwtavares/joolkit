@@ -2,7 +2,7 @@
 
 import { pathToFileURL } from 'url'
 
-// pdfjs-dist v5 is ESM-only; use a lazy dynamic import() in this CommonJS project.
+// pdfjs-dist is ESM-only; use a lazy dynamic import() in this CommonJS project.
 let _pdfjsLib: any = null
 
 async function ensurePdfjsDomGlobals() {
@@ -83,7 +83,7 @@ export async function pdfToTiptap(
   }
 
   if (opts?.maxPages && pdf.numPages > opts.maxPages) {
-    await pdf.destroy()
+    await pdf.cleanup()
     throw new PageLimitError(pdf.numPages, opts.maxPages)
   }
 
@@ -164,7 +164,7 @@ export async function pdfToTiptap(
       `Failed to parse PDF: ${err instanceof Error ? err.message : String(err)}`,
     )
   } finally {
-    await pdf.destroy()
+    await pdf.cleanup()
   }
 }
 
