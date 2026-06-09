@@ -14,12 +14,16 @@ interface UseViewManagementParams {
   activeView: TrackerView | undefined
   allView: TrackerView | undefined
   setSearchParams: SetURLSearchParams
+  onViewCreated?: () => void
+  onViewDeleted?: () => void
 }
 
 export function useViewManagement({
   activeView,
   allView,
   setSearchParams,
+  onViewCreated,
+  onViewDeleted,
 }: UseViewManagementParams) {
   const createView = useCreateTrackerView()
   const updateView = useUpdateTrackerView()
@@ -78,6 +82,7 @@ export function useViewManagement({
           onSuccess: (view) => {
             setViewForm(null)
             setView(view.id)
+            onViewCreated?.()
           },
           onError: () => toast.error('Failed to create view'),
         },
@@ -100,7 +105,10 @@ export function useViewManagement({
       onSuccess: () => {
         setDeleteTarget(null)
         // Fall back to the permanent "All" view if the active view was deleted.
-        if (activeView?.id === target.id && allView) setView(allView.id)
+        if (activeView?.id === target.id && allView) {
+          setView(allView.id)
+          onViewDeleted?.()
+        }
       },
       onError: () => toast.error('Failed to delete view'),
     })
