@@ -2,13 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import request from 'supertest'
 import express from 'express'
 
-vi.mock('../utils/pdfToTiptap', () => ({
+vi.mock('../../utils/pdfToTiptap', () => ({
   PageLimitError: class PageLimitError extends Error {},
   pdfToTiptap: vi.fn().mockResolvedValue({ type: 'doc', content: [] }),
 }))
 
-vi.mock('../middleware/auth', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../middleware/auth')>()
+vi.mock('../../middleware/auth', async (importOriginal) => {
+  const original =
+    await importOriginal<typeof import('../../middleware/auth')>()
   return {
     ...original,
     getSupabase: vi.fn(),
@@ -23,8 +24,8 @@ vi.mock('../middleware/auth', async (importOriginal) => {
   }
 })
 
-import * as authModule from '../middleware/auth'
-import coverLettersRouter from './coverLetters'
+import * as authModule from '../../middleware/auth'
+import coverLettersRouter from '.'
 
 const USER_ID = 'test-user-id'
 
