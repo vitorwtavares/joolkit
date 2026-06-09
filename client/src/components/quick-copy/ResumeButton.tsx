@@ -85,6 +85,7 @@ export function ResumeButton({
     !sortedResumes.some((resume) => resume.position === uploading)
 
   const prevResumeCountRef = useRef(sortedResumes.length)
+  const hasSettledRef = useRef(false)
 
   useEffect(() => {
     if (editingPosition === null) return
@@ -97,6 +98,12 @@ export function ResumeButton({
   useLayoutEffect(() => {
     const prevCount = prevResumeCountRef.current
     prevResumeCountRef.current = sortedResumes.length
+
+    if (!hasSettledRef.current) {
+      if (sortedResumes.length > 0) hasSettledRef.current = true
+      return
+    }
+
     if (sortedResumes.length > prevCount) {
       const viewport = scrollViewportRef.current
       if (viewport) {
