@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useSearchParams } from 'react-router'
 import {
   Plus,
@@ -119,6 +126,9 @@ function ApplicationTrackerInner() {
   const tabsScrollRef = useRef<HTMLDivElement>(null)
   const [tabsOverflowLeft, setTabsOverflowLeft] = useState(false)
   const [tabsOverflowRight, setTabsOverflowRight] = useState(false)
+  const tableScrollRef = useRef<HTMLDivElement>(null)
+  const savedScrollTopRef = useRef<number>(0)
+  const prevVisibleIdsRef = useRef<string[]>([])
 
   const scrollTabsToStart = useCallback(() => {
     tabsScrollRef.current?.scrollTo({ left: 0, behavior: 'smooth' })
@@ -230,6 +240,32 @@ function ApplicationTrackerInner() {
       mutation.disconnect()
     }
   }, [])
+  // Track scroll position so it can be restored after a sort reorder.
+  useEffect(() => {
+    const el = tableScrollRef.current
+    if (!el) return
+    const onScroll = () => {
+      savedScrollTopRef.current = el.scrollTop
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Restore scroll after a reorder (same set of IDs, different order). This
+  // prevents the list jumping to the top when a sort-by-date optimistic update
+  // reorders rows while the user is editing further down.
+  useLayoutEffect(() => {
+    const el = tableScrollRef.current
+    if (!el) return
+    const newIds = visibleApplications.map((a) => a.id)
+    const prevIds = prevVisibleIdsRef.current
+    const prevSet = new Set(prevIds)
+    const isReorder =
+      newIds.length === prevIds.length && newIds.every((id) => prevSet.has(id))
+    if (isReorder) el.scrollTop = savedScrollTopRef.current
+    prevVisibleIdsRef.current = newIds
+  }, [visibleApplications])
+
   const [mountedApp, setMountedApp] = useState<(typeof applications)[0] | null>(
     null,
   )
@@ -494,7 +530,7 @@ function ApplicationTrackerInner() {
         </div>
 
         {/* Table */}
-        <div className="flex-1 overflow-auto">
+        <div ref={tableScrollRef} className="flex-1 overflow-auto">
           <ApplicationTable
             applications={visibleApplications}
             isLoading={isLoading}
