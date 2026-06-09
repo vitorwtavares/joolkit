@@ -90,6 +90,7 @@ export function CoverLetterVariationList({
 }: CoverLetterVariationListProps) {
   const labelInputRef = useRef<HTMLInputElement>(null)
   const scrollViewportRef = useRef<HTMLDivElement>(null)
+  const variationRefs = useRef(new Map<string, HTMLDivElement>())
   const [editingVariation, setEditingVariation] = useState<string | null>(null)
   const [labelDraft, setLabelDraft] = useState('')
 
@@ -102,6 +103,8 @@ export function CoverLetterVariationList({
     )
 
   const prevTemplateCountRef = useRef(sortedTemplates.length)
+  const hasSettledRef = useRef(false)
+  const prevActiveVariationRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (editingVariation === null) return
@@ -111,9 +114,17 @@ export function CoverLetterVariationList({
     input?.setSelectionRange(cursorPosition, cursorPosition)
   }, [editingVariation])
 
+  // Marks the list as settled once data first arrives; after that, scrolls to
+  // bottom when a new variation is added (count increases).
   useLayoutEffect(() => {
     const prevCount = prevTemplateCountRef.current
     prevTemplateCountRef.current = sortedTemplates.length
+
+    if (!hasSettledRef.current) {
+      if (sortedTemplates.length > 0) hasSettledRef.current = true
+      return
+    }
+
     if (sortedTemplates.length > prevCount) {
       const viewport = scrollViewportRef.current
       if (viewport) {
@@ -124,6 +135,35 @@ export function CoverLetterVariationList({
       }
     }
   }, [sortedTemplates])
+
+  // Scrolls the active variation into view whenever it changes — covers both
+  // the initial URL-param load and runtime switches (e.g. sidebar navigation
+  // that resets the URL and switches back to the first variation).
+  useLayoutEffect(() => {
+    const prevActive = prevActiveVariationRef.current
+    prevActiveVariationRef.current = activeVariation ?? null
+
+    if (!hasSettledRef.current) return
+    if (!activeVariation || activeVariation === prevActive) return
+
+    const row = variationRefs.current.get(activeVariation)
+    const viewport = scrollViewportRef.current
+    if (!row || !viewport) return
+
+    const rowRect = row.getBoundingClientRect()
+    const viewportRect = viewport.getBoundingClientRect()
+    if (rowRect.top < viewportRect.top) {
+      viewport.scrollBy({
+        top: rowRect.top - viewportRect.top,
+        behavior: 'smooth',
+      })
+    } else if (rowRect.bottom > viewportRect.bottom) {
+      viewport.scrollBy({
+        top: rowRect.bottom - viewportRect.bottom,
+        behavior: 'smooth',
+      })
+    }
+  }, [activeVariation])
 
   function startLabelEdit(template: CoverLetterTemplate) {
     if (locked || busy) return
@@ -238,6 +278,13 @@ export function CoverLetterVariationList({
           return (
             <div
               key={template.id}
+              ref={(node) => {
+                if (node) {
+                  variationRefs.current.set(template.variation, node)
+                } else {
+                  variationRefs.current.delete(template.variation)
+                }
+              }}
               className={cn(
                 'group/cover-row relative grid h-[62px] min-h-0 w-full shrink-0 grid-cols-[34px_1fr_auto] content-center items-center gap-3 rounded-lg border border-border bg-secondary px-3 py-2.5 transition-[background-color,border-color] hover:border-brand hover:bg-surface-selected',
                 active && 'border-brand-border bg-surface-selected',
