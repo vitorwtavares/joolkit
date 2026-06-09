@@ -53,7 +53,6 @@ export default function Sidebar() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const [isAccountActive, setIsAccountActive] = useState(false)
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -136,7 +135,7 @@ export default function Sidebar() {
           </span>
         </button>
 
-        {isCollapsed && canRevealCollapsedToggle ? (
+        {(!isCollapsed || canRevealCollapsedToggle) && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -144,38 +143,28 @@ export default function Sidebar() {
                 variant="ghost"
                 size="icon-sm"
                 onClick={toggleSidebar}
-                aria-label="Open sidebar"
-                aria-expanded={false}
-                data-can-reveal
-                className="sidebar-toggle-button absolute top-0 left-0 z-10 border-transparent text-muted-foreground transition-[opacity,background-color,color] duration-200 ease-out hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:border-transparent focus-visible:ring-0 data-[state=delayed-open]:bg-sidebar-hover data-[state=delayed-open]:text-sidebar-foreground data-[state=instant-open]:bg-sidebar-hover data-[state=instant-open]:text-sidebar-foreground data-[state=open]:bg-sidebar-hover data-[state=open]:text-sidebar-foreground"
+                aria-label={isCollapsed ? 'Open sidebar' : 'Close sidebar'}
+                aria-expanded={!isCollapsed}
+                data-can-reveal={isCollapsed || undefined}
+                className={cn(
+                  'sidebar-toggle-button absolute top-0 z-10 border-transparent text-muted-foreground duration-200 ease-out hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:border-transparent focus-visible:ring-0 data-[state=delayed-open]:bg-sidebar-hover data-[state=delayed-open]:text-sidebar-foreground data-[state=instant-open]:bg-sidebar-hover data-[state=instant-open]:text-sidebar-foreground data-[state=open]:bg-sidebar-hover data-[state=open]:text-sidebar-foreground',
+                  isCollapsed
+                    ? 'left-0 transition-[opacity,background-color,color]'
+                    : 'right-0 opacity-100 transition-[background-color,color] aria-expanded:bg-transparent aria-expanded:text-muted-foreground hover:aria-expanded:bg-sidebar-hover hover:aria-expanded:text-sidebar-foreground',
+                )}
               >
-                <PanelLeftOpen data-icon="inline-start" />
+                {isCollapsed ? (
+                  <PanelLeftOpen data-icon="inline-start" />
+                ) : (
+                  <PanelLeftClose data-icon="inline-start" />
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={8}>
-              Open sidebar
+              {isCollapsed ? 'Open sidebar' : 'Close sidebar'}
             </TooltipContent>
           </Tooltip>
-        ) : !isCollapsed ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={toggleSidebar}
-                aria-label="Close sidebar"
-                aria-expanded
-                className="sidebar-toggle-button absolute top-0 right-0 z-10 border-transparent text-muted-foreground opacity-100 transition-[background-color,color] duration-200 ease-out hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:border-transparent focus-visible:ring-0 aria-expanded:bg-transparent aria-expanded:text-muted-foreground hover:aria-expanded:bg-sidebar-hover hover:aria-expanded:text-sidebar-foreground data-[state=delayed-open]:bg-sidebar-hover data-[state=delayed-open]:text-sidebar-foreground data-[state=instant-open]:bg-sidebar-hover data-[state=instant-open]:text-sidebar-foreground data-[state=open]:bg-sidebar-hover data-[state=open]:text-sidebar-foreground"
-              >
-                <PanelLeftClose data-icon="inline-start" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8}>
-              Close sidebar
-            </TooltipContent>
-          </Tooltip>
-        ) : null}
+        )}
       </div>
 
       {navItems.map(({ to, label, icon: Icon, disabled }) => {
@@ -240,94 +229,64 @@ export default function Sidebar() {
       <div className="flex-1" />
 
       <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-        {isCollapsed ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <PopoverTrigger asChild>
-                <button
-                  className={cn(
-                    'relative flex h-10 w-full items-center overflow-hidden rounded-lg px-0 text-sm transition-colors',
-                    'text-muted-foreground hover:bg-sidebar-hover hover:text-sidebar-foreground',
-                    'data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground',
-                    isAccountActive &&
-                      'bg-sidebar-hover text-sidebar-foreground',
-                  )}
-                  onBlur={() => setIsAccountActive(false)}
-                  onFocus={() => setIsAccountActive(true)}
-                  onMouseEnter={() => setIsAccountActive(true)}
-                  onMouseLeave={() => setIsAccountActive(false)}
-                  aria-label="Account"
-                >
-                  <span className="flex size-8 shrink-0 items-center justify-center">
-                    <Avatar
-                      className="pointer-events-none size-6 shrink-0 after:hidden"
-                      style={{
-                        background:
-                          'color-mix(in srgb, var(--brand) 48%, transparent)',
-                      }}
-                    >
-                      <AvatarFallback
-                        className="bg-transparent text-xs font-semibold"
-                        style={{ color: 'var(--brand-foreground)' }}
-                      >
-                        {initial}
-                      </AvatarFallback>
-                    </Avatar>
-                  </span>
-                </button>
-              </PopoverTrigger>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8}>
-              {displayName}
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <PopoverTrigger asChild>
-            <button
-              className={cn(
-                'relative flex h-10 w-full items-center overflow-hidden rounded-lg px-0 text-sm transition-colors',
-                'text-muted-foreground hover:bg-sidebar-hover hover:text-sidebar-foreground',
-                'data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground',
-                isAccountActive && 'bg-sidebar-hover text-sidebar-foreground',
-              )}
-              onBlur={() => setIsAccountActive(false)}
-              onFocus={() => setIsAccountActive(true)}
-              onMouseEnter={() => setIsAccountActive(true)}
-              onMouseLeave={() => setIsAccountActive(false)}
-              aria-label="Account"
-            >
-              <span className="flex size-8 shrink-0 items-center justify-center">
-                <Avatar
-                  className="pointer-events-none size-6 shrink-0 after:hidden"
-                  style={{
-                    background:
-                      'color-mix(in srgb, var(--brand) 48%, transparent)',
-                  }}
-                >
-                  <AvatarFallback
-                    className="bg-transparent text-xs font-semibold"
-                    style={{ color: 'var(--brand-foreground)' }}
-                  >
-                    {initial}
-                  </AvatarFallback>
-                </Avatar>
-              </span>
-              <span
+        {(() => {
+          const trigger = (
+            <PopoverTrigger asChild>
+              <button
                 className={cn(
-                  'absolute top-1/2 left-10 min-w-0 -translate-y-1/2 overflow-hidden text-left whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out',
-                  'max-w-[140px] opacity-100',
+                  'relative flex h-10 w-full items-center overflow-hidden rounded-lg px-0 text-sm transition-colors',
+                  'text-muted-foreground hover:bg-sidebar-hover hover:text-sidebar-foreground',
+                  'focus-visible:bg-sidebar-hover focus-visible:text-sidebar-foreground focus-visible:outline-none',
+                  'data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground',
                 )}
+                aria-label="Account"
               >
-                <span className="block truncate leading-tight">
-                  {displayName}
+                <span className="flex size-8 shrink-0 items-center justify-center">
+                  <Avatar
+                    className="pointer-events-none size-6 shrink-0 after:hidden"
+                    style={{
+                      background:
+                        'color-mix(in srgb, var(--brand) 48%, transparent)',
+                    }}
+                  >
+                    <AvatarFallback
+                      className="bg-transparent text-xs font-semibold"
+                      style={{ color: 'var(--brand-foreground)' }}
+                    >
+                      {initial}
+                    </AvatarFallback>
+                  </Avatar>
                 </span>
-                <span className="block truncate text-xs leading-tight opacity-60">
-                  Pro plan
+                <span
+                  className={cn(
+                    'absolute top-1/2 left-10 min-w-0 -translate-y-1/2 overflow-hidden text-left whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out',
+                    isCollapsed
+                      ? 'max-w-0 opacity-0'
+                      : 'max-w-[140px] opacity-100',
+                  )}
+                >
+                  <span className="block truncate leading-tight">
+                    {displayName}
+                  </span>
+                  <span className="block truncate text-xs leading-tight opacity-60">
+                    Pro plan
+                  </span>
                 </span>
-              </span>
-            </button>
-          </PopoverTrigger>
-        )}
+              </button>
+            </PopoverTrigger>
+          )
+
+          if (!isCollapsed) return trigger
+
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+              <TooltipContent side="right" sideOffset={8}>
+                {displayName}
+              </TooltipContent>
+            </Tooltip>
+          )
+        })()}
 
         <PopoverContent
           side="top"

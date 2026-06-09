@@ -23,19 +23,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { CoverLetterVariationList } from '@/components/cover-letter/CoverLetterVariationList'
-import { CoverLetterTokenPanel } from '@/components/cover-letter/CoverLetterTokenPanel'
+import { CoverLetterVariationList } from '@/components/cover-letter/variations/CoverLetterVariationList'
+import { CoverLetterTokenPanel } from '@/components/cover-letter/tokens/CoverLetterTokenPanel'
 import {
   COVER_LETTER_FALLBACK_LABEL,
   getCoverLetterTemplatePath,
   getNextCoverLetterPosition,
-} from '@/components/cover-letter/coverLetterVariationUtils'
+} from '@/components/cover-letter/variations/coverLetterVariationUtils'
 import {
   getCoverLetterTokenValidation,
   getCoverLetterUnresolvedTokensAcrossTexts,
-} from '@/components/cover-letter/tokenValidation'
-import { tiptapDocToText } from '@/components/cover-letter/tokenUtils'
-import { TokenTutorialTrigger } from '@/components/cover-letter/TokenTutorialTrigger'
+} from '@/components/cover-letter/tokens/tokenValidation'
+import { tiptapDocToText } from '@/components/cover-letter/tokens/tokenUtils'
+import { TokenTutorialTrigger } from '@/components/cover-letter/tokens/TokenTutorialTrigger'
 
 interface CoverLetterCardProps {
   templates: CoverLetterTemplate[]
