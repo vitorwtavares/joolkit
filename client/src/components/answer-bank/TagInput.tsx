@@ -99,7 +99,7 @@ export function TagInput({ tags, onChange, className }: TagInputProps) {
         ref={scrollRef}
         onScroll={updateEdges}
         style={{ maskImage, WebkitMaskImage: maskImage }}
-        className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 flex-1 [scrollbar-width:none] items-center gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden"
       >
         {tags.map((tag, i) => (
           <Tag key={tag} onRemove={() => removeTag(i)}>

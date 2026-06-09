@@ -407,7 +407,7 @@ function ApplicationTrackerInner() {
             <div
               ref={tabsScrollRef}
               role="tablist"
-              className="flex touch-pan-x items-center gap-0.5 overflow-x-auto overflow-y-hidden overscroll-x-auto overscroll-y-none ps-16 pe-[6px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex touch-pan-x [scrollbar-width:none] items-center gap-0.5 overflow-x-auto overflow-y-hidden overscroll-x-auto overscroll-y-none ps-16 pe-[6px] [&::-webkit-scrollbar]:hidden"
               style={{
                 maskImage: getTabsMaskImage(
                   tabsOverflowLeft,
