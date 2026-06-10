@@ -1,11 +1,23 @@
 import { Router } from 'express'
 import { getSupabase } from '../../middleware/auth'
 import { deleteUserStorage } from '../../utils/deleteUserStorage'
+import { cancelActiveSubscription } from '../../billing/cancel'
 
 const router = Router()
 
 router.delete('/', async (req, res) => {
   const userId = req.userId!
+
+  // Cancel any live Stripe subscription first so a deleted account stops being
+  // billed. Abort on failure — better to block deletion than orphan a paying
+  // subscription with no account to manage it.
+  try {
+    await cancelActiveSubscription(userId)
+  } catch (err) {
+    console.error('Failed to cancel subscription on account deletion', err)
+    res.status(500).json({ error: 'Could not cancel active subscription' })
+    return
+  }
 
   const { error } = await getSupabase().auth.admin.deleteUser(userId)
   if (error) {

@@ -39,12 +39,18 @@ function mockSupabase({ deleteError = null }: { deleteError?: unknown } = {}) {
     error: null,
   })
   const remove = vi.fn().mockResolvedValue({ data: [], error: null })
-  const from = vi.fn().mockReturnValue({ list, remove })
+  const storageFrom = vi.fn().mockReturnValue({ list, remove })
+  // DB lookup used by cancelActiveSubscription — default to no subscription.
+  const maybeSingle = vi.fn().mockResolvedValue({ data: null })
+  const eq = vi.fn().mockReturnValue({ maybeSingle })
+  const select = vi.fn().mockReturnValue({ eq })
+  const dbFrom = vi.fn().mockReturnValue({ select })
   mockGetSupabase.mockReturnValue({
     auth: { admin: { deleteUser } },
-    storage: { from },
+    storage: { from: storageFrom },
+    from: dbFrom,
   } as never)
-  return { deleteUser, from, list, remove }
+  return { deleteUser, from: storageFrom, list, remove }
 }
 
 describe('DELETE /api/account', () => {
