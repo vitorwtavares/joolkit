@@ -13,12 +13,23 @@ import applicationsRouter from './routes/applications'
 import skillsRouter from './routes/skills'
 import locationsRouter from './routes/locations'
 import trackerViewsRouter from './routes/trackerViews'
+import billingRouter from './routes/billing'
+import { handleStripeWebhook } from './routes/billing/webhook'
 
 const app = express()
 app.set('etag', false)
 app.set('trust proxy', 1)
 
 app.use(cors())
+
+// The Stripe webhook needs the raw body for signature verification, so it must
+// be registered before express.json() (and before auth — the signature is auth).
+app.post(
+  '/api/billing/webhook',
+  express.raw({ type: 'application/json' }),
+  handleStripeWebhook,
+)
+
 app.use(express.json())
 
 const generalLimiter = createRateLimitMiddleware({
@@ -42,5 +53,6 @@ app.use('/api/applications', applicationsRouter)
 app.use('/api/skills', skillsRouter)
 app.use('/api/locations', locationsRouter)
 app.use('/api/tracker/views', trackerViewsRouter)
+app.use('/api/billing', billingRouter)
 
 export default app
