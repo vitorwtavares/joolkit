@@ -40,7 +40,7 @@ router.post('/cover-letter/:variation', pdfLimiter, async (req, res) => {
   ] = await Promise.all([
     supabase
       .from('cover_letter_templates')
-      .select('content, position')
+      .select('content, archived_at')
       .eq('user_id', req.userId!)
       .eq('variation', variation)
       .maybeSingle(),
@@ -61,10 +61,10 @@ router.post('/cover-letter/:variation', pdfLimiter, async (req, res) => {
     return
   }
 
-  // Block exporting a variation hidden behind a downgrade (over the plan's
-  // visible window), even though its quota slot was already consumed upstream.
+  // Block exporting a variation archived behind a downgrade, even though its
+  // quota slot was already consumed upstream.
   const { plan, limits } = req.entitlement!
-  if (plan === 'free' && template.position > limits.coverLetterVariations) {
+  if (template.archived_at) {
     sendPlanLimit(
       res,
       'coverLetterVariations',

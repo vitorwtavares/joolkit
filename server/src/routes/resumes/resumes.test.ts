@@ -27,6 +27,7 @@ vi.mock('../../middleware/auth', async (importOriginal) => {
 
 import * as authModule from '../../middleware/auth'
 import resumesRouter from '.'
+import { PLAN_LIMITS, type Plan } from '../../billing/plans'
 
 const USER_ID = 'test-user-id'
 
@@ -50,10 +51,14 @@ function resume(overrides: Partial<ResumeRow> = {}): ResumeRow {
   }
 }
 
-function buildApp() {
+function buildApp(plan: Plan = 'pro') {
   const app = express()
   app.use(express.json())
   app.use(authModule.authMiddleware)
+  app.use((req, _res, next) => {
+    req.entitlement = { plan, limits: PLAN_LIMITS[plan], subscription: null }
+    next()
+  })
   app.use('/api/resumes', resumesRouter)
   return app
 }
@@ -61,10 +66,10 @@ function buildApp() {
 const mockGetSupabase = vi.mocked(authModule.getSupabase)
 
 function mockSelectChain(response: { data: unknown; error: unknown }) {
-  const { builder, mockEq, mockOrder } = createSelectBuilder(response)
+  const { builder, mockEq, mockIs, mockOrder } = createSelectBuilder(response)
   const mockFrom = vi.fn().mockReturnValue(builder)
   mockGetSupabase.mockReturnValue({ from: mockFrom } as never)
-  return { mockFrom, mockEq, mockOrder }
+  return { mockFrom, mockEq, mockIs, mockOrder }
 }
 
 function mockCreateChain({
@@ -255,6 +260,45 @@ describe('POST /api/resumes', () => {
 
     expect(res.status).toBe(500)
     expect(res.body).toEqual({ error: 'db error' })
+  })
+
+  it('blocks a Free user past the single allowed variation with plan_limit', async () => {
+    const existingSelect = createSelectBuilder({
+      data: [resume({ position: 1 })],
+      error: null,
+    })
+    mockGetSupabase.mockReturnValue({
+      from: vi.fn().mockReturnValue(existingSelect.builder),
+    } as never)
+
+    const res = await request(buildApp('free'))
+      .post('/api/resumes')
+      .send({ file_url: `${USER_ID}/resume.pdf` })
+
+    expect(res.status).toBe(403)
+    expect(res.body).toMatchObject({
+      code: 'plan_limit',
+      resource: 'resumeVariations',
+      plan: 'free',
+      limit: 1,
+    })
+  })
+})
+
+describe('GET /api/resumes visibility', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns only active variations (archived rows excluded)', async () => {
+    const { mockIs } = mockSelectChain({
+      data: [resume({ position: 1 })],
+      error: null,
+    })
+
+    await request(buildApp('free')).get('/api/resumes')
+
+    expect(mockIs).toHaveBeenCalledWith('archived_at', null)
   })
 })
 

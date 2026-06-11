@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import { authMiddleware } from './middleware/auth'
+import { entitlementMiddleware } from './middleware/entitlement'
 import { createRateLimitMiddleware } from './middleware/rateLimit'
 import healthRouter from './routes/health'
 import accountRouter from './routes/account'
@@ -45,11 +46,11 @@ app.use(generalLimiter)
 app.use(authMiddleware)
 app.use('/api/account', accountRouter)
 app.use('/api/profile', profileRouter)
-app.use('/api/resumes', resumesRouter)
-app.use('/api/cover-letters', coverLettersRouter)
-app.use('/api/export', exportRouter)
-app.use('/api/answers', answersRouter)
-app.use('/api/applications', applicationsRouter)
+app.use('/api/resumes', entitlementMiddleware, resumesRouter)
+app.use('/api/cover-letters', entitlementMiddleware, coverLettersRouter)
+app.use('/api/export', entitlementMiddleware, exportRouter)
+app.use('/api/answers', entitlementMiddleware, answersRouter)
+app.use('/api/applications', entitlementMiddleware, applicationsRouter)
 app.use('/api/skills', skillsRouter)
 app.use('/api/locations', locationsRouter)
 app.use('/api/tracker/views', trackerViewsRouter)

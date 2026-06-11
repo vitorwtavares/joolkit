@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { getSupabase } from '../../middleware/auth'
+import { sendPlanLimit } from '../../billing/limits'
 import { normalizeTokenKey } from '../../utils/tiptapToHtml'
 
 const router = Router()
@@ -56,22 +57,31 @@ function formatTokenKeysForInFilter(keys: string[]): string {
   return `(${keys.map((key) => `"${key.replace(/"/g, '\\"')}"`).join(',')})`
 }
 
-// GET /api/cover-letters/tokens
-router.get('/', async (req, res) => {
+const TOKEN_COLUMNS =
+  'id, user_id, token_key, token_value, position, created_at, updated_at'
+
+// Active tokens only. Tokens archived by a downgrade stay stored but hidden until
+// the user resubscribes.
+async function readVisibleTokens(userId: string) {
   const { data, error } = await getSupabase()
     .from('cover_letter_tokens')
-    .select(
-      'id, user_id, token_key, token_value, position, created_at, updated_at',
-    )
-    .eq('user_id', req.userId!)
+    .select(TOKEN_COLUMNS)
+    .eq('user_id', userId)
+    .is('archived_at', null)
     .order('position', { ascending: true })
+  return { rows: (data ?? []).map(mapCoverLetterToken), error }
+}
+
+// GET /api/cover-letters/tokens
+router.get('/', async (req, res) => {
+  const { rows, error } = await readVisibleTokens(req.userId!)
 
   if (error) {
     res.status(500).json({ error: error.message })
     return
   }
 
-  res.json((data ?? []).map(mapCoverLetterToken))
+  res.json(rows)
 })
 
 // PUT /api/cover-letters/tokens
@@ -80,19 +90,34 @@ router.put('/', async (req, res) => {
   const now = new Date().toISOString()
   const userId = req.userId!
   const supabase = getSupabase()
+  const { plan, limits } = req.entitlement!
+  const limit = limits.tokenDefinitions
+
+  // Free can define at most `limit` active tokens. Every delete below is scoped
+  // to active rows (archived_at IS NULL), so over-limit definitions frozen by a
+  // former downgrade are never destroyed and reappear on resubscribe.
+  if (limit !== null && tokens.length > limit) {
+    sendPlanLimit(res, 'tokenDefinitions', limit, plan)
+    return
+  }
 
   if (tokens.length === 0) {
     const { error: deleteError } = await supabase
       .from('cover_letter_tokens')
       .delete()
       .eq('user_id', userId)
-
+      .is('archived_at', null)
     if (deleteError) {
       res.status(500).json({ error: deleteError.message })
       return
     }
 
-    res.json([])
+    const { rows, error } = await readVisibleTokens(userId)
+    if (error) {
+      res.status(500).json({ error: error.message })
+      return
+    }
+    res.json(rows)
     return
   }
 
@@ -118,6 +143,7 @@ router.put('/', async (req, res) => {
     .from('cover_letter_tokens')
     .delete()
     .eq('user_id', userId)
+    .is('archived_at', null)
     .not('token_key', 'in', formatTokenKeysForInFilter(incomingKeys))
 
   if (deleteOrphansError) {
@@ -125,20 +151,13 @@ router.put('/', async (req, res) => {
     return
   }
 
-  const { data, error: fetchError } = await supabase
-    .from('cover_letter_tokens')
-    .select(
-      'id, user_id, token_key, token_value, position, created_at, updated_at',
-    )
-    .eq('user_id', userId)
-    .order('position', { ascending: true })
-
+  const { rows: visible, error: fetchError } = await readVisibleTokens(userId)
   if (fetchError) {
     res.status(500).json({ error: fetchError.message })
     return
   }
 
-  res.json((data ?? []).map(mapCoverLetterToken))
+  res.json(visible)
 })
 
 export default router

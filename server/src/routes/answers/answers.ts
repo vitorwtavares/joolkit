@@ -1,8 +1,10 @@
 import { Router } from 'express'
 import { getSupabase } from '../../middleware/auth'
+import { sendPlanLimit } from '../../billing/limits'
 
 const router = Router()
 
+// Absolute ceiling (the Pro cap), used to sanity-bound the reorder payload.
 const MAX_ANSWERS = 40
 const MAX_TAGS = 8
 const MAX_TAG_LENGTH = 24
@@ -24,11 +26,14 @@ function sanitizeTags(input: unknown): string[] {
   return result
 }
 
+// Returns only active answers. Answers archived by a downgrade stay stored but
+// hidden until the user resubscribes.
 router.get('/', async (req, res) => {
   const { data, error } = await getSupabase()
     .from('answers')
     .select('*')
     .eq('user_id', req.userId!)
+    .is('archived_at', null)
     .order('position', { ascending: true })
 
   if (error) return res.status(500).json({ error: error.message })
@@ -40,12 +45,12 @@ router.post('/', async (req, res) => {
     .from('answers')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', req.userId!)
+    .is('archived_at', null)
 
   if (countError) return res.status(500).json({ error: countError.message })
-  if ((count ?? 0) >= MAX_ANSWERS)
-    return res
-      .status(400)
-      .json({ error: `Maximum of ${MAX_ANSWERS} answers reached` })
+  const { plan, limits } = req.entitlement!
+  if ((count ?? 0) >= limits.answers)
+    return sendPlanLimit(res, 'answers', limits.answers, plan)
 
   const { question, short_answer, long_answer, preferred_variant, tags } =
     req.body
@@ -86,6 +91,7 @@ router.put('/reorder', async (req, res) => {
     .from('answers')
     .select('id')
     .eq('user_id', req.userId!)
+    .is('archived_at', null)
 
   if (fetchError) return res.status(500).json({ error: fetchError.message })
   const ownedIds = new Set(existing?.map((row) => row.id) ?? [])
@@ -112,6 +118,7 @@ router.put('/reorder', async (req, res) => {
     .from('answers')
     .select('*')
     .eq('user_id', req.userId!)
+    .is('archived_at', null)
     .order('position', { ascending: true })
 
   if (error) return res.status(500).json({ error: error.message })
@@ -160,6 +167,7 @@ router.delete('/:id', async (req, res) => {
     .from('answers')
     .select('*')
     .eq('user_id', req.userId!)
+    .is('archived_at', null)
     .order('position', { ascending: true })
 
   if (fetchError) return res.status(500).json({ error: fetchError.message })
