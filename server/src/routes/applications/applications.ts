@@ -1,15 +1,11 @@
 import { Router } from 'express'
 import { getSupabase } from '../../middleware/auth'
+import { sendPlanLimit } from '../../billing/limits'
 
 const router = Router()
 
 const JOINED_SELECT =
   '*, location:locations(id, name), skills:application_skills(skill:skills(id, name))'
-
-// Hard ceiling on applications per user. A flat safeguard that keeps datasets
-// within the bounds the client table and per-user queries are designed for; not
-// a billing tier (that limit, when it lands, replaces this constant).
-const MAX_APPLICATIONS = 500
 
 async function fetchApplicationWithJoins(id: string, userId: string) {
   return await getSupabase()
@@ -56,11 +52,14 @@ async function setApplicationSkills(
 
 // Returns all of the user's applications (newest first). Filtering, sorting,
 // and search are applied client-side on the loaded set — see the tracker page.
+// Returns only active applications. Rows archived by a downgrade stay in the DB
+// but are excluded until the user resubscribes.
 router.get('/', async (req, res) => {
   const { data, error } = await getSupabase()
     .from('applications')
     .select(JOINED_SELECT)
     .eq('user_id', req.userId!)
+    .is('archived_at', null)
     .order('created_at', { ascending: false })
 
   if (error) return res.status(500).json({ error: error.message })
@@ -77,6 +76,13 @@ router.get('/:id', async (req, res) => {
 
   if (error) return res.status(500).json({ error: error.message })
   if (!data) return res.status(404).json({ error: 'Not found' })
+
+  // Archived rows are hidden behind a downgrade — don't serve them directly.
+  const { plan, limits } = req.entitlement!
+  if ((data as { archived_at: string | null }).archived_at) {
+    return sendPlanLimit(res, 'applications', limits.applications, plan)
+  }
+
   return res.json(data)
 })
 
@@ -102,12 +108,12 @@ router.post('/', async (req, res) => {
     .from('applications')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', req.userId!)
+    .is('archived_at', null)
 
   if (countError) return res.status(500).json({ error: countError.message })
-  if ((count ?? 0) >= MAX_APPLICATIONS)
-    return res
-      .status(400)
-      .json({ error: `Maximum of ${MAX_APPLICATIONS} applications reached` })
+  const { plan, limits } = req.entitlement!
+  if ((count ?? 0) >= limits.applications)
+    return sendPlanLimit(res, 'applications', limits.applications, plan)
 
   if (location_id) {
     const locationError = await validateLocationOwnership(

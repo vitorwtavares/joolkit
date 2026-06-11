@@ -20,11 +20,16 @@ vi.mock('../../middleware/auth', async (importOriginal) => {
 
 import * as authModule from '../../middleware/auth'
 import answersRouter from '.'
+import { PLAN_LIMITS, type Plan } from '../../billing/plans'
 
-function buildApp() {
+function buildApp(plan: Plan = 'pro') {
   const app = express()
   app.use(express.json())
   app.use(authModule.authMiddleware)
+  app.use((req, _res, next) => {
+    req.entitlement = { plan, limits: PLAN_LIMITS[plan], subscription: null }
+    next()
+  })
   app.use('/api/answers', answersRouter)
   return app
 }
@@ -33,26 +38,32 @@ const mockGetSupabase = vi.mocked(authModule.getSupabase)
 
 type AnyFn = ReturnType<typeof vi.fn>
 
+// Active-set list/refetch: `.select().eq().is('archived_at', null).order()`.
 function selectEqOrderHandler(response: { data: unknown; error: unknown }) {
   const order = vi.fn().mockResolvedValue(response)
-  const eq = vi.fn().mockReturnValue({ order })
+  const is = vi.fn().mockReturnValue({ order })
+  const eq = vi.fn().mockReturnValue({ is })
   const select = vi.fn().mockReturnValue({ eq })
-  return { builder: { select }, select, eq, order }
+  return { builder: { select }, select, eq, is, order }
 }
 
+// Active-set head count: `.select(*, head).eq().is('archived_at', null)`.
 function selectEqCountHandler(response: {
   count: number | null
   error: unknown
 }) {
-  const eq = vi.fn().mockResolvedValue(response)
+  const is = vi.fn().mockResolvedValue(response)
+  const eq = vi.fn().mockReturnValue({ is })
   const select = vi.fn().mockReturnValue({ eq })
-  return { builder: { select }, select, eq }
+  return { builder: { select }, select, eq, is }
 }
 
+// Active-set id fetch: `.select('id').eq().is('archived_at', null)`.
 function selectEqHandler(response: { data: unknown; error: unknown }) {
-  const eq = vi.fn().mockResolvedValue(response)
+  const is = vi.fn().mockResolvedValue(response)
+  const eq = vi.fn().mockReturnValue({ is })
   const select = vi.fn().mockReturnValue({ eq })
-  return { builder: { select }, select, eq }
+  return { builder: { select }, select, eq, is }
 }
 
 function insertSelectSingleHandler(response: {
@@ -157,16 +168,55 @@ describe('POST /api/answers', () => {
     expect(payload.tags).toEqual(['React', 'Remote'])
   })
 
-  it('rejects with 400 when MAX_ANSWERS is reached', async () => {
+  it('blocks creation with a plan_limit error when the Pro cap is reached', async () => {
     const count = selectEqCountHandler({ count: 40, error: null })
     mockFromSequence([count])
 
-    const res = await request(buildApp())
+    const res = await request(buildApp('pro'))
       .post('/api/answers')
       .send({ short_answer: 'S' })
 
-    expect(res.status).toBe(400)
-    expect(res.body).toEqual({ error: 'Maximum of 40 answers reached' })
+    expect(res.status).toBe(403)
+    expect(res.body).toMatchObject({
+      code: 'plan_limit',
+      resource: 'answers',
+      plan: 'pro',
+      limit: 40,
+    })
+  })
+
+  it('blocks a Free user at the Free answers cap', async () => {
+    const count = selectEqCountHandler({ count: 4, error: null })
+    mockFromSequence([count])
+
+    const res = await request(buildApp('free'))
+      .post('/api/answers')
+      .send({ short_answer: 'S' })
+
+    expect(res.status).toBe(403)
+    expect(res.body).toMatchObject({
+      code: 'plan_limit',
+      resource: 'answers',
+      plan: 'free',
+      limit: 4,
+    })
+  })
+})
+
+describe('GET /api/answers', () => {
+  it('returns only active answers (archived rows excluded)', async () => {
+    const active = [
+      { ...baseAnswer, id: 'a1', position: 1 },
+      { ...baseAnswer, id: 'a2', position: 2 },
+    ]
+    const list = selectEqOrderHandler({ data: active, error: null })
+    mockFromSequence([list])
+
+    const res = await request(buildApp('free')).get('/api/answers')
+
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual(active)
+    expect(list.is).toHaveBeenCalledWith('archived_at', null)
   })
 })
 

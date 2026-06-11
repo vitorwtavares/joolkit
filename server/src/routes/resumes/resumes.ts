@@ -1,7 +1,6 @@
 import { Router } from 'express'
 import { getSupabase } from '../../middleware/auth'
-
-const MAX_RESUME_VARIATIONS = 10
+import { sendPlanLimit } from '../../billing/limits'
 
 const router = Router()
 
@@ -25,11 +24,14 @@ function isUserStoragePath(fileUrl: string, userId: string): boolean {
   return fileUrl.startsWith(`${userId}/`)
 }
 
+// Active variations only. Variations archived by a downgrade stay stored but are
+// excluded from listing, counting, and compaction until the user resubscribes.
 async function fetchResumeVariations(userId: string) {
   return getSupabase()
     .from('resume_variations')
     .select('*')
     .eq('user_id', userId)
+    .is('archived_at', null)
     .order('position', { ascending: true })
 }
 
@@ -91,9 +93,10 @@ router.post('/', async (req, res) => {
     return
   }
 
+  const { plan, limits } = req.entitlement!
   const position = (resumes?.length ?? 0) + 1
-  if (position > MAX_RESUME_VARIATIONS) {
-    res.status(400).json({ error: 'maximum resume variations reached' })
+  if (position > limits.resumeVariations) {
+    sendPlanLimit(res, 'resumeVariations', limits.resumeVariations, plan)
     return
   }
 
