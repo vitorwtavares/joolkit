@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { getBrowser } from '../../utils/browser'
 import { getSupabase } from '../../middleware/auth'
 import { createRateLimitMiddleware } from '../../middleware/rateLimit'
+import { sendPlanLimit } from '../../billing/limits'
 import {
   normalizeTokenKey,
   tiptapToHtml,
@@ -15,9 +16,11 @@ const PDF_EXPORT_WINDOW_MS = 24 * 60 * 60 * 1000
 const pdfLimiter = createRateLimitMiddleware({
   keyPrefix: 'pdf-export',
   windowMs: PDF_EXPORT_WINDOW_MS,
-  limit: 25,
+  // Per-plan daily quota, resolved from the entitlement attached upstream.
+  limit: (req) => req.entitlement!.limits.pdfExportsPerDay,
   message:
-    'PDF export limit reached. You can export up to 25 cover letters every 24 hours.',
+    'Daily PDF export limit reached for your plan. Try again tomorrow or upgrade for a higher limit.',
+  code: 'plan_limit',
   keyGenerator: (req) => {
     const userId = req.userId
     if (!userId) throw new Error('pdfLimiter reached before authMiddleware')
@@ -37,7 +40,7 @@ router.post('/cover-letter/:variation', pdfLimiter, async (req, res) => {
   ] = await Promise.all([
     supabase
       .from('cover_letter_templates')
-      .select('content')
+      .select('content, position')
       .eq('user_id', req.userId!)
       .eq('variation', variation)
       .maybeSingle(),
@@ -55,6 +58,19 @@ router.post('/cover-letter/:variation', pdfLimiter, async (req, res) => {
 
   if (!template?.content) {
     res.status(404).json({ error: 'cover letter content not found' })
+    return
+  }
+
+  // Block exporting a variation hidden behind a downgrade (over the plan's
+  // visible window), even though its quota slot was already consumed upstream.
+  const { plan, limits } = req.entitlement!
+  if (plan === 'free' && template.position > limits.coverLetterVariations) {
+    sendPlanLimit(
+      res,
+      'coverLetterVariations',
+      limits.coverLetterVariations,
+      plan,
+    )
     return
   }
 
