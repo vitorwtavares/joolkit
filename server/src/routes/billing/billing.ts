@@ -3,6 +3,7 @@ import { getSupabase } from '../../middleware/auth'
 import { getStripe } from '../../billing/stripe'
 import { getOrCreateCustomer } from '../../billing/customer'
 import { getUserEntitlement } from '../../billing/entitlement'
+import { getUsageBreakdown } from '../../billing/usage'
 
 const router = Router()
 
@@ -15,14 +16,20 @@ function priceForInterval(interval: unknown): string | undefined {
   return undefined
 }
 
-// GET /api/billing/status — plan, limits, and a safe subscription summary.
-// Usage + hidden counts are added in the enforcement stage.
+// GET /api/billing/status — plan, limits, per-resource active usage + hidden
+// (archived) counts, and a safe subscription summary.
 router.get('/status', async (req, res) => {
-  const ent = await getUserEntitlement(req.userId!)
+  const [ent, usage] = await Promise.all([
+    getUserEntitlement(req.userId!),
+    getUsageBreakdown(req.userId!),
+  ])
   const sub = ent.subscription
+
   res.json({
     plan: ent.plan,
     limits: ent.limits,
+    usage: usage.active,
+    hidden: usage.archived,
     subscription: sub
       ? {
           status: sub.status,
