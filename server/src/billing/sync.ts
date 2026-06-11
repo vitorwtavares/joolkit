@@ -1,10 +1,24 @@
 import { getSupabase } from '../middleware/auth'
 import { getStripe } from './stripe'
+import { isProEntitled, type SubscriptionRow } from './entitlement'
+import { applyPlanTransition } from './archive'
 import type {
   StripePriceLike,
   StripeSubscriptionLike,
   StripeCustomerLike,
 } from './types'
+
+// Entitlement only reads status + current_period_end, so a partial row is enough
+// to decide Pro/Free on either side of a sync.
+function proFrom(
+  status: string | null,
+  currentPeriodEnd: string | null,
+): boolean {
+  return isProEntitled({
+    status,
+    current_period_end: currentPeriodEnd,
+  } as SubscriptionRow)
+}
 
 // Our two prices are month/1 and month/3; anything else maps to null.
 function billingIntervalFrom(price: StripePriceLike): string | null {
@@ -57,6 +71,21 @@ export async function syncSubscriptionFromStripe(
   const price = item?.price
   const isActive =
     subscription.status === 'active' || subscription.status === 'trialing'
+  const currentPeriodEnd = item?.current_period_end
+    ? new Date(item.current_period_end * 1000).toISOString()
+    : null
+
+  // Capture the prior entitlement before we overwrite it, so we can detect a
+  // Pro↔Free crossing and archive/restore data accordingly.
+  const { data: prior } = await getSupabase()
+    .from('subscriptions')
+    .select('status, current_period_end')
+    .eq('user_id', userId)
+    .maybeSingle<{ status: string | null; current_period_end: string | null }>()
+  const wasPro = proFrom(
+    prior?.status ?? null,
+    prior?.current_period_end ?? null,
+  )
 
   const { error } = await getSupabase()
     .from('subscriptions')
@@ -70,9 +99,7 @@ export async function syncSubscriptionFromStripe(
         status: subscription.status,
         billing_interval: price ? billingIntervalFrom(price) : null,
         currency: subscription.currency,
-        current_period_end: item?.current_period_end
-          ? new Date(item.current_period_end * 1000).toISOString()
-          : null,
+        current_period_end: currentPeriodEnd,
         cancel_at_period_end: subscription.cancel_at_period_end,
         updated_at: new Date().toISOString(),
       },
@@ -83,4 +110,10 @@ export async function syncSubscriptionFromStripe(
     console.error('Failed to sync subscription', error)
     throw new Error(error.message)
   }
+
+  // Archive overflow on downgrade / restore it on resubscribe. Runs after the
+  // subscription write so a failure here (which throws and 500s the webhook for
+  // Stripe to retry) can't leave the row unwritten; both paths are idempotent.
+  const isPro = proFrom(subscription.status, currentPeriodEnd)
+  await applyPlanTransition(userId, wasPro, isPro)
 }
