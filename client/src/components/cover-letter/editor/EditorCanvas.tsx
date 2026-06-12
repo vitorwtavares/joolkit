@@ -1,12 +1,14 @@
 import { Loader2 } from 'lucide-react'
 import { EditorContent } from '@tiptap/react'
 import type { Editor } from '@tiptap/react'
+import type { ReactNode } from 'react'
 
 interface EditorCanvasProps {
   isLoading: boolean
   editor: Editor | null
   previewEditor: Editor | null
   isPreview: boolean
+  emptyState?: ReactNode
 }
 
 export function EditorCanvas({
@@ -14,11 +16,20 @@ export function EditorCanvas({
   editor,
   previewEditor,
   isPreview,
+  emptyState,
 }: EditorCanvasProps) {
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (emptyState) {
+    return (
+      <div className="editor-canvas flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-6">
+        {emptyState}
       </div>
     )
   }

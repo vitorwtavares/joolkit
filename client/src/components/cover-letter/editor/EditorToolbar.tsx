@@ -140,6 +140,7 @@ interface EditorToolbarProps {
   isPreview: boolean
   onTogglePreview: () => void
   onCopy: () => void
+  disabled?: boolean
 }
 
 export function EditorToolbar({
@@ -147,6 +148,7 @@ export function EditorToolbar({
   isPreview,
   onTogglePreview,
   onCopy,
+  disabled = false,
 }: EditorToolbarProps) {
   const state = useEditorState({
     editor,
@@ -205,11 +207,13 @@ export function EditorToolbar({
   const toolToggleClass =
     'size-7 min-w-7 rounded-md text-muted-foreground aria-pressed:bg-surface-selected aria-pressed:text-foreground'
 
+  const controlsDisabled = isPreview || disabled
+
   return (
     <div className="flex flex-1 items-center gap-0.5 px-3.5 py-2">
       <Select
         value={activeFamily}
-        disabled={isPreview}
+        disabled={controlsDisabled}
         onValueChange={(v) =>
           editor
             .chain()
@@ -242,7 +246,7 @@ export function EditorToolbar({
       <FontSizeInput
         editor={editor}
         activeSize={activeSize}
-        disabled={isPreview}
+        disabled={controlsDisabled}
       />
 
       <div className="mx-1.5 h-[18px] w-px bg-border-subtle" />
@@ -250,7 +254,7 @@ export function EditorToolbar({
       <Toggle
         size="sm"
         className={toolToggleClass}
-        disabled={isPreview}
+        disabled={controlsDisabled}
         pressed={isBold}
         onPressedChange={() => editor.chain().focus().toggleBold().run()}
       >
@@ -259,7 +263,7 @@ export function EditorToolbar({
       <Toggle
         size="sm"
         className={toolToggleClass}
-        disabled={isPreview}
+        disabled={controlsDisabled}
         pressed={isItalic}
         onPressedChange={() => editor.chain().focus().toggleItalic().run()}
       >
@@ -268,7 +272,7 @@ export function EditorToolbar({
       <Toggle
         size="sm"
         className={toolToggleClass}
-        disabled={isPreview}
+        disabled={controlsDisabled}
         pressed={isUnderline}
         onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
       >
@@ -280,7 +284,7 @@ export function EditorToolbar({
       <Toggle
         size="sm"
         className={toolToggleClass}
-        disabled={isPreview}
+        disabled={controlsDisabled}
         pressed={isLeft}
         onPressedChange={() =>
           editor.chain().focus().setTextAlign('left').run()
@@ -291,7 +295,7 @@ export function EditorToolbar({
       <Toggle
         size="sm"
         className={toolToggleClass}
-        disabled={isPreview}
+        disabled={controlsDisabled}
         pressed={isCenter}
         onPressedChange={() =>
           editor.chain().focus().setTextAlign('center').run()
@@ -302,7 +306,7 @@ export function EditorToolbar({
       <Toggle
         size="sm"
         className={toolToggleClass}
-        disabled={isPreview}
+        disabled={controlsDisabled}
         pressed={isRight}
         onPressedChange={() =>
           editor.chain().focus().setTextAlign('right').run()
@@ -313,7 +317,7 @@ export function EditorToolbar({
       <Toggle
         size="sm"
         className={toolToggleClass}
-        disabled={isPreview}
+        disabled={controlsDisabled}
         pressed={isJustify}
         onPressedChange={() =>
           editor.chain().focus().setTextAlign('justify').run()
@@ -327,6 +331,7 @@ export function EditorToolbar({
       <Toggle
         size="sm"
         className="h-7 gap-1.5 rounded-md px-2 text-muted-foreground aria-pressed:bg-surface-selected aria-pressed:text-foreground"
+        disabled={disabled}
         pressed={isPreview}
         onPressedChange={onTogglePreview}
         aria-label="Toggle export preview"
@@ -341,9 +346,10 @@ export function EditorToolbar({
       <button
         type="button"
         onClick={onCopy}
+        disabled={disabled}
         aria-label="Copy to clipboard"
         title="Copy to clipboard"
-        className="flex h-7 items-center gap-1.5 rounded-md px-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="flex h-7 items-center gap-1.5 rounded-md px-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
       >
         <Clipboard className="size-3.5" />
         <span className="text-sm">Copy</span>
