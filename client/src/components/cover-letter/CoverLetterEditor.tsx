@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/auth'
 import { useCoverLetters } from '@/api/hooks/useCoverLetters'
 import { useCoverLetterTokens } from '@/api/hooks/useCoverLetterTokens'
+import { useResourceLimit } from '@/components/billing/useResourceLimit'
 import { useTokenState } from '@/hooks/useTokenState'
 import { EditorToolbar } from './editor/EditorToolbar'
 import { EditorSidePanel } from './editor/EditorSidePanel'
 import { EditorCanvas } from './editor/EditorCanvas'
 import { EditorStatusBar } from './editor/EditorStatusBar'
 import { CoverLetterToolbar } from './editor/CoverLetterToolbar'
+import { CoverLetterEditorEmptyState } from './editor/CoverLetterEditorEmptyState'
 import { useEditorCore } from './editor/useEditorCore'
 import { useVariationActions } from './editor/useVariationActions'
 import { CoverLetterConfirmDialog } from './dialogs/CoverLetterConfirmDialog'
@@ -42,6 +44,11 @@ export function CoverLetterEditor() {
     () => [...templates].sort((a, b) => a.position - b.position),
     [templates],
   )
+  const coverUsage = useResourceLimit(
+    'coverLetterVariations',
+    sortedTemplates.length,
+  )
+  const hasVariations = sortedTemplates.length > 0
   const template =
     sortedTemplates.find((t) => t.variation === requestedVariation) ??
     sortedTemplates[0]
@@ -115,6 +122,8 @@ export function CoverLetterEditor() {
     isEditorEmpty,
     handleRestore,
   })
+
+  const creatingFirstVariation = uploadingVariation === 'new' && !hasVariations
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -201,6 +210,7 @@ export function CoverLetterEditor() {
                 isPreview={isPreview}
                 onTogglePreview={() => setIsPreview((prev) => !prev)}
                 onCopy={() => void handleCopyToClipboard()}
+                disabled={!hasVariations}
               />
               {isDirty && (
                 <span className="mr-3 text-[14px] text-destructive/60">
@@ -224,12 +234,24 @@ export function CoverLetterEditor() {
                 isLoading={
                   templatesLoading ||
                   isRestoring ||
-                  uploadingVariation !== null ||
+                  (uploadingVariation !== null && hasVariations) ||
                   removingVariation !== null
                 }
                 editor={editor}
                 previewEditor={previewEditor}
                 isPreview={isPreview}
+                emptyState={
+                  !templatesLoading && !hasVariations ? (
+                    <CoverLetterEditorEmptyState
+                      busy={creatingFirstVariation}
+                      limit={coverUsage.limit ?? undefined}
+                      onUpload={() => openUploader(null)}
+                      onStartFromScratch={() =>
+                        handleRequestCreateEmpty({ focusEditor: true })
+                      }
+                    />
+                  ) : undefined
+                }
               />
             </div>
           </div>
@@ -246,7 +268,7 @@ export function CoverLetterEditor() {
           onVariationRename={handleVariationRename}
           onRequestUpload={() => openUploader(template ? variation : null)}
           onRequestAddVariation={() => openUploader(null)}
-          onRequestCreateEmpty={handleRequestCreateEmpty}
+          onRequestCreateEmpty={() => handleRequestCreateEmpty()}
           onRequestRemove={requestRemove}
           onRequestRestore={requestRestore}
           onDownload={handleDownload}
