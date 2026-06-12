@@ -1,7 +1,8 @@
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 type SegmentedOption<T extends string> = {
-  label: string
+  label: ReactNode
   value: T
 }
 
