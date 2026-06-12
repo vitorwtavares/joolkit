@@ -26,7 +26,8 @@
 
     /* Path aliases */
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@joolkit/billing/plans": ["../server/src/billing/plans.ts"]
     }
   },
   "include": ["src"]

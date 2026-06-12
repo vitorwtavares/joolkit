@@ -1,11 +1,12 @@
 import { Router } from 'express'
 import { getSupabase } from '../../middleware/auth'
 import { sendPlanLimit } from '../../billing/limits'
+import { PLAN_LIMITS } from '../../billing/plans'
 
 const router = Router()
 
-// Absolute ceiling (the Pro cap), used to sanity-bound the reorder payload.
-const MAX_ANSWERS = 40
+// Pro cap — sanity-bounds the reorder payload.
+const MAX_ANSWERS = PLAN_LIMITS.pro.answers
 const MAX_TAGS = 8
 const MAX_TAG_LENGTH = 24
 

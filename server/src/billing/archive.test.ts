@@ -57,9 +57,9 @@ describe('archiveOverflow', () => {
 
     await archiveOverflow('u1')
 
-    // Free keeps 2 token definitions → t3,t4,t5 are frozen.
+    // Free keeps 4 token definitions → t5 is frozen.
     const tokens = archived.find((a) => a.table === 'cover_letter_tokens')
-    expect(tokens?.ids).toEqual(['t3', 't4', 't5'])
+    expect(tokens?.ids).toEqual(['t5'])
     expect(tokens?.archived_at).toEqual(expect.any(String))
   })
 
@@ -95,14 +95,16 @@ describe('unarchiveAll', () => {
 describe('applyPlanTransition', () => {
   it('archives overflow on a Pro→Free downgrade', async () => {
     const { archived, unarchived } = mockSupabase({
-      cover_letter_tokens: ['t1', 't2', 't3'].map((id) => ({ id })),
+      cover_letter_tokens: ['t1', 't2', 't3', 't4', 't5'].map((id) => ({
+        id,
+      })),
     })
 
     await applyPlanTransition('u1', true, false)
 
     expect(
       archived.find((a) => a.table === 'cover_letter_tokens')?.ids,
-    ).toEqual(['t3'])
+    ).toEqual(['t5'])
     expect(unarchived).toHaveLength(0)
   })
 

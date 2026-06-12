@@ -169,7 +169,7 @@ describe('POST /api/answers', () => {
   })
 
   it('blocks creation with a plan_limit error when the Pro cap is reached', async () => {
-    const count = selectEqCountHandler({ count: 40, error: null })
+    const count = selectEqCountHandler({ count: 50, error: null })
     mockFromSequence([count])
 
     const res = await request(buildApp('pro'))
@@ -181,7 +181,7 @@ describe('POST /api/answers', () => {
       code: 'plan_limit',
       resource: 'answers',
       plan: 'pro',
-      limit: 40,
+      limit: 50,
     })
   })
 
@@ -225,7 +225,7 @@ describe('PUT /api/answers/reorder', () => {
     const cases = [
       { orderedIds: 'nope' },
       { orderedIds: [] },
-      { orderedIds: Array.from({ length: 41 }, (_, i) => `id${i}`) },
+      { orderedIds: Array.from({ length: 51 }, (_, i) => `id${i}`) },
       { orderedIds: ['a', ''] },
     ]
     for (const body of cases) {
