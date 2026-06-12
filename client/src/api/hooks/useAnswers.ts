@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api'
+import { invalidateBillingStatus } from './useBilling'
 
 export interface Answer {
   id: string
@@ -34,6 +35,7 @@ export function useCreateAnswer() {
       queryClient.setQueryData<Answer[]>(['answers'], (prev) =>
         prev ? [...prev, data] : [data],
       )
+      void invalidateBillingStatus(queryClient)
     },
   })
 }
@@ -112,6 +114,7 @@ export function useDeleteAnswer() {
     mutationFn: (id: string) => api.delete<Answer[]>(`/api/answers/${id}`),
     onSuccess: (data) => {
       queryClient.setQueryData<Answer[]>(['answers'], data)
+      void invalidateBillingStatus(queryClient)
     },
   })
 }

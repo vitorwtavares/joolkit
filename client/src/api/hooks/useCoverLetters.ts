@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api'
-
-export const COVER_LETTER_VARIATION_LIMIT = 10
+import { invalidateBillingStatus } from './useBilling'
 
 export interface CoverLetterTemplate {
   id: string
@@ -32,12 +31,14 @@ export function useDeleteCoverLetterTemplate() {
     onSuccess: (data, variation) => {
       if (Array.isArray(data)) {
         queryClient.setQueryData<CoverLetterTemplate[]>(['cover-letters'], data)
+        void invalidateBillingStatus(queryClient)
         return
       }
       queryClient.setQueryData<CoverLetterTemplate[]>(
         ['cover-letters'],
         (prev) => prev?.filter((t) => t.variation !== variation) ?? [],
       )
+      void invalidateBillingStatus(queryClient)
     },
   })
 }
@@ -91,6 +92,7 @@ export function useRestoreCoverLetter() {
 }
 
 export function useExportCoverLetterPDF() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (variation: string) => {
       const blob = await api.postBlob(
@@ -102,6 +104,9 @@ export function useExportCoverLetterPDF() {
       a.download = 'cover-letter.pdf'
       a.click()
       setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000)
+    },
+    onSettled: () => {
+      void invalidateBillingStatus(queryClient)
     },
   })
 }
@@ -128,6 +133,7 @@ export function useCreateCoverLetterVariation() {
           return [...prev, data].sort((a, b) => a.position - b.position)
         },
       )
+      void invalidateBillingStatus(queryClient)
     },
   })
 }

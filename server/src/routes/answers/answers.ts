@@ -1,13 +1,26 @@
 import { Router } from 'express'
 import { getSupabase } from '../../middleware/auth'
 import { sendPlanLimit } from '../../billing/limits'
+import { PLAN_LIMITS } from '../../billing/plans'
 
 const router = Router()
 
-// Absolute ceiling (the Pro cap), used to sanity-bound the reorder payload.
-const MAX_ANSWERS = 40
+// Pro cap — sanity-bounds the reorder payload.
+const MAX_ANSWERS = PLAN_LIMITS.pro.answers
 const MAX_TAGS = 8
 const MAX_TAG_LENGTH = 24
+const MAX_SHORT_ANSWER_LENGTH = 2000
+const MAX_LONG_ANSWER_LENGTH = 5000
+
+function sanitizeAnswerText(
+  value: unknown,
+  maxLength: number,
+): string | null | undefined {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  if (typeof value !== 'string') return ''
+  return value.slice(0, maxLength)
+}
 
 function sanitizeTags(input: unknown): string[] {
   if (!Array.isArray(input)) return []
@@ -54,14 +67,19 @@ router.post('/', async (req, res) => {
 
   const { question, short_answer, long_answer, preferred_variant, tags } =
     req.body
+  const sanitizedShort = sanitizeAnswerText(
+    short_answer,
+    MAX_SHORT_ANSWER_LENGTH,
+  )
+  const sanitizedLong = sanitizeAnswerText(long_answer, MAX_LONG_ANSWER_LENGTH)
 
   const { data, error } = await getSupabase()
     .from('answers')
     .insert({
       user_id: req.userId!,
       question: question ?? '',
-      short_answer: short_answer ?? '',
-      long_answer: long_answer ?? null,
+      short_answer: sanitizedShort ?? '',
+      long_answer: sanitizedLong ?? null,
       preferred_variant: preferred_variant ?? 'short',
       tags: sanitizeTags(tags),
       position: (count ?? 0) + 1,
@@ -132,8 +150,13 @@ router.put('/:id', async (req, res) => {
     updated_at: new Date().toISOString(),
   }
   if (question !== undefined) update.question = question
-  if (short_answer !== undefined) update.short_answer = short_answer
-  if (long_answer !== undefined) update.long_answer = long_answer
+  const sanitizedShort = sanitizeAnswerText(
+    short_answer,
+    MAX_SHORT_ANSWER_LENGTH,
+  )
+  const sanitizedLong = sanitizeAnswerText(long_answer, MAX_LONG_ANSWER_LENGTH)
+  if (sanitizedShort !== undefined) update.short_answer = sanitizedShort
+  if (sanitizedLong !== undefined) update.long_answer = sanitizedLong
   if (preferred_variant !== undefined)
     update.preferred_variant = preferred_variant
   if (tags !== undefined) update.tags = sanitizeTags(tags)

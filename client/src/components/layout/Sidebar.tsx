@@ -8,13 +8,15 @@ import {
   LogOut,
   FileText,
   Settings,
+  Sparkles,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getInitials } from '@/utils/getInitials'
 import { useAuth } from '@/context/auth'
-import { SettingsModal } from '@/components/settings/SettingsModal'
+import { useBillingStatus } from '@/api/hooks/useBilling'
+import { useUpgrade } from '@/components/billing/UpgradeProvider'
 import {
   Popover,
   PopoverContent,
@@ -53,8 +55,9 @@ export default function Sidebar() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const { data: billing } = useBillingStatus()
+  const { openUpgrade } = useUpgrade()
   const [popoverOpen, setPopoverOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
       return (
@@ -70,6 +73,8 @@ export default function Sidebar() {
   const email = user?.email ?? ''
   const displayName = user?.user_metadata?.full_name || email
   const initial = displayName ? getInitials(displayName) : '?'
+  const isPro = billing?.plan === 'pro'
+  const planLabel = billing ? (isPro ? 'Pro plan' : 'Free plan') : ''
   const labelClassName = cn(
     'min-w-0 overflow-hidden whitespace-nowrap transition-[max-width,opacity,transform] duration-200 ease-out',
     isCollapsed
@@ -269,7 +274,7 @@ export default function Sidebar() {
                     {displayName}
                   </span>
                   <span className="block truncate text-xs leading-tight opacity-60">
-                    Pro plan
+                    {planLabel}
                   </span>
                 </span>
               </button>
@@ -305,10 +310,23 @@ export default function Sidebar() {
 
           <Separator />
 
+          {billing && !isPro && (
+            <button
+              onClick={() => {
+                setPopoverOpen(false)
+                openUpgrade()
+              }}
+              className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-sm font-medium text-brand transition-colors outline-none hover:bg-sidebar-hover focus-visible:bg-sidebar-hover focus-visible:outline-none"
+            >
+              <Sparkles size={14} />
+              Upgrade to Pro
+            </button>
+          )}
+
           <button
             onClick={() => {
               setPopoverOpen(false)
-              setSettingsOpen(true)
+              navigate('/settings/account')
             }}
             className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground transition-colors outline-none hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:bg-sidebar-hover focus-visible:text-sidebar-foreground focus-visible:outline-none"
           >
@@ -331,8 +349,6 @@ export default function Sidebar() {
           </button>
         </PopoverContent>
       </Popover>
-
-      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
     </aside>
   )
 }

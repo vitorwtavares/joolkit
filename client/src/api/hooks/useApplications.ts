@@ -5,6 +5,7 @@ import {
   type QueryClient,
 } from '@tanstack/react-query'
 import { api } from '../api'
+import { invalidateBillingStatus } from './useBilling'
 import type { Skill } from './useSkills'
 import type { Location } from './useLocations'
 import type { FilterConfig } from './useTrackerViews'
@@ -261,6 +262,7 @@ export function useCreateApplication() {
           old?.map((a) => (a.id === ctx?.tempId ? newApp : a)) ?? [newApp],
       )
       queryClient.setQueryData(['applications', 'detail', newApp.id], newApp)
+      void invalidateBillingStatus(queryClient)
     },
   })
 }
@@ -311,6 +313,7 @@ export function useDeleteApplication() {
         old?.filter((a) => a.id !== id),
       )
       queryClient.removeQueries({ queryKey: ['applications', 'detail', id] })
+      void invalidateBillingStatus(queryClient)
     },
   })
 }

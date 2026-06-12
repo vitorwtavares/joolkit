@@ -8,6 +8,10 @@ import {
 } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { Answer } from '@/api/hooks/useAnswers'
+import {
+  DEFAULT_ANSWER_MAX_LENGTH,
+  DETAILED_ANSWER_MAX_LENGTH,
+} from '@/utils/answerLimits'
 import { EditAnswerModal } from './EditAnswerModal'
 
 const mockCreate = vi.fn()
@@ -18,6 +22,13 @@ vi.mock('@/api/hooks/useAnswers', () => ({
   useCreateAnswer: () => ({ mutateAsync: mockCreate }),
   useUpdateAnswer: () => ({ mutateAsync: mockUpdate }),
   useDeleteAnswer: () => ({ mutateAsync: mockDelete }),
+}))
+
+vi.mock('@/components/billing/UpgradeProvider', () => ({
+  useUpgrade: () => ({
+    openUpgrade: vi.fn(),
+    handlePlanLimitError: () => false,
+  }),
 }))
 
 function makeAnswer(overrides: Partial<Answer> = {}): Answer {
@@ -116,6 +127,17 @@ describe('EditAnswerModal', () => {
       tags: [],
     })
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce())
+  })
+
+  it('sets maxLength on answer textareas', () => {
+    renderModal({ answer: null })
+
+    expect(
+      screen.getByPlaceholderText(/write your default answer/i),
+    ).toHaveAttribute('maxLength', String(DEFAULT_ANSWER_MAX_LENGTH))
+    expect(
+      screen.getByPlaceholderText(/more detailed version/i),
+    ).toHaveAttribute('maxLength', String(DETAILED_ANSWER_MAX_LENGTH))
   })
 
   it('opens the discard-changes dialog when closing while dirty and closes only after Discard', async () => {

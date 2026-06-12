@@ -18,6 +18,9 @@ import {
   useUpdateResumeFile,
   useUpdateResumeLabel,
 } from '@/api/hooks/useResumes'
+import { useBillingStatus } from '@/api/hooks/useBilling'
+import { useUpgrade } from '@/components/billing/UpgradeProvider'
+import { HiddenDataNotice } from '@/components/billing/HiddenDataNotice'
 import { CopyButton } from '@/components/quick-copy/CopyButton'
 import { ResumeCard } from '@/components/quick-copy/ResumeCard'
 import { CoverLetterCard } from '@/components/quick-copy/CoverLetterCard'
@@ -96,6 +99,8 @@ const linkFields: {
 
 export default function QuickCopy() {
   const { user } = useAuth()
+  const { data: billing } = useBillingStatus()
+  const { handlePlanLimitError } = useUpgrade()
   const { data: profile, isLoading, isFetching, dataUpdatedAt } = useProfile()
   const { mutate: updateProfile } = useUpdateProfile()
   const { data: resumes = [], isLoading: resumesLoading } = useResumes()
@@ -113,6 +118,20 @@ export default function QuickCopy() {
 
   const [sessionStart] = useState(() => Date.now())
   const locked = isFetching && !!profile && dataUpdatedAt < sessionStart
+
+  // Both file resources share the Files section, so collapse their hidden-data
+  // notices into one banner rather than stacking two near-identical rows.
+  const resumeHidden = billing?.hidden.resumeVariations ?? 0
+  const coverHidden = billing?.hidden.coverLetterVariations ?? 0
+  const filesHidden = resumeHidden + coverHidden
+  const filesHiddenParts = [
+    resumeHidden > 0 &&
+      `${resumeHidden} resume variation${resumeHidden === 1 ? '' : 's'}`,
+    coverHidden > 0 &&
+      `${coverHidden} cover-letter variation${coverHidden === 1 ? '' : 's'}`,
+  ]
+    .filter(Boolean)
+    .join(' and ')
 
   function handleProfileSave(
     field: keyof UpdateProfilePayload,
@@ -145,7 +164,7 @@ export default function QuickCopy() {
   if (!profile) return null
 
   return (
-    <div className="flex-1 overflow-y-auto p-16 pb-6">
+    <div className="flex-1 overflow-y-auto p-16 pb-6 max-[1599px]:py-12">
       <PageHeader
         title="Quick copy"
         subtitle="Click any filled field to copy. Click the pencil to edit."
@@ -195,6 +214,20 @@ export default function QuickCopy() {
         <h2 className="mb-3 text-[12px] font-medium tracking-[0.07em] text-text-faint uppercase">
           Files
         </h2>
+        {filesHidden > 0 && (
+          <HiddenDataNotice
+            className="mb-3"
+            message={
+              <>
+                Your Pro files are safely saved — {filesHiddenParts}{' '}
+                {filesHidden === 1 ? 'is' : 'are'} hidden on Free.{' '}
+                <span className="font-medium text-foreground">
+                  Upgrade to Pro to unlock all.
+                </span>
+              </>
+            }
+          />
+        )}
         <div className="grid grid-cols-1 gap-3 min-[1250px]:grid-cols-[minmax(380px,1.8fr)_minmax(0,3fr)]">
           <ResumeCard
             resumes={resumes}
@@ -207,9 +240,13 @@ export default function QuickCopy() {
                 } else {
                   await createResumeVariation({ file_url: path, label })
                 }
-              } catch {
-                toast.error('Failed to save file info')
-                throw new Error('Failed to save resume file info')
+              } catch (err) {
+                if (!handlePlanLimitError(err)) {
+                  toast.error('Failed to save file info')
+                }
+                throw new Error('Failed to save resume file info', {
+                  cause: err,
+                })
               }
             }}
             onRemoved={async (resumeId) => {
@@ -241,9 +278,13 @@ export default function QuickCopy() {
                 } else {
                   await createCoverLetterVariation({ file_url: path, label })
                 }
-              } catch {
-                toast.error('Failed to save file info')
-                throw new Error('Failed to save cover letter file info')
+              } catch (err) {
+                if (!handlePlanLimitError(err)) {
+                  toast.error('Failed to save file info')
+                }
+                throw new Error('Failed to save cover letter file info', {
+                  cause: err,
+                })
               }
             }}
             onRemoved={async (variation) => {

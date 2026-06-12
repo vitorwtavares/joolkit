@@ -1,8 +1,9 @@
 import { Download, RotateCcw, Trash2, Upload } from 'lucide-react'
-import {
-  COVER_LETTER_VARIATION_LIMIT,
-  type CoverLetterTemplate,
-} from '@/api/hooks/useCoverLetters'
+import type { CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
+import { FREE_COVER_LETTER_VARIATION_LIMIT } from '@/components/billing/planData'
+import type { PdfExportUsage } from '@/api/hooks/useBilling'
+import { useResourceLimit } from '@/components/billing/useResourceLimit'
+import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CoverLetterVariationList } from '../variations/CoverLetterVariationList'
 import { CoverLetterTokenPanel } from '../tokens/CoverLetterTokenPanel'
@@ -48,6 +49,8 @@ interface EditorSidePanelProps {
   isLoadingTemplates: boolean
   unresolvedTokens: string[]
   downloadDisabled: boolean
+  pdfExports: PdfExportUsage | undefined
+  exportLimitReached: boolean
 }
 
 function formatLastSaved(dateStr: string | undefined): string {
@@ -64,6 +67,16 @@ function formatLastSaved(dateStr: string | undefined): string {
 function extractFilename(url: string | null): string {
   if (!url) return '-'
   return getCoverLetterFilename(url)
+}
+
+// Coarse "resets in Xh/Xm" for the daily export window — precision isn't needed.
+function formatResetIn(resetAt: string | null): string {
+  if (!resetAt) return 'soon'
+  const ms = new Date(resetAt).getTime() - Date.now()
+  if (ms <= 0) return 'soon'
+  const mins = Math.ceil(ms / 60_000)
+  if (mins < 60) return `in ${mins}m`
+  return `in ${Math.round(mins / 60)}h`
 }
 
 export function EditorSidePanel({
@@ -97,7 +110,14 @@ export function EditorSidePanel({
   isLoadingTemplates,
   unresolvedTokens,
   downloadDisabled,
+  pdfExports: pdf,
+  exportLimitReached,
 }: EditorSidePanelProps) {
+  const coverUsage = useResourceLimit('coverLetterVariations', templates.length)
+  const tokenUsage = useResourceLimit('tokenDefinitions', tokens.length)
+  const coverLimit = coverUsage.limit ?? FREE_COVER_LETTER_VARIATION_LIMIT
+  const tokenLimit = tokenUsage.limit
+
   const hasUnresolved = unresolvedTokens.length > 0
   const label = template?.label ?? COVER_LETTER_FALLBACK_LABEL
   const isLoadingDownload = isLoadingTokens || isLoadingTemplates
@@ -108,8 +128,17 @@ export function EditorSidePanel({
     <div className="flex w-[370px] min-w-[290px] flex-col overflow-y-auto bg-surface-panel">
       {/* Variations */}
       <div className="border-b border-border-subtle p-3.5">
-        <div className="mb-3.5 text-[12px] font-medium tracking-[0.08em] text-text-faint uppercase">
+        <div className="mb-3.5 flex items-center gap-2 text-[12px] font-medium tracking-[0.08em] text-text-faint uppercase">
           Variations
+          <div
+            className={cn(
+              'rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] leading-none tracking-normal text-muted-foreground normal-case',
+              coverUsage.atLimit &&
+                'border-brand-border bg-brand-soft text-brand',
+            )}
+          >
+            {templates.length}/{coverLimit}
+          </div>
         </div>
 
         <div className="flex h-[240px] min-h-0 flex-col">
@@ -122,7 +151,9 @@ export function EditorSidePanel({
             removingVariation={removingVariation}
             savingLabelVariation={savingLabelVariation}
             skeletonRows={3}
-            emptyDescription={`Add up to ${COVER_LETTER_VARIATION_LIMIT} variations. Select one to edit it here.`}
+            limit={coverLimit}
+            onUpgrade={coverUsage.onUpgrade}
+            emptyDescription={`Add up to ${coverLimit} variations. Select one to edit it here.`}
             onAdd={onRequestAddVariation}
             onAddEmpty={onRequestCreateEmpty}
             onSelect={(item) => onVariationChange(item.variation)}
@@ -130,13 +161,33 @@ export function EditorSidePanel({
             onRename={onVariationRename}
           />
         </div>
+
+        {coverUsage.hidden > 0 && (
+          <p className="mt-2 text-[11px] text-text-faint">
+            {coverUsage.hidden} more{' '}
+            {coverUsage.hidden === 1 ? 'variation is' : 'variations are'} safely
+            saved from Pro. Upgrade to use{' '}
+            {coverUsage.hidden === 1 ? 'it' : 'them'} again.
+          </p>
+        )}
       </div>
 
       {/* Tokens */}
       <div className="border-b border-border-subtle p-3.5">
         <div className="mb-3.5 flex items-center justify-between gap-3">
-          <div className="text-[12px] font-medium tracking-[0.08em] text-text-faint uppercase">
+          <div className="flex items-center gap-2 text-[12px] font-medium tracking-[0.08em] text-text-faint uppercase">
             Tokens
+            {tokenLimit !== null && (
+              <div
+                className={cn(
+                  'rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] leading-none tracking-normal text-muted-foreground normal-case',
+                  tokenUsage.atLimit &&
+                    'border-brand-border bg-brand-soft text-brand',
+                )}
+              >
+                {tokens.length}/{tokenLimit}
+              </div>
+            )}
           </div>
           <UnresolvedTokensIndicator
             unresolvedTokens={unresolvedTokens}
@@ -150,6 +201,9 @@ export function EditorSidePanel({
             unresolvedTokens={unresolvedTokens}
             isLoading={isLoadingTokens}
             variant="section"
+            tokenLimit={tokenUsage.limit}
+            hiddenCount={tokenUsage.hidden}
+            onUpgrade={tokenUsage.onUpgrade}
             onTokenChange={onTokenChange}
             onTokenDelete={onTokenDelete}
             onTokenAdd={onTokenAdd}
@@ -288,6 +342,22 @@ export function EditorSidePanel({
           loading={isDownloading}
           disabled={downloadDisabled || isDownloading}
         />
+
+        {!isLoadingDownload && pdf && (
+          <div className="mt-2">
+            {exportLimitReached ? (
+              <p className="text-[12px] leading-normal text-token-unresolved">
+                Daily export limit reached ({pdf.limit}/day) · resets{' '}
+                {formatResetIn(pdf.resetAt)}.
+              </p>
+            ) : (
+              <p className="text-[11px] text-text-faint">
+                {pdf.remaining} of {pdf.limit} daily export
+                {pdf.limit === 1 ? '' : 's'} left.
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

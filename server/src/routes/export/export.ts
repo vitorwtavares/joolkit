@@ -21,6 +21,7 @@ const pdfLimiter = createRateLimitMiddleware({
   message:
     'Daily PDF export limit reached for your plan. Try again tomorrow or upgrade for a higher limit.',
   code: 'plan_limit',
+  planLimitResource: 'pdfExports',
   keyGenerator: (req) => {
     const userId = req.userId
     if (!userId) throw new Error('pdfLimiter reached before authMiddleware')

@@ -29,6 +29,7 @@ describe('export route limits', () => {
         keyPrefix: 'pdf-export',
         windowMs: 24 * 60 * 60 * 1000,
         code: 'plan_limit',
+        planLimitResource: 'pdfExports',
         limit: expect.any(Function),
       }),
     )
@@ -43,7 +44,7 @@ describe('export route limits', () => {
     const limitFor = (pdfExportsPerDay: number) =>
       options.limit({ entitlement: { limits: { pdfExportsPerDay } } })
 
-    expect(limitFor(1)).toBe(1)
-    expect(limitFor(25)).toBe(25)
+    expect(limitFor(2)).toBe(2)
+    expect(limitFor(15)).toBe(15)
   })
 })

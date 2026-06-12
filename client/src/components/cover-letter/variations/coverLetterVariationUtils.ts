@@ -1,5 +1,3 @@
-import { COVER_LETTER_VARIATION_LIMIT } from '@/api/hooks/useCoverLetters'
-
 export const COVER_LETTER_FALLBACK_LABEL = 'Cover letter'
 export const COVER_LETTER_LABEL_MAX_LENGTH = 40
 
@@ -21,7 +19,10 @@ export function getCoverLetterTemplatePath(
   return `${userId}/${folder}/${crypto.randomUUID()}/${fileName}`
 }
 
-export function getNextCoverLetterPosition(count: number): number | null {
+export function getNextCoverLetterPosition(
+  count: number,
+  limit: number,
+): number | null {
   const nextPosition = count + 1
-  return nextPosition <= COVER_LETTER_VARIATION_LIMIT ? nextPosition : null
+  return nextPosition <= limit ? nextPosition : null
 }

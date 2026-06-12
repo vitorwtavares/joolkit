@@ -259,7 +259,7 @@ describe('cover letter token routes', () => {
     )
   })
 
-  it('blocks a Free user from defining more than 2 token definitions', async () => {
+  it('blocks a Free user from defining more than 4 token definitions', async () => {
     const res = await request(buildApp('free'))
       .put('/api/cover-letters/tokens')
       .send({
@@ -267,6 +267,8 @@ describe('cover letter token routes', () => {
           { key: 'a', value: '1' },
           { key: 'b', value: '2' },
           { key: 'c', value: '3' },
+          { key: 'd', value: '4' },
+          { key: 'e', value: '5' },
         ],
       })
 
@@ -275,7 +277,7 @@ describe('cover letter token routes', () => {
       code: 'plan_limit',
       resource: 'tokenDefinitions',
       plan: 'free',
-      limit: 2,
+      limit: 4,
     })
   })
 

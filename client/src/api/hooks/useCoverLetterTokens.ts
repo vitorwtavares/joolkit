@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api'
+import { invalidateBillingStatus } from './useBilling'
 
 export interface CoverLetterTokens {
   id: string
@@ -29,6 +30,7 @@ export function useUpdateCoverLetterTokens() {
       api.put<CoverLetterTokens[]>('/api/cover-letters/tokens', payload),
     onSuccess: (data) => {
       queryClient.setQueryData(['cover-letter-tokens'], data)
+      void invalidateBillingStatus(queryClient)
     },
   })
 }
