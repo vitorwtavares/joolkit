@@ -168,6 +168,26 @@ describe('POST /api/answers', () => {
     expect(payload.tags).toEqual(['React', 'Remote'])
   })
 
+  it('truncates short_answer and long_answer to their max lengths', async () => {
+    const count = selectEqCountHandler({ count: 0, error: null })
+    const insert = insertSelectSingleHandler({
+      data: { ...baseAnswer, id: 'a1', position: 1 },
+      error: null,
+    })
+    mockFromSequence([count, insert])
+
+    const longShort = 's'.repeat(2500)
+    const longDetailed = 'd'.repeat(6000)
+
+    await request(buildApp())
+      .post('/api/answers')
+      .send({ short_answer: longShort, long_answer: longDetailed })
+
+    const payload = insert.insert.mock.calls[0][0]
+    expect(payload.short_answer).toHaveLength(2000)
+    expect(payload.long_answer).toHaveLength(5000)
+  })
+
   it('blocks creation with a plan_limit error when the Pro cap is reached', async () => {
     const count = selectEqCountHandler({ count: 50, error: null })
     mockFromSequence([count])
