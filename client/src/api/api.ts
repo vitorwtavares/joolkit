@@ -14,13 +14,51 @@ async function getAuthHeaders(): Promise<HeadersInit> {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
+// Resources the server caps and reports in structured `plan_limit` errors.
+export type PlanLimitResource =
+  | 'applications'
+  | 'answers'
+  | 'resumeVariations'
+  | 'coverLetterVariations'
+  | 'tokenDefinitions'
+  | 'pdfExports'
+
+interface PlanLimitDetails {
+  resource: PlanLimitResource
+  plan: 'free' | 'pro'
+  limit: number
+}
+
 export class ApiError extends Error {
   status: number
-  constructor(message: string, status: number) {
+  // Set when the server returns a structured `{ code: 'plan_limit', ... }` body,
+  // so the client can surface an upgrade prompt instead of a generic error.
+  planLimit?: PlanLimitDetails
+
+  constructor(message: string, status: number, planLimit?: PlanLimitDetails) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.planLimit = planLimit
   }
+}
+
+function planLimitFromBody(body: {
+  code?: string
+  resource?: PlanLimitResource
+  plan?: 'free' | 'pro'
+  limit?: number
+}): PlanLimitDetails | undefined {
+  if (body.code !== 'plan_limit' || !body.resource) return undefined
+  return {
+    resource: body.resource,
+    plan: body.plan ?? 'free',
+    limit: body.limit ?? 0,
+  }
+}
+
+export function isPlanLimitError(err: unknown): err is ApiError {
+  return err instanceof ApiError && err.planLimit !== undefined
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -40,6 +78,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw new ApiError(
       body.error ?? `Request failed: ${res.status}`,
       res.status,
+      planLimitFromBody(body),
     )
   }
 
@@ -62,6 +101,7 @@ async function requestBlob(
     throw new ApiError(
       body.error ?? `Request failed: ${res.status}`,
       res.status,
+      planLimitFromBody(body),
     )
   }
 
