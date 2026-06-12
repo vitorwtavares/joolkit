@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Loader2, X } from 'lucide-react'
+import { toast } from 'sonner'
+import { useUpgrade } from '@/components/billing/UpgradeProvider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -54,6 +56,7 @@ export function EditAnswerModal({
   const createAnswer = useCreateAnswer()
   const updateAnswer = useUpdateAnswer()
   const deleteAnswer = useDeleteAnswer()
+  const { handlePlanLimitError } = useUpgrade()
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -112,6 +115,14 @@ export function EditAnswerModal({
         })
       }
       onClose()
+    } catch (err) {
+      // A Free user racing past their cap gets the upgrade prompt; the modal
+      // closes so it isn't stranded behind the dialog.
+      if (handlePlanLimitError(err)) {
+        onClose()
+      } else {
+        toast.error('Failed to save answer. Please try again.')
+      }
     } finally {
       setSaving(false)
     }

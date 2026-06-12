@@ -20,6 +20,13 @@ vi.mock('@/api/hooks/useAnswers', () => ({
   useDeleteAnswer: () => ({ mutateAsync: mockDelete }),
 }))
 
+vi.mock('@/components/billing/UpgradeProvider', () => ({
+  useUpgrade: () => ({
+    openUpgrade: vi.fn(),
+    handlePlanLimitError: () => false,
+  }),
+}))
+
 function makeAnswer(overrides: Partial<Answer> = {}): Answer {
   return {
     id: 'a1',

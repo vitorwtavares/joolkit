@@ -1,15 +1,17 @@
 import { useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { ExternalLink, FileText, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import {
-  COVER_LETTER_VARIATION_LIMIT,
-  type CoverLetterTemplate,
-} from '@/api/hooks/useCoverLetters'
+import type { CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
+import { FREE_COVER_LETTER_VARIATION_LIMIT } from '@/components/billing/planData'
 import { useExportCoverLetterPDF } from '@/api/hooks/useCoverLetters'
+import { blockPdfExportIfLimited } from '@/components/billing/pdfExportLimit'
+import { useUpgrade } from '@/components/billing/UpgradeProvider'
+import { useResourceLimit } from '@/components/billing/useResourceLimit'
 import { useCoverLetterTokens } from '@/api/hooks/useCoverLetterTokens'
 import { useTokenState } from '@/hooks/useTokenState'
 import { useDownloadBubble } from '@/hooks/useDownloadBubble'
@@ -59,6 +61,7 @@ export function CoverLetterCard({
   onLabelUpdated,
 }: CoverLetterCardProps) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadTargetRef = useRef<{
     variation: string | null
@@ -79,6 +82,7 @@ export function CoverLetterCard({
   } = useDownloadBubble()
 
   const { data: tokenData, isLoading: tokensLoading } = useCoverLetterTokens()
+  const { handlePlanLimitError, openUpgrade } = useUpgrade()
   const exportPDF = useExportCoverLetterPDF()
   const {
     tokens,
@@ -89,6 +93,9 @@ export function CoverLetterCard({
     flushTokenSaveAsync,
   } = useTokenState(tokenData)
 
+  const coverUsage = useResourceLimit('coverLetterVariations', templates.length)
+  const tokenUsage = useResourceLimit('tokenDefinitions', tokens.length)
+  const limit = coverUsage.limit ?? FREE_COVER_LETTER_VARIATION_LIMIT
   const sortedTemplates = useMemo(
     () => [...templates].sort((a, b) => a.position - b.position),
     [templates],
@@ -102,7 +109,7 @@ export function CoverLetterCard({
     [sortedTemplates, tokens],
   )
   const filledCount = sortedTemplates.length
-  const maxReached = filledCount >= COVER_LETTER_VARIATION_LIMIT
+  const maxReached = coverUsage.atLimit
   const busy =
     uploading !== null ||
     removing !== null ||
@@ -128,7 +135,7 @@ export function CoverLetterCard({
   }
 
   function handleAdd() {
-    if (!getNextCoverLetterPosition(sortedTemplates.length)) return
+    if (!getNextCoverLetterPosition(sortedTemplates.length, limit)) return
     openUploader(null)
   }
 
@@ -181,6 +188,14 @@ export function CoverLetterCard({
 
   async function handleDownload(template: CoverLetterTemplate) {
     if (busy || isOnCooldown) return
+
+    const blocked = await blockPdfExportIfLimited({
+      queryClient,
+      userId,
+      openUpgrade,
+    })
+    if (blocked) return
+
     const tokenValidation = getCoverLetterTokenValidation({
       text: tiptapDocToText(template.content),
       tokens,
@@ -203,7 +218,10 @@ export function CoverLetterCard({
     setExportingVariation(template.variation)
     exportPDF.mutate(template.variation, {
       onSettled: () => setExportingVariation(null),
-      onError: (error) => toast.error(error.message || 'Failed to export PDF'),
+      onError: (error) => {
+        if (handlePlanLimitError(error)) return
+        toast.error(error.message || 'Failed to export PDF')
+      },
     })
   }
 
@@ -260,11 +278,11 @@ export function CoverLetterCard({
                 maxReached && 'border-brand-border bg-brand-soft text-brand',
               )}
             >
-              {filledCount}/{COVER_LETTER_VARIATION_LIMIT}
+              {filledCount}/{limit}
             </div>
           </div>
           <div className="mt-0.5 text-[13px] text-text-faint">
-            Up to {COVER_LETTER_VARIATION_LIMIT} variations
+            Up to {limit} variations
           </div>
         </div>
 
@@ -299,6 +317,8 @@ export function CoverLetterCard({
           downloadingVariation={exportingVariation}
           savingLabelVariation={savingLabel}
           downloadDisabled={isOnCooldown}
+          limit={limit}
+          onUpgrade={coverUsage.onUpgrade}
           onAdd={handleAdd}
           onReplace={(template) =>
             openUploader(
@@ -315,6 +335,9 @@ export function CoverLetterCard({
           tokens={tokens}
           unresolvedTokens={unresolvedTokens}
           isLoading={tokensLoading}
+          tokenLimit={tokenUsage.limit}
+          hiddenCount={tokenUsage.hidden}
+          onUpgrade={tokenUsage.onUpgrade}
           onTokenChange={updateToken}
           onTokenDelete={deleteToken}
           onTokenAdd={addToken}

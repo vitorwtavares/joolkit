@@ -61,6 +61,8 @@ export function CoverLetterEditor() {
     tokenValidation,
     hasUnresolved,
     downloadDisabled,
+    pdfExports,
+    exportLimitReached,
     handleSave,
     handleRestore,
     handleCopyToClipboard,
@@ -267,6 +269,8 @@ export function CoverLetterEditor() {
           isLoadingTemplates={templatesLoading}
           unresolvedTokens={tokenValidation.unresolvedTokens}
           downloadDisabled={downloadDisabled}
+          pdfExports={pdfExports}
+          exportLimitReached={exportLimitReached}
         />
       </div>
 

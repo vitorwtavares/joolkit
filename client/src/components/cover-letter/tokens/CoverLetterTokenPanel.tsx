@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Plus, Tag, Trash2 } from 'lucide-react'
+import { UpgradeCTA } from '@/components/billing/UpgradeCTA'
 import { Input } from '@/components/ui/input'
 import { PersistentScrollArea } from '@/components/ui/persistent-scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -18,6 +19,12 @@ interface CoverLetterTokenPanelProps {
   isLoading?: boolean
   className?: string
   variant?: 'card' | 'section'
+  // Max token definitions the plan allows (null = unlimited, Pro). When the cap
+  // is hit and `onUpgrade` is set (Free), the add button becomes an upgrade CTA.
+  tokenLimit?: number | null
+  // Tokens archived by a downgrade — surfaced as a small notice when > 0.
+  hiddenCount?: number
+  onUpgrade?: () => void
   onTokenChange: (
     id: string,
     patch: Partial<Pick<EditableCoverLetterToken, 'key' | 'value'>>,
@@ -35,6 +42,9 @@ export function CoverLetterTokenPanel({
   isLoading = false,
   className,
   variant = 'card',
+  tokenLimit = null,
+  hiddenCount = 0,
+  onUpgrade,
   onTokenChange,
   onTokenDelete,
   onTokenAdd,
@@ -132,7 +142,14 @@ export function CoverLetterTokenPanel({
     }
   }, [tokens])
 
+  const atTokenLimit = tokenLimit !== null && tokens.length >= tokenLimit
+
   function handleTokenAdd() {
+    // Free users at their token cap get an upgrade prompt instead of a new row.
+    if (atTokenLimit) {
+      onUpgrade?.()
+      return
+    }
     pendingNewTokenRef.current = true
     onTokenAdd()
   }
@@ -152,6 +169,17 @@ export function CoverLetterTokenPanel({
           <div className="flex min-w-0 items-center gap-2 text-[12px] font-semibold tracking-[0.06em] text-text-faint uppercase">
             <Tag size={13} />
             Tokens
+            {tokenLimit !== null && (
+              <div
+                className={cn(
+                  'rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] leading-none tracking-normal text-muted-foreground normal-case',
+                  atTokenLimit &&
+                    'border-brand-border bg-brand-soft text-brand',
+                )}
+              >
+                {tokens.length}/{tokenLimit}
+              </div>
+            )}
           </div>
           <UnresolvedTokensIndicator
             unresolvedTokens={unresolvedTokens}
@@ -297,15 +325,28 @@ export function CoverLetterTokenPanel({
               isSection ? 'pt-2' : 'border-t border-border p-2',
             )}
           >
-            <button
-              type="button"
-              onClick={handleTokenAdd}
-              className="flex h-[41px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border-strong bg-transparent px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-brand-border hover:bg-brand-soft hover:text-brand"
-            >
-              <Plus size={13} />
-              Add token
-            </button>
+            {atTokenLimit && onUpgrade ? (
+              <UpgradeCTA label="Upgrade for more tokens" onClick={onUpgrade} />
+            ) : (
+              <button
+                type="button"
+                onClick={handleTokenAdd}
+                disabled={atTokenLimit}
+                className="flex h-[41px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border-strong bg-transparent px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-brand-border hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-60"
+              >
+                <Plus size={13} />
+                Add token
+              </button>
+            )}
           </footer>
+
+          {hiddenCount > 0 && (
+            <p className="shrink-0 px-3 pt-2 text-[11px] text-text-faint">
+              {hiddenCount} more {hiddenCount === 1 ? 'token is' : 'tokens are'}{' '}
+              safely saved from Pro. Upgrade to use{' '}
+              {hiddenCount === 1 ? 'it' : 'them'} again.
+            </p>
+          )}
         </>
       )}
     </section>
