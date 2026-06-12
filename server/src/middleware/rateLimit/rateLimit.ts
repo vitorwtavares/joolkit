@@ -1,4 +1,5 @@
 import type { Request, RequestHandler } from 'express'
+import type { LimitResource } from '../../billing/limits'
 import { getSupabase } from '../auth'
 
 interface RateLimitOptions {
@@ -10,6 +11,9 @@ interface RateLimitOptions {
   // Optional machine-readable code attached to the 429 body (e.g. 'plan_limit')
   // so the client can tell a plan cap apart from a generic throttle.
   code?: string
+  // With `code: 'plan_limit'`, include resource/plan/limit on 429 so the client
+  // can open an upgrade prompt (reads plan from req.entitlement when set).
+  planLimitResource?: LimitResource
   keyGenerator: (req: Request) => string
 }
 
@@ -29,6 +33,7 @@ export function createRateLimitMiddleware({
   windowMs,
   message,
   code,
+  planLimitResource,
   keyGenerator,
 }: RateLimitOptions): RequestHandler {
   return (async (req, res, next) => {
@@ -56,7 +61,16 @@ export function createRateLimitMiddleware({
 
     if (!data.allowed) {
       res.setHeader('Retry-After', String(resetSeconds))
-      res.status(429).json({ error: message, ...(code ? { code } : {}) })
+      const body: Record<string, unknown> = {
+        error: message,
+        ...(code ? { code } : {}),
+      }
+      if (code === 'plan_limit' && planLimitResource) {
+        body.resource = planLimitResource
+        body.plan = req.entitlement?.plan ?? 'free'
+        body.limit = resolvedLimit
+      }
+      res.status(429).json(body)
       return
     }
 
