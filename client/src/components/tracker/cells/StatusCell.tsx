@@ -56,13 +56,13 @@ export function StatusCell({ value, onSave, inline = false }: StatusCellProps) {
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-48 gap-0 p-1"
+        className="max-h-(--radix-popover-content-available-height) w-48 gap-0 overflow-hidden p-1"
         onOpenAutoFocus={focusListOnOpen}
       >
         <div
           ref={listRef}
           tabIndex={-1}
-          className="outline-none"
+          className="min-h-0 overflow-y-auto outline-none"
           onKeyDown={handleKeyDown}
         >
           {ALL_STATUSES.map((status, i) => (
