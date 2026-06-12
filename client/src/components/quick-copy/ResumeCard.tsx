@@ -8,6 +8,7 @@ import { useResourceLimit } from '@/components/billing/useResourceLimit'
 import { UpgradeCTA } from '@/components/billing/UpgradeCTA'
 import { cn } from '@/lib/utils'
 import { downloadFile } from '@/utils/downloadFile'
+import { getUploadFileSizeError } from '@/utils/getUploadFileSizeError'
 import { useDownloadBubble } from '@/hooks/useDownloadBubble'
 import { PersistentScrollArea } from '@/components/ui/persistent-scroll-area'
 import { ResumeRow } from './ResumeRow'
@@ -115,6 +116,14 @@ export function ResumeCard({
     const file = e.target.files?.[0]
     const target = uploadTargetRef.current
     if (!file || !target) return
+
+    const sizeError = getUploadFileSizeError(file)
+    if (sizeError) {
+      toast.error(sizeError)
+      e.target.value = ''
+      uploadTargetRef.current = null
+      return
+    }
 
     const { id, position, label } = target
     const existingResume =

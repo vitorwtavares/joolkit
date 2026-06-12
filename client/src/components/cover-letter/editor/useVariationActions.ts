@@ -18,6 +18,7 @@ import {
   getCoverLetterTemplatePath,
 } from '../variations/coverLetterVariationUtils'
 import { TOAST_POSITION } from './editorExtensions'
+import { getUploadFileSizeError } from '@/utils/getUploadFileSizeError'
 
 interface UseVariationActionsParams {
   user: User | null
@@ -116,6 +117,13 @@ export function useVariationActions({
     file: File,
   ) => {
     if (!user) return
+
+    const sizeError = getUploadFileSizeError(file)
+    if (sizeError) {
+      toast.error(sizeError, TOAST_POSITION)
+      return
+    }
+
     const label = targetVariation
       ? (sortedTemplates.find((t) => t.variation === targetVariation)?.label ??
         COVER_LETTER_FALLBACK_LABEL)
@@ -272,6 +280,12 @@ export function useVariationActions({
   }
 
   const handleFileSelected = (file: File) => {
+    const sizeError = getUploadFileSizeError(file)
+    if (sizeError) {
+      toast.error(sizeError, TOAST_POSITION)
+      return
+    }
+
     const targetVariation = uploadTargetRef.current
     const targetTemplate =
       targetVariation === null

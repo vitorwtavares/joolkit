@@ -5,6 +5,7 @@ import { ExternalLink, FileText, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { cn } from '@/lib/utils'
+import { getUploadFileSizeError } from '@/utils/getUploadFileSizeError'
 import { Button } from '@/components/ui/button'
 import type { CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
 import { FREE_COVER_LETTER_VARIATION_LIMIT } from '@/components/billing/planData'
@@ -143,6 +144,14 @@ export function CoverLetterCard({
     const file = e.target.files?.[0]
     const target = uploadTargetRef.current
     if (!file || !target) return
+
+    const sizeError = getUploadFileSizeError(file)
+    if (sizeError) {
+      toast.error(sizeError)
+      e.target.value = ''
+      uploadTargetRef.current = null
+      return
+    }
 
     const { variation, label } = target
     const existingTemplate =
