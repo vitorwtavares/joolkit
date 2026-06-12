@@ -4,6 +4,8 @@ import { getStripe } from '../../billing/stripe'
 import { getOrCreateCustomer } from '../../billing/customer'
 import { getUserEntitlement } from '../../billing/entitlement'
 import { getUsageBreakdown } from '../../billing/usage'
+import { getPdfExportUsage } from '../../billing/pdfQuota'
+import { getDisplayCurrency } from '../../billing/geo'
 
 const router = Router()
 
@@ -17,12 +19,16 @@ function priceForInterval(interval: unknown): string | undefined {
 }
 
 // GET /api/billing/status — plan, limits, per-resource active usage + hidden
-// (archived) counts, and a safe subscription summary.
+// (archived) counts, today's PDF-export quota, and a safe subscription summary.
 router.get('/status', async (req, res) => {
   const [ent, usage] = await Promise.all([
     getUserEntitlement(req.userId!),
     getUsageBreakdown(req.userId!),
   ])
+  const pdfExports = await getPdfExportUsage(
+    req.userId!,
+    ent.limits.pdfExportsPerDay,
+  )
   const sub = ent.subscription
 
   res.json({
@@ -30,6 +36,9 @@ router.get('/status', async (req, res) => {
     limits: ent.limits,
     usage: usage.active,
     hidden: usage.archived,
+    pdfExports,
+    // Best-effort currency for the pre-checkout UI (Stripe finalises at checkout).
+    displayCurrency: getDisplayCurrency(req),
     subscription: sub
       ? {
           status: sub.status,

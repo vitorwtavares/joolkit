@@ -10,13 +10,16 @@ vi.mock('../../billing/stripe', () => ({ getStripe: vi.fn() }))
 vi.mock('../../billing/customer', () => ({ getOrCreateCustomer: vi.fn() }))
 vi.mock('../../billing/entitlement', () => ({ getUserEntitlement: vi.fn() }))
 vi.mock('../../billing/usage', () => ({ getUsageBreakdown: vi.fn() }))
+vi.mock('../../billing/pdfQuota', () => ({ getPdfExportUsage: vi.fn() }))
 
 import * as entitlementModule from '../../billing/entitlement'
 import * as usageModule from '../../billing/usage'
+import * as pdfQuotaModule from '../../billing/pdfQuota'
 import billingRouter from '.'
 
 const mockGetEntitlement = vi.mocked(entitlementModule.getUserEntitlement)
 const mockGetUsage = vi.mocked(usageModule.getUsageBreakdown)
+const mockGetPdfUsage = vi.mocked(pdfQuotaModule.getPdfExportUsage)
 
 function buildApp() {
   const app = express()
@@ -29,7 +32,15 @@ function buildApp() {
   return app
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => {
+  vi.clearAllMocks()
+  mockGetPdfUsage.mockResolvedValue({
+    limit: PLAN_LIMITS.free.pdfExportsPerDay,
+    used: 0,
+    remaining: PLAN_LIMITS.free.pdfExportsPerDay,
+    resetAt: null,
+  })
+})
 
 describe('GET /api/billing/status', () => {
   it('reports per-resource usage and the count hidden beyond Free limits', async () => {
@@ -43,7 +54,7 @@ describe('GET /api/billing/status', () => {
       answers: 4,
       resumeVariations: 1,
       coverLetterVariations: 1,
-      tokenDefinitions: 2,
+      tokenDefinitions: 4,
     }
     const archived = {
       applications: 10,
@@ -54,6 +65,13 @@ describe('GET /api/billing/status', () => {
     }
     mockGetUsage.mockResolvedValue({ active, archived })
 
+    mockGetPdfUsage.mockResolvedValue({
+      limit: PLAN_LIMITS.free.pdfExportsPerDay,
+      used: PLAN_LIMITS.free.pdfExportsPerDay,
+      remaining: 0,
+      resetAt: '2026-06-12T00:00:00Z',
+    })
+
     const res = await request(buildApp()).get('/api/billing/status')
 
     expect(res.status).toBe(200)
@@ -61,6 +79,13 @@ describe('GET /api/billing/status', () => {
     // usage reflects the active set, hidden reflects archived (downgrade) rows.
     expect(res.body.usage).toEqual(active)
     expect(res.body.hidden).toEqual(archived)
+    // today's PDF-export quota is surfaced for the client's export controls.
+    expect(res.body.pdfExports).toEqual({
+      limit: PLAN_LIMITS.free.pdfExportsPerDay,
+      used: PLAN_LIMITS.free.pdfExportsPerDay,
+      remaining: 0,
+      resetAt: '2026-06-12T00:00:00Z',
+    })
   })
 
   it('reports zero hidden when nothing is archived (Pro)', async () => {
