@@ -319,10 +319,18 @@ export function CoverLetterTokenPanel({
             )}
           </PersistentScrollArea>
 
+          {hiddenCount > 0 && (
+            <p className="shrink-0 px-3 pt-2 text-[11px] text-text-faint">
+              {hiddenCount} more {hiddenCount === 1 ? 'token is' : 'tokens are'}{' '}
+              safely saved from Pro. Upgrade to use{' '}
+              {hiddenCount === 1 ? 'it' : 'them'} again.
+            </p>
+          )}
+
           <footer
             className={cn(
-              'shrink-0',
-              isSection ? 'pt-2' : 'border-t border-border p-2',
+              'mt-auto shrink-0 px-2 pt-2 pb-2',
+              !isSection && 'border-t border-border',
             )}
           >
             {atTokenLimit && onUpgrade ? (
@@ -339,14 +347,6 @@ export function CoverLetterTokenPanel({
               </button>
             )}
           </footer>
-
-          {hiddenCount > 0 && (
-            <p className="shrink-0 px-3 pt-2 text-[11px] text-text-faint">
-              {hiddenCount} more {hiddenCount === 1 ? 'token is' : 'tokens are'}{' '}
-              safely saved from Pro. Upgrade to use{' '}
-              {hiddenCount === 1 ? 'it' : 'them'} again.
-            </p>
-          )}
         </>
       )}
     </section>

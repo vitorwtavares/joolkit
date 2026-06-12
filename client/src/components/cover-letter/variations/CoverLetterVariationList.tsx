@@ -198,7 +198,7 @@ export function CoverLetterVariationList({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       <PersistentScrollArea
         scrollViewportRef={scrollViewportRef}
         className="flex min-h-0 flex-1"
@@ -235,7 +235,7 @@ export function CoverLetterVariationList({
         ))}
       </PersistentScrollArea>
 
-      <div className="flex-shrink-0 pt-2">
+      <div className="mt-auto shrink-0 pt-2 pb-2">
         {canUpgrade ? (
           <UpgradeCTA
             label="Upgrade for more variations"
