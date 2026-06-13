@@ -163,6 +163,7 @@ function ApplicationTrackerInner() {
   const createApplication = useCreateApplication()
   const { handlePlanLimitError } = useUpgrade()
   const {
+    isLoading: planLoading,
     isPro,
     limit: appLimit,
     hidden: hiddenApplications,
@@ -378,6 +379,7 @@ function ApplicationTrackerInner() {
             <CreateOrUpgradeButton
               atLimit={atAppLimit}
               isPro={isPro}
+              isLoading={planLoading}
               createLabel="New entry"
               onCreate={handleNewEntry}
               onUpgrade={openUpgrade}

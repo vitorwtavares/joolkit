@@ -4,11 +4,12 @@ import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import type { ResumeVariation } from '@/api/hooks/useResumes'
 import { FREE_RESUME_VARIATION_LIMIT } from '@/components/billing/planData'
+import { LimitBadge } from '@/components/billing/LimitBadge'
 import { useResourceLimit } from '@/components/billing/useResourceLimit'
 import { UpgradeCTA } from '@/components/billing/UpgradeCTA'
-import { cn } from '@/lib/utils'
-import { downloadFile } from '@/utils/downloadFile'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getUploadFileSizeError } from '@/utils/getUploadFileSizeError'
+import { downloadFile } from '@/utils/downloadFile'
 import { useDownloadBubble } from '@/hooks/useDownloadBubble'
 import { PersistentScrollArea } from '@/components/ui/persistent-scroll-area'
 import { ResumeRow } from './ResumeRow'
@@ -59,6 +60,7 @@ export function ResumeCard({
     isOnCooldown,
   } = useDownloadBubble()
   const {
+    isLoading: planLoading,
     limit: rawLimit,
     atLimit: maxReached,
     canUpgrade,
@@ -211,17 +213,19 @@ export function ResumeCard({
             <div className="truncate text-[14px] font-semibold text-foreground">
               Resume
             </div>
-            <div
-              className={cn(
-                'rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] leading-none text-muted-foreground',
-                maxReached && 'border-brand-border bg-brand-soft text-brand',
-              )}
-            >
-              {filledCount}/{limit}
-            </div>
+            <LimitBadge
+              used={filledCount}
+              limit={limit}
+              isLoading={planLoading}
+              atLimit={maxReached}
+            />
           </div>
           <div className="mt-0.5 text-[13px] text-text-faint">
-            Up to {limit} variations
+            {planLoading ? (
+              <Skeleton className="h-4 w-28" />
+            ) : (
+              <>Up to {limit} variations</>
+            )}
           </div>
         </div>
       </header>
@@ -242,7 +246,7 @@ export function ResumeCard({
         {sortedResumes.length === 0 ? (
           <button
             type="button"
-            disabled={locked || busy}
+            disabled={locked || busy || planLoading}
             onClick={handleAdd}
             className="flex h-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border-strong bg-secondary px-4 py-6 text-center transition-colors hover:border-brand-border hover:bg-surface-selected disabled:pointer-events-none disabled:opacity-60"
           >
@@ -288,7 +292,9 @@ export function ResumeCard({
               ))}
             </PersistentScrollArea>
             <div className="mt-auto shrink-0 pt-2 pb-2">
-              {canUpgrade ? (
+              {planLoading ? (
+                <Skeleton className="h-[41px] w-full rounded-lg" />
+              ) : canUpgrade ? (
                 <UpgradeCTA
                   label="Upgrade for more variations"
                   onClick={openUpgrade}
@@ -300,7 +306,7 @@ export function ResumeCard({
               ) : (
                 <button
                   type="button"
-                  disabled={locked || busy}
+                  disabled={locked || busy || planLoading}
                   onClick={handleAdd}
                   className="flex h-[41px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border-strong bg-transparent px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-brand-border hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-60"
                 >

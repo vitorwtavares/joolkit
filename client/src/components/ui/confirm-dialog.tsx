@@ -17,6 +17,8 @@ interface ConfirmDialogProps {
   description: React.ReactNode
   cancelLabel?: string
   confirmLabel: string
+  // Label shown alongside the spinner while the action is in flight.
+  confirmingLabel?: string
   confirmVariant?: 'destructive' | 'default'
   isConfirming?: boolean
   onConfirm: () => void
@@ -29,6 +31,7 @@ export function ConfirmDialog({
   description,
   cancelLabel = 'Cancel',
   confirmLabel,
+  confirmingLabel,
   confirmVariant = 'destructive',
   isConfirming = false,
   onConfirm,
@@ -58,7 +61,10 @@ export function ConfirmDialog({
             }}
           >
             {isConfirming ? (
-              <Loader2 size={14} className="animate-spin" />
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                {confirmingLabel}
+              </>
             ) : (
               confirmLabel
             )}

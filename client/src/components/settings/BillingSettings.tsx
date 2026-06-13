@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Check, Sparkles } from 'lucide-react'
+import { Check, RefreshCw, Sparkles } from 'lucide-react'
 import {
   useBillingPortal,
   useBillingStatus,
@@ -38,7 +38,13 @@ function totalHidden(hidden: BillingStatus['hidden']): number {
 }
 
 export function BillingSettings() {
-  const { data: status, isLoading } = useBillingStatus()
+  const {
+    data: status,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useBillingStatus()
   const { openUpgrade } = useUpgrade()
   const portal = useBillingPortal()
   const queryClient = useQueryClient()
@@ -62,15 +68,17 @@ export function BillingSettings() {
   }, [searchParams, setSearchParams, queryClient])
 
   async function handleManageBilling() {
-    setConfirmPortalOpen(false)
+    // Keep the dialog open so its confirm button shows the in-flight spinner
+    // while we fetch the portal URL; the browser redirects on success.
     try {
       await portal.mutateAsync()
     } catch {
+      setConfirmPortalOpen(false)
       toast.error('Could not open the billing portal. Please try again.')
     }
   }
 
-  if (isLoading || !status) {
+  if (isLoading && !status) {
     return (
       <div className="flex flex-col gap-4">
         <Skeleton className="h-7 w-24" />
@@ -79,6 +87,41 @@ export function BillingSettings() {
       </div>
     )
   }
+
+  if (isError && !status) {
+    return (
+      <div className="flex flex-col">
+        <h2 className="text-lg font-semibold tracking-tight">Billing</h2>
+        <p className="mt-1 text-[13px] text-muted-foreground">
+          Manage your plan and see how much of it you're using.
+        </p>
+
+        <div className="mt-6 rounded-xl border border-border bg-card p-4">
+          <p className="text-[13px] text-foreground">
+            Couldn't load your billing details.
+          </p>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Your plan is unchanged — try again in a moment.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => void refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw
+              size={14}
+              className={isFetching ? 'animate-spin' : undefined}
+            />
+            {isFetching ? 'Retrying…' : 'Try again'}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!status) return null
 
   const isPro = status.plan === 'pro'
   const sub = status.subscription
@@ -204,6 +247,7 @@ export function BillingSettings() {
         title="Manage your billing"
         description="You'll be taken to Stripe to update or cancel your plan. If you cancel, you keep Pro until the end of your paid period — after that, Free limits apply and any over-limit data stays safely stored, ready to restore if you resubscribe."
         confirmLabel="Continue to Stripe"
+        confirmingLabel="Redirecting to Stripe…"
         confirmVariant="default"
         isConfirming={portal.isPending}
         onConfirm={handleManageBilling}
