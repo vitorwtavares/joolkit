@@ -1114,3 +1114,118 @@ html:has(.page) {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ---------- legal pages (privacy / terms) ---------- */
+.page .legal {
+  padding: 132px 0 96px;
+}
+.page .legal-inner {
+  max-width: 760px;
+}
+.page .legal-head {
+  padding-bottom: 28px;
+  margin-bottom: 36px;
+  border-bottom: 1px solid var(--border);
+}
+.page .legal-lang {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  background: var(--panel);
+}
+.page .legal-lang-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: transparent;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+.page .legal-lang-btn:hover {
+  color: var(--text);
+}
+.page .legal-lang-btn.is-active {
+  color: #fff;
+  background: var(--accent);
+}
+.page .legal-head h1 {
+  font-size: clamp(30px, 5vw, 42px);
+  line-height: 1.1;
+}
+.page .legal-date {
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--muted-2);
+}
+.page .legal-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 40px;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.page .legal-intro p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text);
+}
+.page .legal-section {
+  margin-bottom: 34px;
+}
+.page .legal-section h2 {
+  font-size: 19px;
+  margin-bottom: 14px;
+}
+.page .legal-sub {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 20px 0 8px;
+  color: var(--text);
+}
+.page .legal-section p,
+.page .legal-section li {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--muted);
+}
+.page .legal-section p + p {
+  margin-top: 12px;
+}
+.page .legal-section ul {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.page .legal-section li {
+  padding-left: 4px;
+}
+.page .legal-section strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.page .legal a {
+  color: var(--accent-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.page .legal a:hover {
+  color: var(--accent-bright);
+}

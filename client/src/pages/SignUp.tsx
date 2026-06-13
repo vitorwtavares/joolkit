@@ -4,15 +4,18 @@ import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
 import { useAuth } from '@/context/auth'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthShell } from '@/components/auth/AuthShell'
+import { legalUrl } from '@/utils/legalUrl'
 
 export default function SignUp() {
   const { user, isLoading } = useAuth()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [agreed, setAgreed] = useState(false)
   const [done, setDone] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -21,6 +24,7 @@ export default function SignUp() {
 
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
+    if (!agreed) return
     setSubmitting(true)
     try {
       const { error } = await supabase.auth.signUp({
@@ -120,10 +124,43 @@ export default function SignUp() {
               />
             </div>
 
+            <div className="flex items-center gap-2.5 pt-1">
+              <Checkbox
+                id="sign-up-terms"
+                checked={agreed}
+                onCheckedChange={(checked) => setAgreed(checked === true)}
+                className="shrink-0"
+              />
+              <Label
+                htmlFor="sign-up-terms"
+                className="block text-[13px] leading-snug font-normal text-muted-foreground"
+              >
+                I agree to the{' '}
+                <a
+                  href={legalUrl('/terms')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-foreground underline underline-offset-[3px] transition-colors hover:text-brand"
+                >
+                  Terms of Service
+                </a>{' '}
+                and{' '}
+                <a
+                  href={legalUrl('/privacy')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-foreground underline underline-offset-[3px] transition-colors hover:text-brand"
+                >
+                  Privacy Policy
+                </a>
+                .
+              </Label>
+            </div>
+
             <Button
               type="submit"
               className="mt-3 h-11 w-full rounded-[10px] text-sm font-medium"
-              disabled={submitting}
+              disabled={submitting || !agreed}
             >
               {submitting ? 'Creating account...' : 'Create account'}
             </Button>

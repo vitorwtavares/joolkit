@@ -9,10 +9,10 @@ const COLUMNS: FooterColumn[] = [
   {
     heading: 'Product',
     links: [
-      { label: 'Features', href: '#features' },
-      { label: 'How it works', href: '#how' },
-      { label: 'Pricing', href: '#pricing' },
-      { label: 'FAQ', href: '#faq' },
+      { label: 'Features', href: '/#features' },
+      { label: 'How it works', href: '/#how' },
+      { label: 'Pricing', href: '/#pricing' },
+      { label: 'FAQ', href: '/#faq' },
     ],
   },
   {
@@ -25,8 +25,8 @@ const COLUMNS: FooterColumn[] = [
   {
     heading: 'Legal',
     links: [
-      { label: 'Privacy', href: '#' },
-      { label: 'Terms', href: '#' },
+      { label: 'Privacy', href: '/privacy' },
+      { label: 'Terms', href: '/terms' },
     ],
   },
 ]
