@@ -31,10 +31,11 @@ export function useResourceLimit(
   resource: CappedResource,
   used: number,
 ): ResourceLimit {
-  const { data, isLoading } = useBillingStatus()
+  const { data, isLoading, isError } = useBillingStatus()
   const { openUpgrade } = useUpgrade()
 
-  const isPlanLoading = isLoading || !data
+  // After retries exhaust, fall back to free ceilings so UI stays usable.
+  const isPlanLoading = isLoading || (!data && !isError)
   const isPro = data?.plan === 'pro'
   const limit = isPlanLoading
     ? null
