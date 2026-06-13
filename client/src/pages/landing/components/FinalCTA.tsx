@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { appUrl } from '../appUrl'
 import mark from '../assets/joolkit-mark.svg'
 
 export default function FinalCTA() {
@@ -19,9 +19,9 @@ export default function FinalCTA() {
             start, no card required.
           </p>
           <div className="cta-row" style={{ marginTop: 30 }}>
-            <Link className="btn btn-primary btn-lg" to="/sign-up">
+            <a className="btn btn-primary btn-lg" href={appUrl('/sign-up')}>
               Try joolkit free
-            </Link>
+            </a>
             <a className="btn btn-ghost btn-lg" href="#pricing">
               See pricing
             </a>

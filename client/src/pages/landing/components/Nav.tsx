@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
+import { appUrl } from '../appUrl'
 import logoLight from '../assets/joolkit-horizontal-light.png'
 
 export default function Nav() {
@@ -25,12 +25,12 @@ export default function Nav() {
           <a href="#faq">FAQ</a>
         </div>
         <div className="nav-right">
-          <Link className="nav-login" to="/sign-in">
+          <a className="nav-login" href={appUrl('/sign-in')}>
             Log in
-          </Link>
-          <Link className="btn btn-primary" to="/sign-up">
+          </a>
+          <a className="btn btn-primary" href={appUrl('/sign-up')}>
             Try joolkit free
-          </Link>
+          </a>
         </div>
       </div>
     </nav>

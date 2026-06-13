@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { appUrl } from '../appUrl'
 import { BankIcon, CheckIcon, CopyIcon } from '../icons'
 import TrackerBoard from './TrackerBoard'
 
@@ -24,9 +24,9 @@ export default function Hero() {
           handing your applications to an opaque auto-apply bot.
         </p>
         <div className="cta-row">
-          <Link className="btn btn-primary btn-lg" to="/sign-up">
+          <a className="btn btn-primary btn-lg" href={appUrl('/sign-up')}>
             Try joolkit free
-          </Link>
+          </a>
           <a className="btn btn-ghost btn-lg" href="#how">
             See how it works
           </a>

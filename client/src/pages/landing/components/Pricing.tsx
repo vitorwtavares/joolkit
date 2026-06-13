@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { appUrl } from '../appUrl'
 import { CheckIcon } from '../icons'
 import { useDisplayCurrency } from '../useDisplayCurrency'
 import type { DisplayCurrency } from '../useDisplayCurrency'
@@ -102,13 +102,13 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-            <Link
+            <a
               className="btn btn-ghost"
               style={{ marginTop: 'auto' }}
-              to="/sign-up"
+              href={appUrl('/sign-up')}
             >
               Try joolkit free
-            </Link>
+            </a>
           </div>
           <div className="plan pop">
             <div className="plan-name">
@@ -133,13 +133,13 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-            <Link
+            <a
               className="btn btn-primary"
               style={{ marginTop: 'auto' }}
-              to="/sign-up"
+              href={appUrl('/sign-up')}
             >
               Get Pro
-            </Link>
+            </a>
           </div>
         </div>
         <div className="plan-foot">Cancel anytime. No hidden costs.</div>

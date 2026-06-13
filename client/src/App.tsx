@@ -20,6 +20,8 @@ import { Toaster } from './components/ui/sonner'
 import { TooltipProvider } from './components/ui/tooltip'
 import { warmupApi } from './utils/warmupApi'
 
+const isLandingSite = import.meta.env.VITE_SITE === 'landing'
+
 export default function App() {
   useEffect(() => {
     warmupApi()
@@ -30,13 +32,18 @@ export default function App() {
       <BrowserRouter>
         <UpgradeProvider>
           <Routes>
-            <Route path="/landing-page" element={<LandingPage />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            {isLandingSite && <Route path="/" element={<LandingPage />} />}
             <Route element={<AuthGuard />}>
-              <Route path="/" element={<Navigate to="/quick-copy" replace />} />
+              {!isLandingSite && (
+                <Route
+                  path="/"
+                  element={<Navigate to="/quick-copy" replace />}
+                />
+              )}
               <Route element={<Layout />}>
                 <Route path="/quick-copy" element={<QuickCopy />} />
                 <Route path="/cover-letter" element={<CoverLetter />} />
