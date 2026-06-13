@@ -13,6 +13,7 @@
   <img src="https://img.shields.io/badge/express-5-111827?style=flat-square&logo=express" alt="Express 5" />
   <img src="https://img.shields.io/badge/supabase-auth%20%2B%20storage-111827?style=flat-square&logo=supabase" alt="Supabase" />
   <img src="https://img.shields.io/badge/tiptap-editor-111827?style=flat-square" alt="Tiptap" />
+  <img src="https://img.shields.io/badge/license-Elastic%202.0-111827?style=flat-square" alt="Elastic License 2.0" />
 </p>
 
 `joolkit` is built for people who still want to write their own applications, but are tired of retyping the same details, juggling files, and keeping status updates in scattered tabs.
@@ -38,3 +39,7 @@ It brings the repetitive parts of applying into one place: quick personal info c
 - **Frontend:** React, Vite, Tailwind CSS, shadcn/ui, Tiptap, TanStack Query
 - **Backend:** Node.js, Express, Supabase, Puppeteer Core
 - **Infra:** Vercel, Supabase
+
+## License
+
+This project is licensed under the [Elastic License 2.0](LICENSE). You're free to view and learn from the code, but you may not offer it as a hosted or managed service.
