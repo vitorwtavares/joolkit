@@ -11,6 +11,7 @@
   },
   "scripts": {
     "dev": "turbo dev",
+    "dev:landing": "pnpm --filter @joolkit/client dev:landing",
     "build": "turbo build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
