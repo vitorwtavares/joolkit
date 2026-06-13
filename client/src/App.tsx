@@ -10,6 +10,7 @@ import Settings from './pages/Settings'
 import { AccountSettings } from './components/settings/AccountSettings'
 import { BillingSettings } from './components/settings/BillingSettings'
 import { UpgradeProvider } from './components/billing/UpgradeProvider'
+import LandingPage from './pages/landing/LandingPage'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import ForgotPassword from './pages/ForgotPassword'
@@ -29,6 +30,7 @@ export default function App() {
       <BrowserRouter>
         <UpgradeProvider>
           <Routes>
+            <Route path="/landing-page" element={<LandingPage />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
