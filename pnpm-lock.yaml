@@ -8,12 +8,6 @@ importers:
 
   .:
     devDependencies:
-      '@types/express':
-        specifier: ^5.0.6
-        version: 5.0.6
-      '@types/node':
-        specifier: ^25.9.2
-        version: 25.9.2
       husky:
         specifier: ^9.1.7
         version: 9.1.7
