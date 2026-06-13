@@ -4,6 +4,7 @@ import { authMiddleware } from './middleware/auth'
 import { entitlementMiddleware } from './middleware/entitlement'
 import { createRateLimitMiddleware } from './middleware/rateLimit'
 import healthRouter from './routes/health'
+import geoRouter from './routes/geo'
 import accountRouter from './routes/account'
 import profileRouter from './routes/profile'
 import resumesRouter from './routes/resumes'
@@ -42,6 +43,7 @@ const generalLimiter = createRateLimitMiddleware({
 })
 
 app.use('/api/health', healthRouter)
+app.use('/api/geo', geoRouter)
 app.use(generalLimiter)
 app.use(authMiddleware)
 app.use('/api/account', accountRouter)
