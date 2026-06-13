@@ -10,6 +10,7 @@ import Settings from './pages/Settings'
 import { AccountSettings } from './components/settings/AccountSettings'
 import { BillingSettings } from './components/settings/BillingSettings'
 import { UpgradeProvider } from './components/billing/UpgradeProvider'
+import LandingPage from './pages/landing/LandingPage'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import ForgotPassword from './pages/ForgotPassword'
@@ -18,6 +19,8 @@ import NotFound from './pages/NotFound'
 import { Toaster } from './components/ui/sonner'
 import { TooltipProvider } from './components/ui/tooltip'
 import { warmupApi } from './utils/warmupApi'
+
+const isLandingSite = import.meta.env.VITE_SITE === 'landing'
 
 export default function App() {
   useEffect(() => {
@@ -33,8 +36,14 @@ export default function App() {
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            {isLandingSite && <Route path="/" element={<LandingPage />} />}
             <Route element={<AuthGuard />}>
-              <Route path="/" element={<Navigate to="/quick-copy" replace />} />
+              {!isLandingSite && (
+                <Route
+                  path="/"
+                  element={<Navigate to="/quick-copy" replace />}
+                />
+              )}
               <Route element={<Layout />}>
                 <Route path="/quick-copy" element={<QuickCopy />} />
                 <Route path="/cover-letter" element={<CoverLetter />} />
