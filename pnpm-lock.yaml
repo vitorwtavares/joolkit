@@ -47,6 +47,9 @@ importers:
       '@fontsource-variable/jetbrains-mono':
         specifier: ^5.2.8
         version: 5.2.8
+      '@fontsource-variable/schibsted-grotesk':
+        specifier: ^5.2.8
+        version: 5.2.8
       '@fontsource/bricolage-grotesque':
         specifier: ^5.2.10
         version: 5.2.10
@@ -751,6 +754,9 @@ packages:
 
   '@fontsource-variable/jetbrains-mono@5.2.8':
     resolution: {integrity: sha512-WBA9elru6Jdp5df2mES55wuOO0WIrn3kpXnI4+W2ek5u3ZgLS9XS4gmIlcQhiZOWEKl95meYdvK7xI+ETLCq/Q==}
+
+  '@fontsource-variable/schibsted-grotesk@5.2.8':
+    resolution: {integrity: sha512-nZAorDrFue4dXZbI613WdvAhu5DPH1UJYNn5fWl7Poa+nl/s9o3VUcQImIiVZpQnYG/jkPVzHsTE7WZbSDvvkw==}
 
   '@fontsource/bricolage-grotesque@5.2.10':
     resolution: {integrity: sha512-V2xS+1P7C8IrSypXLUx/bLtX/LsTlYtV2k2CsU+S/0t8qepZ2hvKSlyJIx7Ub/iY8Bbnj+IjAuUF9nvFz+BbIg==}
@@ -5220,6 +5226,8 @@ snapshots:
   '@fontsource-variable/hanken-grotesk@5.2.8': {}
 
   '@fontsource-variable/jetbrains-mono@5.2.8': {}
+
+  '@fontsource-variable/schibsted-grotesk@5.2.8': {}
 
   '@fontsource/bricolage-grotesque@5.2.10': {}
 
