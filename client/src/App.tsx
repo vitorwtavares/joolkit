@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/layout/Layout'
@@ -11,6 +10,7 @@ import { AccountSettings } from './components/settings/AccountSettings'
 import { BillingSettings } from './components/settings/BillingSettings'
 import { UpgradeProvider } from './components/billing/UpgradeProvider'
 import LandingPage from './pages/landing/LandingPage'
+import RedirectToApp from './pages/landing/RedirectToApp'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import ForgotPassword from './pages/ForgotPassword'
@@ -18,45 +18,49 @@ import ResetPassword from './pages/ResetPassword'
 import NotFound from './pages/NotFound'
 import { Toaster } from './components/ui/sonner'
 import { TooltipProvider } from './components/ui/tooltip'
-import { warmupApi } from './utils/warmupApi'
 
 const isLandingSite = import.meta.env.VITE_SITE === 'landing'
 
 export default function App() {
-  useEffect(() => {
-    warmupApi()
-  }, [])
-
   return (
     <TooltipProvider>
       <BrowserRouter>
         <UpgradeProvider>
           <Routes>
-            <Route path="/sign-in" element={<SignIn />} />
-            <Route path="/sign-up" element={<SignUp />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            {isLandingSite && <Route path="/" element={<LandingPage />} />}
-            <Route element={<AuthGuard />}>
-              {!isLandingSite && (
-                <Route
-                  path="/"
-                  element={<Navigate to="/quick-copy" replace />}
-                />
-              )}
-              <Route element={<Layout />}>
-                <Route path="/quick-copy" element={<QuickCopy />} />
-                <Route path="/cover-letter" element={<CoverLetter />} />
-                <Route path="/answer-bank" element={<AnswerBank />} />
-                <Route path="/tracker" element={<ApplicationTracker />} />
-                <Route path="/settings" element={<Settings />}>
-                  <Route index element={<Navigate to="account" replace />} />
-                  <Route path="account" element={<AccountSettings />} />
-                  <Route path="billing" element={<BillingSettings />} />
+            {isLandingSite ? (
+              <>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="*" element={<RedirectToApp />} />
+              </>
+            ) : (
+              <>
+                <Route path="/sign-in" element={<SignIn />} />
+                <Route path="/sign-up" element={<SignUp />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route element={<AuthGuard />}>
+                  <Route
+                    path="/"
+                    element={<Navigate to="/quick-copy" replace />}
+                  />
+                  <Route element={<Layout />}>
+                    <Route path="/quick-copy" element={<QuickCopy />} />
+                    <Route path="/cover-letter" element={<CoverLetter />} />
+                    <Route path="/answer-bank" element={<AnswerBank />} />
+                    <Route path="/tracker" element={<ApplicationTracker />} />
+                    <Route path="/settings" element={<Settings />}>
+                      <Route
+                        index
+                        element={<Navigate to="account" replace />}
+                      />
+                      <Route path="account" element={<AccountSettings />} />
+                      <Route path="billing" element={<BillingSettings />} />
+                    </Route>
+                  </Route>
                 </Route>
-              </Route>
-            </Route>
-            <Route path="*" element={<NotFound />} />
+                <Route path="*" element={<NotFound />} />
+              </>
+            )}
           </Routes>
           <Toaster />
         </UpgradeProvider>
