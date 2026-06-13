@@ -19,8 +19,9 @@ interface CoverLetterTokenPanelProps {
   isLoading?: boolean
   className?: string
   variant?: 'card' | 'section'
-  // Max token definitions the plan allows (null = unlimited, Pro). When the cap
-  // is hit and `onUpgrade` is set (Free), the add button becomes an upgrade CTA.
+  // Max token definitions the plan allows (null = unlimited Pro, undefined =
+  // still loading). When the cap is hit and `onUpgrade` is set (Free), the add
+  // button becomes an upgrade CTA.
   tokenLimit?: number | null
   // Tokens archived by a downgrade — surfaced as a small notice when > 0.
   hiddenCount?: number
@@ -142,7 +143,8 @@ export function CoverLetterTokenPanel({
     }
   }, [tokens])
 
-  const atTokenLimit = tokenLimit !== null && tokens.length >= tokenLimit
+  const atTokenLimit =
+    typeof tokenLimit === 'number' && tokens.length >= tokenLimit
 
   function handleTokenAdd() {
     // Free users at their token cap get an upgrade prompt instead of a new row.
@@ -169,7 +171,7 @@ export function CoverLetterTokenPanel({
           <div className="flex min-w-0 items-center gap-2 text-[12px] font-semibold tracking-[0.06em] text-text-faint uppercase">
             <Tag size={13} />
             Tokens
-            {tokenLimit !== null && (
+            {typeof tokenLimit === 'number' && (
               <div
                 className={cn(
                   'rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] leading-none tracking-normal text-muted-foreground normal-case',

@@ -2,8 +2,8 @@ import { Download, RotateCcw, Trash2, Upload } from 'lucide-react'
 import type { CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
 import { FREE_COVER_LETTER_VARIATION_LIMIT } from '@/components/billing/planData'
 import type { PdfExportUsage } from '@/api/hooks/useBilling'
+import { LimitBadge } from '@/components/billing/LimitBadge'
 import { useResourceLimit } from '@/components/billing/useResourceLimit'
-import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CoverLetterVariationList } from '../variations/CoverLetterVariationList'
 import { CoverLetterTokenPanel } from '../tokens/CoverLetterTokenPanel'
@@ -130,15 +130,13 @@ export function EditorSidePanel({
       <div className="border-b border-border-subtle p-3.5">
         <div className="mb-3.5 flex items-center gap-2 text-[12px] font-medium tracking-[0.08em] text-text-faint uppercase">
           Variations
-          <div
-            className={cn(
-              'rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] leading-none tracking-normal text-muted-foreground normal-case',
-              coverUsage.atLimit &&
-                'border-brand-border bg-brand-soft text-brand',
-            )}
-          >
-            {templates.length}/{coverLimit}
-          </div>
+          <LimitBadge
+            used={templates.length}
+            limit={coverLimit}
+            isLoading={coverUsage.isLoading}
+            atLimit={coverUsage.atLimit}
+            className="tracking-normal normal-case"
+          />
         </div>
 
         <div className="flex h-[240px] min-h-0 flex-col">
@@ -152,6 +150,7 @@ export function EditorSidePanel({
             savingLabelVariation={savingLabelVariation}
             skeletonRows={3}
             limit={coverLimit}
+            planLoading={coverUsage.isLoading}
             onUpgrade={coverUsage.onUpgrade}
             emptyDescription={`Add up to ${coverLimit} variations. Select one to edit it here.`}
             onAdd={onRequestAddVariation}
@@ -177,16 +176,14 @@ export function EditorSidePanel({
         <div className="mb-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-[12px] font-medium tracking-[0.08em] text-text-faint uppercase">
             Tokens
-            {tokenLimit !== null && (
-              <div
-                className={cn(
-                  'rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] leading-none tracking-normal text-muted-foreground normal-case',
-                  tokenUsage.atLimit &&
-                    'border-brand-border bg-brand-soft text-brand',
-                )}
-              >
-                {tokens.length}/{tokenLimit}
-              </div>
+            {typeof tokenLimit === 'number' && (
+              <LimitBadge
+                used={tokens.length}
+                limit={tokenLimit}
+                isLoading={tokenUsage.isLoading}
+                atLimit={tokenUsage.atLimit}
+                className="tracking-normal normal-case"
+              />
             )}
           </div>
           <UnresolvedTokensIndicator
@@ -201,7 +198,7 @@ export function EditorSidePanel({
             unresolvedTokens={unresolvedTokens}
             isLoading={isLoadingTokens}
             variant="section"
-            tokenLimit={tokenUsage.limit}
+            tokenLimit={tokenUsage.isLoading ? undefined : tokenUsage.limit}
             hiddenCount={tokenUsage.hidden}
             onUpgrade={tokenUsage.onUpgrade}
             onTokenChange={onTokenChange}

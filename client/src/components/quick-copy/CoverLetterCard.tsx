@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router'
 import { ExternalLink, FileText, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
-import { cn } from '@/lib/utils'
 import { getUploadFileSizeError } from '@/utils/getUploadFileSizeError'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
 import { FREE_COVER_LETTER_VARIATION_LIMIT } from '@/components/billing/planData'
+import { LimitBadge } from '@/components/billing/LimitBadge'
 import { useExportCoverLetterPDF } from '@/api/hooks/useCoverLetters'
 import { blockPdfExportIfLimited } from '@/components/billing/pdfExportLimit'
 import { useUpgrade } from '@/components/billing/UpgradeProvider'
@@ -281,17 +282,19 @@ export function CoverLetterCard({
             <div className="truncate text-[14px] font-semibold text-foreground">
               Cover letter
             </div>
-            <div
-              className={cn(
-                'rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[11px] leading-none text-muted-foreground',
-                maxReached && 'border-brand-border bg-brand-soft text-brand',
-              )}
-            >
-              {filledCount}/{limit}
-            </div>
+            <LimitBadge
+              used={filledCount}
+              limit={limit}
+              isLoading={coverUsage.isLoading}
+              atLimit={maxReached}
+            />
           </div>
           <div className="mt-0.5 text-[13px] text-text-faint">
-            Up to {limit} variations
+            {coverUsage.isLoading ? (
+              <Skeleton className="h-4 w-28" />
+            ) : (
+              <>Up to {limit} variations</>
+            )}
           </div>
         </div>
 
@@ -321,6 +324,7 @@ export function CoverLetterCard({
           templates={sortedTemplates}
           locked={locked}
           busy={busy}
+          planLoading={coverUsage.isLoading}
           uploadingVariation={uploading}
           removingVariation={removing}
           downloadingVariation={exportingVariation}
@@ -344,7 +348,7 @@ export function CoverLetterCard({
           tokens={tokens}
           unresolvedTokens={unresolvedTokens}
           isLoading={tokensLoading}
-          tokenLimit={tokenUsage.limit}
+          tokenLimit={tokenUsage.isLoading ? undefined : tokenUsage.limit}
           hiddenCount={tokenUsage.hidden}
           onUpgrade={tokenUsage.onUpgrade}
           onTokenChange={updateToken}

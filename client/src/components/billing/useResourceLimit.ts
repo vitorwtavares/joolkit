@@ -4,9 +4,12 @@ import { useUpgrade } from './UpgradeProvider'
 import { FREE_CEILINGS } from './planData'
 
 export interface ResourceLimit {
+  // True while billing status is still loading — limit-dependent UI should wait.
+  isLoading: boolean
   isPro: boolean
-  // Effective cap for the current plan (null = unlimited). Falls back to free
-  // limits while billing status loads.
+  // Effective cap for the current plan (null = unlimited). Only set once billing
+  // status has loaded; callers should gate UI on `isLoading` instead of
+  // inferring from a free-plan fallback.
   limit: number | null
   // Rows archived by a downgrade, surfaced via hidden-data notices.
   hidden: number
@@ -22,30 +25,36 @@ export interface ResourceLimit {
 }
 
 // Centralises the per-resource plan derivation every capped surface repeated:
-// effective limit (with loading fallback), hidden count, at-limit/upgrade flags.
-// `used` is the caller's source-of-truth count (its own optimistic list length).
+// effective limit, hidden count, at-limit/upgrade flags. `used` is the caller's
+// source-of-truth count (its own optimistic list length).
 export function useResourceLimit(
   resource: CappedResource,
   used: number,
 ): ResourceLimit {
-  const { data } = useBillingStatus()
+  const { data, isLoading } = useBillingStatus()
   const { openUpgrade } = useUpgrade()
 
+  const isPlanLoading = isLoading || !data
   const isPro = data?.plan === 'pro'
-  const limit = data ? data.limits[resource] : FREE_CEILINGS[resource]
+  const limit = isPlanLoading
+    ? null
+    : data
+      ? data.limits[resource]
+      : FREE_CEILINGS[resource]
   const hidden = data?.hidden[resource] ?? 0
-  const atLimit = limit !== null && used >= limit
+  const atLimit = !isPlanLoading && limit !== null && used >= limit
   const canUpgrade = atLimit && !isPro
 
   const triggerUpgrade = useCallback(() => openUpgrade(), [openUpgrade])
 
   return {
+    isLoading: isPlanLoading,
     isPro,
     limit,
     hidden,
     atLimit,
     canUpgrade,
     openUpgrade: triggerUpgrade,
-    onUpgrade: isPro ? undefined : triggerUpgrade,
+    onUpgrade: isPlanLoading || isPro ? undefined : triggerUpgrade,
   }
 }

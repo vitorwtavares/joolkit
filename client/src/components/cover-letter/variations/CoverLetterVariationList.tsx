@@ -19,6 +19,7 @@ interface CoverLetterVariationListProps {
   locked?: boolean
   busy?: boolean
   isLoading?: boolean
+  planLoading?: boolean
   uploadingVariation?: string | null
   removingVariation?: string | null
   downloadingVariation?: string | null
@@ -51,6 +52,7 @@ export function CoverLetterVariationList({
   locked = false,
   busy = false,
   isLoading = false,
+  planLoading = false,
   uploadingVariation = null,
   removingVariation = null,
   downloadingVariation = null,
@@ -73,7 +75,7 @@ export function CoverLetterVariationList({
   const variationRefs = useRef(new Map<string, HTMLDivElement>())
 
   const sortedTemplates = [...templates].sort((a, b) => a.position - b.position)
-  const maxReached = sortedTemplates.length >= limit
+  const maxReached = !planLoading && sortedTemplates.length >= limit
   const canUpgrade = maxReached && !!onUpgrade
   const addingNewVariation =
     uploadingVariation !== null &&
@@ -236,7 +238,9 @@ export function CoverLetterVariationList({
       </PersistentScrollArea>
 
       <div className="mt-auto shrink-0 pt-2 pb-2">
-        {canUpgrade ? (
+        {planLoading ? (
+          <Skeleton className="h-[41px] w-full rounded-lg" />
+        ) : canUpgrade ? (
           <UpgradeCTA
             label="Upgrade for more variations"
             onClick={() => onUpgrade?.()}
@@ -249,7 +253,7 @@ export function CoverLetterVariationList({
           renderAddAffordance(
             <button
               type="button"
-              disabled={locked || busy}
+              disabled={locked || busy || planLoading}
               onClick={onAddEmpty ? undefined : onAdd}
               className="flex h-[41px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border-strong bg-transparent px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-brand-border hover:bg-brand-soft hover:text-brand disabled:pointer-events-none disabled:opacity-60"
             >
