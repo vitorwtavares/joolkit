@@ -15,14 +15,14 @@ export default function Nav() {
   return (
     <nav className={'nav' + (scrolled ? ' scrolled' : '')}>
       <div className="nav-inner container">
-        <a href="#top">
+        <a href="/#top">
           <img className="nav-logo" src={logoLight} alt="joolkit" />
         </a>
         <div className="nav-links">
-          <a href="#features">Features</a>
-          <a href="#how">How it works</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#faq">FAQ</a>
+          <a href="/#features">Features</a>
+          <a href="/#how">How it works</a>
+          <a href="/#pricing">Pricing</a>
+          <a href="/#faq">FAQ</a>
         </div>
         <div className="nav-right">
           <a className="nav-login" href={appUrl('/sign-in')}>

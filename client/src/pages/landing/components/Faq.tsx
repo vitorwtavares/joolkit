@@ -44,7 +44,7 @@ const ITEMS: FaqItem[] = [
   {
     question: 'Can I export my cover letters?',
     answer:
-      'Yes — clean PDF export is built in, with token substitution and template variations so each letter comes out tailored to the role.',
+      'Yes — clean PDF export is built in, with token substitution and template variations so each letter comes out tailored to the role. How many you can export depends on your plan — see our pricing page for the current limits.',
   },
   {
     question: 'What do I get on the free plan?',
