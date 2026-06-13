@@ -1,0 +1,1 @@
+export { entitlementMiddleware } from './entitlement'

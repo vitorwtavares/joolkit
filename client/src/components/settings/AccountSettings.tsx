@@ -71,9 +71,18 @@ export function AccountSettings() {
   return (
     <div className="flex flex-col">
       <h2 className="text-lg font-semibold tracking-tight">Account</h2>
-      <p className="mt-0.5 text-[13px] text-muted-foreground">{email}</p>
+      <p className="mt-1 text-[13px] text-muted-foreground">
+        Manage how you sign in and what happens to your data.
+      </p>
 
-      <div className="mt-4 flex flex-col divide-y divide-border">
+      <div className="mt-6 flex flex-col divide-y divide-border">
+        <div className="pb-6">
+          <p className="text-[12px] font-medium tracking-[0.08em] text-text-faint uppercase">
+            Email
+          </p>
+          <p className="mt-1 text-[15px] text-foreground">{email}</p>
+        </div>
+
         <SettingRow
           title="Reset password"
           description="We'll email you a link to set a new password."

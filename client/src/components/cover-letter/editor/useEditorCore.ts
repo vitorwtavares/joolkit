@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useEditor, useEditorState } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import TextAlign from '@tiptap/extension-text-align'
@@ -12,6 +13,10 @@ import {
   useExportCoverLetterPDF,
   type CoverLetterTemplate,
 } from '@/api/hooks/useCoverLetters'
+import { useBillingStatus } from '@/api/hooks/useBilling'
+import { blockPdfExportIfLimited } from '@/components/billing/pdfExportLimit'
+import { useUpgrade } from '@/components/billing/UpgradeProvider'
+import { useAuth } from '@/context/auth'
 import { TokenHighlight, setTokenHighlight } from '../tokens/tokenHighlight'
 import { getCoverLetterTokenValidation } from '../tokens/tokenValidation'
 import {
@@ -58,6 +63,10 @@ export function useEditorCore({
   const updateContent = useUpdateCoverLetterContent()
   const restoreMutation = useRestoreCoverLetter()
   const exportPDF = useExportCoverLetterPDF()
+  const queryClient = useQueryClient()
+  const { user } = useAuth()
+  const { handlePlanLimitError, openUpgrade } = useUpgrade()
+  const { data: billing } = useBillingStatus()
 
   const [isDirty, setIsDirty] = useState(false)
   const [isPreview, setIsPreview] = useState(false)
@@ -169,6 +178,9 @@ export function useEditorCore({
     tokens,
   })
   const hasUnresolved = tokenValidation.unresolvedTokens.length > 0
+  const pdfExports = billing?.pdfExports
+  // Today's daily export quota is spent — gates every download entry point.
+  const exportLimitReached = !!pdfExports && pdfExports.remaining <= 0
   const downloadDisabled =
     tokensLoading || templatesLoading || hasUnresolved || isEditorEmpty
 
@@ -240,6 +252,16 @@ export function useEditorCore({
 
   const handleDownload = async () => {
     if (!variation) return
+
+    if (user) {
+      const blocked = await blockPdfExportIfLimited({
+        queryClient,
+        userId: user.id,
+        openUpgrade,
+      })
+      if (blocked) return
+    }
+
     if (hasUnresolved) {
       toast.error(
         `Fill in ${tokenValidation.unresolvedTokens.join(' and ')} before downloading`,
@@ -254,8 +276,10 @@ export function useEditorCore({
       return
     }
     exportPDF.mutate(variation, {
-      onError: (error) =>
-        toast.error(error.message || 'Failed to export PDF', TOAST_POSITION),
+      onError: (error) => {
+        if (handlePlanLimitError(error)) return
+        toast.error(error.message || 'Failed to export PDF', TOAST_POSITION)
+      },
     })
   }
 
@@ -272,6 +296,8 @@ export function useEditorCore({
     tokenValidation,
     hasUnresolved,
     downloadDisabled,
+    pdfExports,
+    exportLimitReached,
     handleSave,
     handleRestore,
     handleCopyToClipboard,

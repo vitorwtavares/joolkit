@@ -21,6 +21,10 @@ import type {
   CreateApplicationPayload,
 } from '@/api/hooks/useApplications'
 import { useTrackerViews, type TrackerView } from '@/api/hooks/useTrackerViews'
+import { useUpgrade } from '@/components/billing/UpgradeProvider'
+import { useResourceLimit } from '@/components/billing/useResourceLimit'
+import { HiddenDataNotice } from '@/components/billing/HiddenDataNotice'
+import { CreateOrUpgradeButton } from '@/components/billing/CreateOrUpgradeButton'
 import { ApplicationTable } from '@/components/tracker/table/ApplicationTable'
 import { ApplicationDrawer } from '@/components/tracker/ApplicationDrawer'
 import { SortControl } from '@/components/tracker/controls/SortControl'
@@ -157,6 +161,14 @@ function ApplicationTrackerInner() {
   }, [views, applications])
 
   const createApplication = useCreateApplication()
+  const { handlePlanLimitError } = useUpgrade()
+  const {
+    isPro,
+    limit: appLimit,
+    hidden: hiddenApplications,
+    atLimit: atAppLimit,
+    openUpgrade,
+  } = useResourceLimit('applications', applications.length)
 
   // Track scroll position so it can be restored after a sort reorder.
   useEffect(() => {
@@ -217,10 +229,12 @@ function ApplicationTrackerInner() {
   function handleNewEntry() {
     createApplication.mutate(newEntryDefaults(activeView), {
       onSuccess: (app) => openDrawer(app.id),
-      onError: (error) =>
+      onError: (error) => {
+        if (handlePlanLimitError(error)) return
         toast.error(
           error instanceof ApiError ? error.message : 'Failed to create entry',
-        ),
+        )
+      },
     })
   }
 
@@ -229,12 +243,20 @@ function ApplicationTrackerInner() {
       {/* Left column: header + tabs + table */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex-shrink-0 px-16 pt-16 pb-0">
+        <div className="flex-shrink-0 px-16 pt-16 pb-0 max-[1599px]:pt-12">
           <PageHeader
             title="Applications"
             subtitle="Track every application in one place."
             subtitleClassName="mb-4"
           />
+          {hiddenApplications > 0 && (
+            <HiddenDataNotice
+              resource="applications"
+              limit={appLimit}
+              hidden={hiddenApplications}
+              className="mb-4"
+            />
+          )}
         </div>
 
         {/* View tabs + actions row */}
@@ -353,15 +375,16 @@ function ApplicationTrackerInner() {
               value={hiddenColumns}
               onChange={handleColumnsChange}
             />
-            <Button
-              size="sm"
-              onClick={handleNewEntry}
+            <CreateOrUpgradeButton
+              atLimit={atAppLimit}
+              isPro={isPro}
+              createLabel="New entry"
+              onCreate={handleNewEntry}
+              onUpgrade={openUpgrade}
               disabled={createApplication.isPending}
+              size="sm"
               className="min-w-[110px]"
-            >
-              <Plus size={14} />
-              New entry
-            </Button>
+            />
           </div>
         </div>
 

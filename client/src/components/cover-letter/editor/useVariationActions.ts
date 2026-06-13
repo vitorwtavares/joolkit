@@ -18,6 +18,7 @@ import {
   getCoverLetterTemplatePath,
 } from '../variations/coverLetterVariationUtils'
 import { TOAST_POSITION } from './editorExtensions'
+import { getUploadFileSizeError } from '@/utils/getUploadFileSizeError'
 
 interface UseVariationActionsParams {
   user: User | null
@@ -67,6 +68,7 @@ export function useVariationActions({
   const uploadTargetRef = useRef<string | null>(null)
   const titleInputRef = useRef<HTMLInputElement>(null)
   const pendingTitleFocus = useRef(false)
+  const pendingEditorFocus = useRef(false)
 
   // Focus the header label input after switching to a variation queued for rename.
   useEffect(() => {
@@ -76,6 +78,22 @@ export function useVariationActions({
     input?.focus()
     input?.select()
   }, [template?.variation])
+
+  // After creating the first variation from scratch, focus the editor immediately.
+  useEffect(() => {
+    if (
+      !pendingEditorFocus.current ||
+      !editor ||
+      !variation ||
+      uploadingVariation !== null
+    ) {
+      return
+    }
+    pendingEditorFocus.current = false
+    requestAnimationFrame(() => {
+      editor.commands.focus('end')
+    })
+  }, [editor, uploadingVariation, variation])
 
   // Any action that switches away from (or replaces) the active variation runs
   // through here so unsaved edits prompt a discard confirmation first.
@@ -116,6 +134,13 @@ export function useVariationActions({
     file: File,
   ) => {
     if (!user) return
+
+    const sizeError = getUploadFileSizeError(file)
+    if (sizeError) {
+      toast.error(sizeError, TOAST_POSITION)
+      return
+    }
+
     const label = targetVariation
       ? (sortedTemplates.find((t) => t.variation === targetVariation)?.label ??
         COVER_LETTER_FALLBACK_LABEL)
@@ -254,12 +279,15 @@ export function useVariationActions({
     })
   }
 
-  const handleCreateEmptyVariation = async () => {
+  const handleCreateEmptyVariation = async ({
+    focusEditor = false,
+  }: { focusEditor?: boolean } = {}) => {
     setUploadingVariation('new')
     try {
       const data = await createVariation.mutateAsync({
         label: COVER_LETTER_FALLBACK_LABEL,
       })
+      if (focusEditor) pendingEditorFocus.current = true
       setSearchParams({ v: data.variation }, { replace: true })
       toast.success(`${data.label} created`, TOAST_POSITION)
     } catch (err) {
@@ -272,6 +300,12 @@ export function useVariationActions({
   }
 
   const handleFileSelected = (file: File) => {
+    const sizeError = getUploadFileSizeError(file)
+    if (sizeError) {
+      toast.error(sizeError, TOAST_POSITION)
+      return
+    }
+
     const targetVariation = uploadTargetRef.current
     const targetTemplate =
       targetVariation === null
@@ -314,8 +348,8 @@ export function useVariationActions({
     setPendingAction({ type: 'remove', template: targetTemplate })
   const requestRestore = () => setPendingAction({ type: 'restore' })
 
-  const handleRequestCreateEmpty = () =>
-    guardUnsavedChanges(() => void handleCreateEmptyVariation())
+  const handleRequestCreateEmpty = (options?: { focusEditor?: boolean }) =>
+    guardUnsavedChanges(() => void handleCreateEmptyVariation(options))
 
   return {
     uploadingVariation,

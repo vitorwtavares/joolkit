@@ -23,6 +23,7 @@ import {
   useCreateLocation,
   useDeleteLocation,
 } from '@/api/hooks/useLocations'
+import { normalizeForSearch } from '@/utils/normalizeForSearch'
 
 interface LocationRef {
   id: string
@@ -65,15 +66,15 @@ export function LocationCell({ value, onSave }: LocationCellProps) {
   )
 
   const filteredOthers = useMemo(() => {
-    const q = search.trim().toLowerCase()
+    const q = normalizeForSearch(search.trim())
     return locations
       .filter((l) => !isRemote(l))
-      .filter((l) => !q || l.name.toLowerCase().includes(q))
+      .filter((l) => !q || normalizeForSearch(l.name).includes(q))
   }, [locations, search])
 
   const exactMatch = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return locations.some((l) => l.name.toLowerCase() === q)
+    const q = normalizeForSearch(search.trim())
+    return locations.some((l) => normalizeForSearch(l.name) === q)
   }, [locations, search])
 
   const clearIdx = value !== null ? 0 : -1

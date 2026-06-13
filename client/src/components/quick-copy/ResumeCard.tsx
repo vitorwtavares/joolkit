@@ -2,12 +2,13 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { FileText, Loader2, Plus, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/api/supabase'
-import {
-  RESUME_VARIATION_LIMIT,
-  type ResumeVariation,
-} from '@/api/hooks/useResumes'
+import type { ResumeVariation } from '@/api/hooks/useResumes'
+import { FREE_RESUME_VARIATION_LIMIT } from '@/components/billing/planData'
+import { useResourceLimit } from '@/components/billing/useResourceLimit'
+import { UpgradeCTA } from '@/components/billing/UpgradeCTA'
 import { cn } from '@/lib/utils'
 import { downloadFile } from '@/utils/downloadFile'
+import { getUploadFileSizeError } from '@/utils/getUploadFileSizeError'
 import { useDownloadBubble } from '@/hooks/useDownloadBubble'
 import { PersistentScrollArea } from '@/components/ui/persistent-scroll-area'
 import { ResumeRow } from './ResumeRow'
@@ -16,9 +17,9 @@ function getFilename(path: string): string {
   return path.split('/').pop() ?? path
 }
 
-function getNextPosition(resumes: ResumeVariation[]): number | null {
-  const nextPosition = resumes.length + 1
-  return nextPosition <= RESUME_VARIATION_LIMIT ? nextPosition : null
+function getNextPosition(count: number, limit: number): number | null {
+  const nextPosition = count + 1
+  return nextPosition <= limit ? nextPosition : null
 }
 
 interface ResumeCardProps {
@@ -57,10 +58,16 @@ export function ResumeCard({
     bubble: downloadBubble,
     isOnCooldown,
   } = useDownloadBubble()
+  const {
+    limit: rawLimit,
+    atLimit: maxReached,
+    canUpgrade,
+    openUpgrade,
+  } = useResourceLimit('resumeVariations', resumes.length)
+  const limit = rawLimit ?? FREE_RESUME_VARIATION_LIMIT
 
   const sortedResumes = [...resumes].sort((a, b) => a.position - b.position)
   const filledCount = sortedResumes.length
-  const maxReached = filledCount >= RESUME_VARIATION_LIMIT
   const busy = uploading !== null || removing !== null
   const addingNewVariation =
     uploading !== null &&
@@ -100,7 +107,7 @@ export function ResumeCard({
   }
 
   function handleAdd() {
-    const position = getNextPosition(sortedResumes)
+    const position = getNextPosition(sortedResumes.length, limit)
     if (!position) return
     openUploader(position)
   }
@@ -109,6 +116,14 @@ export function ResumeCard({
     const file = e.target.files?.[0]
     const target = uploadTargetRef.current
     if (!file || !target) return
+
+    const sizeError = getUploadFileSizeError(file)
+    if (sizeError) {
+      toast.error(sizeError)
+      e.target.value = ''
+      uploadTargetRef.current = null
+      return
+    }
 
     const { id, position, label } = target
     const existingResume =
@@ -202,11 +217,11 @@ export function ResumeCard({
                 maxReached && 'border-brand-border bg-brand-soft text-brand',
               )}
             >
-              {filledCount}/{RESUME_VARIATION_LIMIT}
+              {filledCount}/{limit}
             </div>
           </div>
           <div className="mt-0.5 text-[13px] text-text-faint">
-            Up to {RESUME_VARIATION_LIMIT} variations
+            Up to {limit} variations
           </div>
         </div>
       </header>
@@ -242,12 +257,11 @@ export function ResumeCard({
               Upload a file
             </span>
             <span className="max-w-[26ch] text-[12px] text-text-faint">
-              Add up to {RESUME_VARIATION_LIMIT} variations. Each becomes a
-              one-click download.
+              Add up to {limit} variations. Each becomes a one-click download.
             </span>
           </button>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex h-full min-h-0 flex-1 flex-col">
             <PersistentScrollArea
               scrollViewportRef={scrollViewportRef}
               className="flex min-h-0 flex-1"
@@ -273,10 +287,15 @@ export function ResumeCard({
                 />
               ))}
             </PersistentScrollArea>
-            <div className="flex-shrink-0 pt-2">
-              {maxReached ? (
+            <div className="mt-auto shrink-0 pt-2 pb-2">
+              {canUpgrade ? (
+                <UpgradeCTA
+                  label="Upgrade for more variations"
+                  onClick={openUpgrade}
+                />
+              ) : maxReached ? (
                 <div className="px-2 py-1 text-center text-[11px] text-text-faint">
-                  Maximum of {RESUME_VARIATION_LIMIT} variations reached
+                  Maximum of {limit} variations reached
                 </div>
               ) : (
                 <button
@@ -292,7 +311,7 @@ export function ResumeCard({
                       <Plus size={14} />
                       Add variation
                       <span className="font-normal text-text-faint">
-                        · {filledCount}/{RESUME_VARIATION_LIMIT}
+                        · {filledCount}/{limit}
                       </span>
                     </>
                   )}

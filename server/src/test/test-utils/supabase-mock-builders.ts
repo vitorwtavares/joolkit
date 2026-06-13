@@ -5,9 +5,12 @@ export function createSelectBuilder(response: {
   error: unknown
 }) {
   const mockOrder = vi.fn().mockResolvedValue(response)
-  const mockEq = vi.fn().mockReturnValue({ order: mockOrder })
+  const mockIs = vi.fn().mockReturnValue({ order: mockOrder })
+  // eq() exposes both is() and order(), so `.eq().is().order()` (active-set
+  // reads) and a plain `.eq().order()` both resolve.
+  const mockEq = vi.fn().mockReturnValue({ is: mockIs, order: mockOrder })
   const mockSelect = vi.fn().mockReturnValue({ eq: mockEq })
-  return { builder: { select: mockSelect }, mockEq, mockOrder }
+  return { builder: { select: mockSelect }, mockEq, mockIs, mockOrder }
 }
 
 export function createInsertBuilder(response: {

@@ -1,10 +1,10 @@
 import { Router } from 'express'
 import { randomUUID } from 'node:crypto'
 import { getSupabase } from '../../middleware/auth'
+import { sendPlanLimit } from '../../billing/limits'
 import { pdfToTiptap, PageLimitError } from '../../utils/pdfToTiptap'
 
 const MAX_PAGES = 3
-const MAX_COVER_LETTER_VARIATIONS = 10
 const MAX_COVER_LETTER_LABEL_LENGTH = 40
 
 const router = Router()
@@ -35,11 +35,14 @@ function createVariationKey(): string {
   return `variation-${randomUUID()}`
 }
 
+// Active templates only. Templates archived by a downgrade stay stored but are
+// excluded from listing, counting, and compaction until the user resubscribes.
 async function fetchCoverLetterTemplates(userId: string) {
   return getSupabase()
     .from('cover_letter_templates')
     .select('*')
     .eq('user_id', userId)
+    .is('archived_at', null)
     .order('position', { ascending: true })
 }
 
@@ -138,9 +141,15 @@ router.post('/', async (req, res) => {
     return
   }
 
+  const { plan, limits } = req.entitlement!
   const position = (templates?.length ?? 0) + 1
-  if (position > MAX_COVER_LETTER_VARIATIONS) {
-    res.status(400).json({ error: 'maximum cover letter variations reached' })
+  if (position > limits.coverLetterVariations) {
+    sendPlanLimit(
+      res,
+      'coverLetterVariations',
+      limits.coverLetterVariations,
+      plan,
+    )
     return
   }
 

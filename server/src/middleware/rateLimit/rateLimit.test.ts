@@ -6,6 +6,7 @@ vi.mock('../auth', () => ({
   getSupabase: vi.fn(),
 }))
 
+import { PLAN_LIMITS } from '../../billing/plans'
 import { getSupabase } from '../auth'
 import { createRateLimitMiddleware } from './rateLimit'
 
@@ -76,6 +77,50 @@ describe('createRateLimitMiddleware', () => {
     expect(res.status).toBe(429)
     expect(res.body).toEqual({ error: 'Too many requests' })
     expect(res.headers['retry-after']).toBeDefined()
+  })
+
+  it('includes structured plan_limit fields when configured', async () => {
+    buildRpc({
+      data: {
+        allowed: false,
+        remaining: 0,
+        reset_at: new Date(Date.now() + 30_000).toISOString(),
+      },
+      error: null,
+    })
+
+    const app = express()
+    app.use((req, _res, next) => {
+      req.entitlement = {
+        plan: 'free',
+        limits: PLAN_LIMITS.free,
+        subscription: null,
+      }
+      next()
+    })
+    app.use(
+      createRateLimitMiddleware({
+        keyPrefix: 'pdf-export',
+        limit: 1,
+        windowMs: 86_400_000,
+        message: 'Daily PDF export limit reached',
+        code: 'plan_limit',
+        planLimitResource: 'pdfExports',
+        keyGenerator: () => 'user-1',
+      }),
+    )
+    app.get('/test', (_req, res) => res.json({ ok: true }))
+
+    const res = await request(app).get('/test')
+
+    expect(res.status).toBe(429)
+    expect(res.body).toEqual({
+      error: 'Daily PDF export limit reached',
+      code: 'plan_limit',
+      resource: 'pdfExports',
+      plan: 'free',
+      limit: 1,
+    })
   })
 
   it('fails open when the rate limit check fails', async () => {

@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Loader2, X } from 'lucide-react'
+import { toast } from 'sonner'
+import { useUpgrade } from '@/components/billing/UpgradeProvider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -23,6 +25,10 @@ import {
   useDeleteAnswer,
 } from '@/api/hooks/useAnswers'
 import type { Answer } from '@/api/hooks/useAnswers'
+import {
+  DEFAULT_ANSWER_MAX_LENGTH,
+  DETAILED_ANSWER_MAX_LENGTH,
+} from '@/utils/answerLimits'
 import { TagInput } from './TagInput'
 
 interface EditAnswerModalProps {
@@ -35,6 +41,10 @@ function countStats(text: string) {
   const chars = text.length
   const words = text.trim() ? text.trim().split(/\s+/).length : 0
   return { chars, words }
+}
+
+function formatCharCount(chars: number, maxChars: number) {
+  return `${chars.toLocaleString()} / ${maxChars.toLocaleString()} chars`
 }
 
 export function EditAnswerModal({
@@ -54,6 +64,7 @@ export function EditAnswerModal({
   const createAnswer = useCreateAnswer()
   const updateAnswer = useUpdateAnswer()
   const deleteAnswer = useDeleteAnswer()
+  const { handlePlanLimitError } = useUpgrade()
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -112,6 +123,14 @@ export function EditAnswerModal({
         })
       }
       onClose()
+    } catch (err) {
+      // A Free user racing past their cap gets the upgrade prompt; the modal
+      // closes so it isn't stranded behind the dialog.
+      if (handlePlanLimitError(err)) {
+        onClose()
+      } else {
+        toast.error('Failed to save answer. Please try again.')
+      }
     } finally {
       setSaving(false)
     }
@@ -183,13 +202,15 @@ export function EditAnswerModal({
                   Default
                 </span>
                 <span className="font-mono text-[11px] text-text-faint">
-                  {shortStats.chars} chars · {shortStats.words} words
+                  {formatCharCount(shortStats.chars, DEFAULT_ANSWER_MAX_LENGTH)}{' '}
+                  · {shortStats.words} words
                 </span>
               </div>
               <textarea
                 id="answer-short"
                 name="answer-short"
                 value={shortAnswer}
+                maxLength={DEFAULT_ANSWER_MAX_LENGTH}
                 onChange={(e) => setShortAnswer(e.target.value)}
                 placeholder="Write your default answer..."
                 className="h-[240px] resize-none rounded-lg border border-border bg-background px-3.5 py-3 text-[13.5px] leading-relaxed text-foreground transition-[border-color,box-shadow] outline-none placeholder:text-muted-foreground/50 focus:border-brand-border focus:ring-3 focus:ring-brand-soft"
@@ -201,13 +222,15 @@ export function EditAnswerModal({
                   Detailed
                 </span>
                 <span className="font-mono text-[11px] text-text-faint">
-                  {longStats.chars} chars · {longStats.words} words
+                  {formatCharCount(longStats.chars, DETAILED_ANSWER_MAX_LENGTH)}{' '}
+                  · {longStats.words} words
                 </span>
               </div>
               <textarea
                 id="answer-long"
                 name="answer-long"
                 value={longAnswer}
+                maxLength={DETAILED_ANSWER_MAX_LENGTH}
                 onChange={(e) => setLongAnswer(e.target.value)}
                 placeholder="Write a more detailed version of your answer..."
                 className="h-[240px] resize-none rounded-lg border border-border bg-background px-3.5 py-3 text-[13.5px] leading-relaxed text-foreground transition-[border-color,box-shadow] outline-none placeholder:text-muted-foreground/50 focus:border-brand-border focus:ring-3 focus:ring-brand-soft"

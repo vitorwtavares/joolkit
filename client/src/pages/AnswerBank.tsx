@@ -1,23 +1,30 @@
 import { useMemo, useState } from 'react'
-import { Plus, Search, X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAnswers } from '@/api/hooks/useAnswers'
+import { useResourceLimit } from '@/components/billing/useResourceLimit'
+import { HiddenDataNotice } from '@/components/billing/HiddenDataNotice'
+import { CreateOrUpgradeButton } from '@/components/billing/CreateOrUpgradeButton'
 import { AnswerCard } from '@/components/answer-bank/AnswerCard'
 import { EmptySlotCard } from '@/components/answer-bank/EmptySlotCard'
 import { EditAnswerModal } from '@/components/answer-bank/EditAnswerModal'
 import type { Answer } from '@/api/hooks/useAnswers'
 
 const SKELETON_COUNT = 6
-const MAX_ANSWERS = 40
 
 export default function AnswerBank() {
   const { data: answers = [], isLoading } = useAnswers()
+  const { isPro, limit, hidden, atLimit, openUpgrade } = useResourceLimit(
+    'answers',
+    answers.length,
+  )
   const [modalOpen, setModalOpen] = useState(false)
   const [editingAnswer, setEditingAnswer] = useState<Answer | null>(null)
   const [search, setSearch] = useState('')
+
+  const canAddMore = !atLimit
 
   function openNew() {
     setEditingAnswer(null)
@@ -34,8 +41,6 @@ export default function AnswerBank() {
     setEditingAnswer(null)
   }
 
-  const canAddMore = answers.length < MAX_ANSWERS
-
   const trimmedSearch = search.trim().toLowerCase()
   const filteredAnswers = useMemo(() => {
     if (!trimmedSearch) return answers
@@ -47,7 +52,7 @@ export default function AnswerBank() {
   }, [answers, trimmedSearch])
 
   return (
-    <div className="flex-1 overflow-y-auto p-16 pb-6">
+    <div className="flex-1 overflow-y-auto p-16 pb-6 max-[1599px]:py-12">
       <PageHeader
         title="Answers"
         subtitle={
@@ -84,13 +89,26 @@ export default function AnswerBank() {
                 </button>
               )}
             </div>
-            <Button onClick={openNew} disabled={!canAddMore}>
-              <Plus size={13} />
-              New answer
-            </Button>
+            <CreateOrUpgradeButton
+              atLimit={atLimit}
+              isPro={isPro}
+              createLabel="New answer"
+              upgradeLabel="Upgrade for more"
+              onCreate={openNew}
+              onUpgrade={openUpgrade}
+            />
           </div>
         }
       />
+
+      {hidden > 0 && (
+        <HiddenDataNotice
+          resource="answers"
+          limit={limit}
+          hidden={hidden}
+          className="mb-4"
+        />
+      )}
 
       {isLoading ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-3">

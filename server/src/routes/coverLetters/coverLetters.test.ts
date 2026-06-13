@@ -33,6 +33,7 @@ vi.mock('../../middleware/auth', async (importOriginal) => {
 
 import * as authModule from '../../middleware/auth'
 import coverLettersRouter from '.'
+import { PLAN_LIMITS, type Plan } from '../../billing/plans'
 
 const USER_ID = 'test-user-id'
 
@@ -58,10 +59,14 @@ function coverLetter(overrides: Partial<CoverLetterRow> = {}): CoverLetterRow {
   }
 }
 
-function buildApp() {
+function buildApp(plan: Plan = 'pro') {
   const app = express()
   app.use(express.json())
   app.use(authModule.authMiddleware)
+  app.use((req, _res, next) => {
+    req.entitlement = { plan, limits: PLAN_LIMITS[plan], subscription: null }
+    next()
+  })
   app.use('/api/cover-letters', coverLettersRouter)
   return app
 }
@@ -73,14 +78,17 @@ function createUpsertBuilder(response: { error: unknown }) {
   return { builder: { upsert: mockUpsert }, mockUpsert }
 }
 
+// Orphan deletion is scoped to active rows: `.delete().eq().is().not()`.
 function createOrphanDeleteBuilder(response: { error: unknown }) {
   const mockNot = vi.fn().mockResolvedValue(response)
-  const mockEq = vi.fn().mockReturnValue({ not: mockNot })
+  const mockIs = vi.fn().mockReturnValue({ not: mockNot })
+  const mockEq = vi.fn().mockReturnValue({ is: mockIs })
   const mockDelete = vi.fn().mockReturnValue({ eq: mockEq })
   return {
     builder: { delete: mockDelete },
     mockDelete,
     mockEq,
+    mockIs,
     mockNot,
   }
 }
@@ -250,6 +258,55 @@ describe('cover letter token routes', () => {
       { onConflict: 'user_id,token_key' },
     )
   })
+
+  it('blocks a Free user from defining more than 4 token definitions', async () => {
+    const res = await request(buildApp('free'))
+      .put('/api/cover-letters/tokens')
+      .send({
+        tokens: [
+          { key: 'a', value: '1' },
+          { key: 'b', value: '2' },
+          { key: 'c', value: '3' },
+          { key: 'd', value: '4' },
+          { key: 'e', value: '5' },
+        ],
+      })
+
+    expect(res.status).toBe(403)
+    expect(res.body).toMatchObject({
+      code: 'plan_limit',
+      resource: 'tokenDefinitions',
+      plan: 'free',
+      limit: 4,
+    })
+  })
+
+  it('scopes Free orphan deletion to active rows so archived tokens survive', async () => {
+    const upsert = createUpsertBuilder({ error: null })
+    const orphanDelete = createOrphanDeleteBuilder({ error: null })
+    const select = createSelectBuilder({ data: [], error: null })
+    const mockFrom = vi
+      .fn()
+      .mockReturnValueOnce(upsert.builder)
+      .mockReturnValueOnce(orphanDelete.builder)
+      .mockReturnValueOnce(select.builder)
+    mockGetSupabase.mockReturnValue({ from: mockFrom } as never)
+
+    const res = await request(buildApp('free'))
+      .put('/api/cover-letters/tokens')
+      .send({
+        tokens: [
+          { key: 'a', value: '1' },
+          { key: 'b', value: '2' },
+        ],
+      })
+
+    expect(res.status).toBe(200)
+    // Orphan deletion only touches active rows; archived (downgrade) tokens stay.
+    expect(orphanDelete.mockIs).toHaveBeenCalledWith('archived_at', null)
+    // The returned set is the active window too.
+    expect(select.mockIs).toHaveBeenCalledWith('archived_at', null)
+  })
 })
 
 describe('POST /api/cover-letters', () => {
@@ -369,7 +426,7 @@ describe('POST /api/cover-letters', () => {
     })
   })
 
-  it('returns 400 when the maximum is reached', async () => {
+  it('blocks creation with a plan_limit error when the Pro cap is reached', async () => {
     const existingSelect = createSelectBuilder({
       data: Array.from({ length: 10 }, (_, index) =>
         coverLetter({ position: index + 1 }),
@@ -382,15 +439,41 @@ describe('POST /api/cover-letters', () => {
       storage: createStorage(),
     } as never)
 
-    const res = await request(buildApp())
+    const res = await request(buildApp('pro'))
       .post('/api/cover-letters')
       .send({
         file_url: `${USER_ID}/cover-letter.pdf`,
       })
 
-    expect(res.status).toBe(400)
-    expect(res.body).toEqual({
-      error: 'maximum cover letter variations reached',
+    expect(res.status).toBe(403)
+    expect(res.body).toMatchObject({
+      code: 'plan_limit',
+      resource: 'coverLetterVariations',
+      plan: 'pro',
+      limit: 10,
+    })
+  })
+
+  it('blocks a Free user after the single allowed variation', async () => {
+    const existingSelect = createSelectBuilder({
+      data: [coverLetter({ position: 1 })],
+      error: null,
+    })
+    mockGetSupabase.mockReturnValue({
+      from: vi.fn().mockReturnValue(existingSelect.builder),
+      storage: createStorage(),
+    } as never)
+
+    const res = await request(buildApp('free'))
+      .post('/api/cover-letters')
+      .send({ file_url: `${USER_ID}/cover-letter.pdf` })
+
+    expect(res.status).toBe(403)
+    expect(res.body).toMatchObject({
+      code: 'plan_limit',
+      resource: 'coverLetterVariations',
+      plan: 'free',
+      limit: 1,
     })
   })
 })

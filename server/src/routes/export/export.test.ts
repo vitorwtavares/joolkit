@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   createRateLimitMiddleware: vi.fn(
-    () => (_req: unknown, _res: unknown, next: () => void) => next(),
+    (_options: unknown) => (_req: unknown, _res: unknown, next: () => void) =>
+      next(),
   ),
 }))
 
@@ -19,7 +20,7 @@ vi.mock('../../utils/browser', () => ({
 }))
 
 describe('export route limits', () => {
-  it('limits cover letter PDF exports to 25 per rolling day', async () => {
+  it('configures a per-day PDF export limiter tagged as a plan limit', async () => {
     const router = await import('.')
 
     expect(router.default).toBeDefined()
@@ -27,10 +28,23 @@ describe('export route limits', () => {
       expect.objectContaining({
         keyPrefix: 'pdf-export',
         windowMs: 24 * 60 * 60 * 1000,
-        limit: 25,
-        message:
-          'PDF export limit reached. You can export up to 25 cover letters every 24 hours.',
+        code: 'plan_limit',
+        planLimitResource: 'pdfExports',
+        limit: expect.any(Function),
       }),
     )
+  })
+
+  it('resolves the daily limit from the caller’s plan entitlement', async () => {
+    await import('.')
+
+    const options = mocks.createRateLimitMiddleware.mock.calls[0][0] as {
+      limit: (req: unknown) => number
+    }
+    const limitFor = (pdfExportsPerDay: number) =>
+      options.limit({ entitlement: { limits: { pdfExportsPerDay } } })
+
+    expect(limitFor(2)).toBe(2)
+    expect(limitFor(15)).toBe(15)
   })
 })

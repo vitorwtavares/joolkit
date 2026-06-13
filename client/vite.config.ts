@@ -8,6 +8,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      '@joolkit/billing/plans': path.resolve(
+        __dirname,
+        '../server/src/billing/plans.ts',
+      ),
     },
   },
 })

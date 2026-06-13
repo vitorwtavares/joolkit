@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api'
-
-export const RESUME_VARIATION_LIMIT = 10
+import { invalidateBillingStatus } from './useBilling'
 
 export interface ResumeVariation {
   id: string
@@ -49,6 +48,7 @@ export function useCreateResumeVariation() {
         if (!prev) return [data]
         return [...prev, data].sort((a, b) => a.position - b.position)
       })
+      void invalidateBillingStatus(queryClient)
     },
   })
 }
@@ -60,6 +60,7 @@ export function useDeleteResumeVariation() {
       api.delete<ResumeVariation[]>(`/api/resumes/${id}`),
     onSuccess: (data) => {
       queryClient.setQueryData<ResumeVariation[]>(['resumes'], data)
+      void invalidateBillingStatus(queryClient)
     },
   })
 }

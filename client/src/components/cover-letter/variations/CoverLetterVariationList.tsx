@@ -1,9 +1,8 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { FilePlus, Loader2, Plus, Upload } from 'lucide-react'
-import {
-  COVER_LETTER_VARIATION_LIMIT,
-  type CoverLetterTemplate,
-} from '@/api/hooks/useCoverLetters'
+import type { CoverLetterTemplate } from '@/api/hooks/useCoverLetters'
+import { FREE_COVER_LETTER_VARIATION_LIMIT } from '@/components/billing/planData'
+import { UpgradeCTA } from '@/components/billing/UpgradeCTA'
 import { PersistentScrollArea } from '@/components/ui/persistent-scroll-area'
 import {
   DropdownMenu,
@@ -27,6 +26,10 @@ interface CoverLetterVariationListProps {
   downloadDisabled?: boolean
   skeletonRows?: number
   emptyDescription?: string
+  // Effective plan cap. When the user is at the cap and `onUpgrade` is provided
+  // (Free), the add affordance becomes an upgrade prompt instead of a hard stop.
+  limit?: number
+  onUpgrade?: () => void
   onAdd: () => void
   /** When provided, the add affordance offers a choice between uploading a file
    *  and starting an empty variation from scratch (editor only). */
@@ -54,7 +57,9 @@ export function CoverLetterVariationList({
   savingLabelVariation = null,
   downloadDisabled = false,
   skeletonRows = 3,
-  emptyDescription = `Add up to ${COVER_LETTER_VARIATION_LIMIT} variations. Each becomes a one-click download.`,
+  limit = FREE_COVER_LETTER_VARIATION_LIMIT,
+  onUpgrade,
+  emptyDescription = `Add up to ${limit} variations. Each becomes a one-click download.`,
   onAdd,
   onAddEmpty,
   onSelect,
@@ -68,7 +73,8 @@ export function CoverLetterVariationList({
   const variationRefs = useRef(new Map<string, HTMLDivElement>())
 
   const sortedTemplates = [...templates].sort((a, b) => a.position - b.position)
-  const maxReached = sortedTemplates.length >= COVER_LETTER_VARIATION_LIMIT
+  const maxReached = sortedTemplates.length >= limit
+  const canUpgrade = maxReached && !!onUpgrade
   const addingNewVariation =
     uploadingVariation !== null &&
     !sortedTemplates.some(
@@ -192,7 +198,7 @@ export function CoverLetterVariationList({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       <PersistentScrollArea
         scrollViewportRef={scrollViewportRef}
         className="flex min-h-0 flex-1"
@@ -229,10 +235,15 @@ export function CoverLetterVariationList({
         ))}
       </PersistentScrollArea>
 
-      <div className="flex-shrink-0 pt-2">
-        {maxReached ? (
+      <div className="mt-auto shrink-0 pt-2 pb-2">
+        {canUpgrade ? (
+          <UpgradeCTA
+            label="Upgrade for more variations"
+            onClick={() => onUpgrade?.()}
+          />
+        ) : maxReached ? (
           <div className="px-2 py-1 text-center text-[11px] text-text-faint">
-            Maximum of {COVER_LETTER_VARIATION_LIMIT} variations reached
+            Maximum of {limit} variations reached
           </div>
         ) : (
           renderAddAffordance(
@@ -249,7 +260,7 @@ export function CoverLetterVariationList({
                   <Plus size={14} />
                   Add variation
                   <span className="font-normal text-text-faint">
-                    · {sortedTemplates.length}/{COVER_LETTER_VARIATION_LIMIT}
+                    · {sortedTemplates.length}/{limit}
                   </span>
                 </>
               )}
