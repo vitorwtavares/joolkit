@@ -1,5 +1,5 @@
-import { initSupabase } from '../server/src/middleware/auth'
-import app from '../server/src/app'
+import { initSupabase } from '../server/dist/middleware/auth'
+import app from '../server/dist/app'
 
 initSupabase()
 
