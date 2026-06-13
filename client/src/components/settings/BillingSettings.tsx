@@ -62,10 +62,12 @@ export function BillingSettings() {
   }, [searchParams, setSearchParams, queryClient])
 
   async function handleManageBilling() {
-    setConfirmPortalOpen(false)
+    // Keep the dialog open so its confirm button shows the in-flight spinner
+    // while we fetch the portal URL; the browser redirects on success.
     try {
       await portal.mutateAsync()
     } catch {
+      setConfirmPortalOpen(false)
       toast.error('Could not open the billing portal. Please try again.')
     }
   }
@@ -204,6 +206,7 @@ export function BillingSettings() {
         title="Manage your billing"
         description="You'll be taken to Stripe to update or cancel your plan. If you cancel, you keep Pro until the end of your paid period — after that, Free limits apply and any over-limit data stays safely stored, ready to restore if you resubscribe."
         confirmLabel="Continue to Stripe"
+        confirmingLabel="Redirecting to Stripe…"
         confirmVariant="default"
         isConfirming={portal.isPending}
         onConfirm={handleManageBilling}
