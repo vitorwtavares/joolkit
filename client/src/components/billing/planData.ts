@@ -73,9 +73,9 @@ export const PRO_PRICING: Record<
 const free = PLAN_LIMITS.free
 const pro = PLAN_LIMITS.pro
 
-// Free-plan caps while billing status loads. Conservative on first paint so
-// free users never see a briefly permissive UI; Pro users may get a positive
-// surprise once status arrives. Server is always the runtime backstop.
+// Free-plan caps used when billing status fails to load (after retries). While
+// status is fetching, limit-dependent UI stays in a neutral loading state instead
+// of assuming Free (which caused flicker for Pro users).
 export const FREE_CEILINGS: Record<CappedResource, number | null> = {
   applications: free.applications,
   answers: free.answers,

@@ -1,9 +1,12 @@
 import { Plus, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 
 interface CreateOrUpgradeButtonProps {
   atLimit: boolean
   isPro: boolean
+  isLoading?: boolean
   createLabel: string
   upgradeLabel?: string
   onCreate: () => void
@@ -20,6 +23,7 @@ interface CreateOrUpgradeButtonProps {
 export function CreateOrUpgradeButton({
   atLimit,
   isPro,
+  isLoading = false,
   createLabel,
   upgradeLabel = 'Upgrade',
   onCreate,
@@ -28,6 +32,10 @@ export function CreateOrUpgradeButton({
   size,
   className,
 }: CreateOrUpgradeButtonProps) {
+  if (isLoading) {
+    return <Skeleton className={cn('h-9 w-28 rounded-md', className)} />
+  }
+
   const showUpgrade = atLimit && !isPro
   return (
     <Button

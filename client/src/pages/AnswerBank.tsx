@@ -16,15 +16,19 @@ const SKELETON_COUNT = 6
 
 export default function AnswerBank() {
   const { data: answers = [], isLoading } = useAnswers()
-  const { isPro, limit, hidden, atLimit, openUpgrade } = useResourceLimit(
-    'answers',
-    answers.length,
-  )
+  const {
+    isPro,
+    limit,
+    hidden,
+    atLimit,
+    isLoading: planLoading,
+    openUpgrade,
+  } = useResourceLimit('answers', answers.length)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingAnswer, setEditingAnswer] = useState<Answer | null>(null)
   const [search, setSearch] = useState('')
 
-  const canAddMore = !atLimit
+  const canAddMore = !planLoading && !atLimit
 
   function openNew() {
     setEditingAnswer(null)
@@ -92,6 +96,7 @@ export default function AnswerBank() {
             <CreateOrUpgradeButton
               atLimit={atLimit}
               isPro={isPro}
+              isLoading={planLoading}
               createLabel="New answer"
               upgradeLabel="Upgrade for more"
               onCreate={openNew}

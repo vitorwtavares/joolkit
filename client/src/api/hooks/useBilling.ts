@@ -69,6 +69,7 @@ export interface BillingStatus {
 }
 
 const BILLING_STATUS_STALE_TIME = 30 * 1000
+const BILLING_STATUS_RETRY_COUNT = 3
 
 export function fetchBillingStatus(
   queryClient: QueryClient,
@@ -89,6 +90,7 @@ export function useBillingStatus() {
     enabled: !!user,
     staleTime: BILLING_STATUS_STALE_TIME,
     refetchOnWindowFocus: true,
+    retry: BILLING_STATUS_RETRY_COUNT,
   })
 }
 
