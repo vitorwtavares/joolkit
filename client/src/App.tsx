@@ -11,6 +11,8 @@ import { BillingSettings } from './components/settings/BillingSettings'
 import { UpgradeProvider } from './components/billing/UpgradeProvider'
 import LandingPage from './pages/landing/LandingPage'
 import RedirectToApp from './pages/landing/RedirectToApp'
+import PrivacyPolicy from './pages/landing/legal/PrivacyPolicy'
+import TermsOfService from './pages/landing/legal/TermsOfService'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import ForgotPassword from './pages/ForgotPassword'
@@ -30,6 +32,8 @@ export default function App() {
             {isLandingSite ? (
               <>
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
                 <Route path="*" element={<RedirectToApp />} />
               </>
             ) : (
