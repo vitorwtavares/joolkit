@@ -67,43 +67,6 @@ export default function AnswerBank() {
             pencil to edit.
           </>
         }
-        right={
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search
-                size={14}
-                className="pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-              />
-              <Input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search answers"
-                aria-label="Search by question or tag"
-                className="h-8 w-[180px] ps-8 pe-7"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch('')}
-                  aria-label="Clear search"
-                  className="absolute end-1.5 top-1/2 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-            <CreateOrUpgradeButton
-              atLimit={atLimit}
-              isPro={isPro}
-              isLoading={planLoading}
-              createLabel="New answer"
-              upgradeLabel="Upgrade for more"
-              onCreate={openNew}
-              onUpgrade={openUpgrade}
-            />
-          </div>
-        }
       />
 
       {hidden > 0 && (
@@ -114,6 +77,42 @@ export default function AnswerBank() {
           className="mb-4"
         />
       )}
+
+      <div className="mb-4 flex items-center justify-end gap-2">
+        <div className="relative">
+          <Search
+            size={14}
+            className="pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search answers"
+            aria-label="Search by question or tag"
+            className="h-8 w-[180px] ps-8 pe-7"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              aria-label="Clear search"
+              className="absolute end-1.5 top-1/2 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <CreateOrUpgradeButton
+          atLimit={atLimit}
+          isPro={isPro}
+          isLoading={planLoading}
+          createLabel="New answer"
+          upgradeLabel="Upgrade for more"
+          onCreate={openNew}
+          onUpgrade={openUpgrade}
+        />
+      </div>
 
       {isLoading ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-3">
