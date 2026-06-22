@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  The job application toolkit — it brings the repetitive parts of job hunting into one<br />
+  The job application toolkit. It brings the repetitive parts of job hunting into one<br />
   streamlined workspace, so you apply faster without retyping, and without handing your<br />
   applications to an opaque auto-apply bot.
 </p>
@@ -32,18 +32,18 @@
 
 ## Four tools. One workflow.
 
-Everything repetitive about applying to jobs — handled. You still control every application.
+Everything repetitive about applying to jobs, handled. You still control every application.
 
 | Tool                    | What it does                                                                                                                |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Quick Copy**          | Your details, links, and frequently used files — one click to copy exactly the right thing into any form.                   |
+| **Quick Copy**          | Your details, links, and frequently used files. One click to copy exactly the right thing into any form.                    |
 | **Cover Letter Editor** | Start from your own templates, switch variations, and replace tokens automatically. Export a clean PDF.                     |
 | **Answer Bank**         | Save short and long-form answers once, tag and search them, then drop the perfect response into any application in seconds. |
 | **Application Tracker** | Keep every role, status, location, and deadline in one organized table you actually maintain.                               |
 
 ## How it works
 
-Three steps. No bots applying on your behalf — just less busywork.
+Three steps. No bots applying on your behalf, just less busywork.
 
 1. **Set up your kit once** — Add your details, links, reusable answers, and cover-letter templates. A few minutes, one time.
 2. **Apply faster** — Copy the right info and tailor a cover letter in seconds with token replacement. No more retyping.
