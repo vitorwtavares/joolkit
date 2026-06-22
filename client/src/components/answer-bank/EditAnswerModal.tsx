@@ -47,6 +47,26 @@ function formatCharCount(chars: number, maxChars: number) {
   return `${chars.toLocaleString()} / ${maxChars.toLocaleString()} chars`
 }
 
+function formatTimestamp(dateStr: string | null | undefined): string {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+// created_at and updated_at are set together on insert, so treat the answer as
+// edited only once updated_at moves meaningfully past creation.
+function wasEdited(answer: Answer): boolean {
+  if (!answer.created_at || !answer.updated_at) return false
+  return (
+    new Date(answer.updated_at).getTime() -
+      new Date(answer.created_at).getTime() >
+    1000
+  )
+}
+
 export function EditAnswerModal({
   open,
   answer,
@@ -238,7 +258,7 @@ export function EditAnswerModal({
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-t border-border-subtle px-[22px] py-3.5">
+          <div className="relative flex items-center justify-between border-t border-border-subtle px-[22px] py-3.5">
             <div className="flex items-center gap-3">
               {answer && (
                 <Button
@@ -251,6 +271,13 @@ export function EditAnswerModal({
                 </Button>
               )}
             </div>
+            {answer && (
+              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-[12px] text-text-faint">
+                Created {formatTimestamp(answer.created_at)}
+                {wasEdited(answer) &&
+                  ` · Edited ${formatTimestamp(answer.updated_at)}`}
+              </span>
+            )}
             <div className="flex gap-2">
               <Button
                 variant="outline"
