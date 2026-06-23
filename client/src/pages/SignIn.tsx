@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthShell } from '@/components/auth/AuthShell'
+import { OAuthButtons } from '@/components/auth/OAuthButtons'
 
 export default function SignIn() {
   const { user, isLoading } = useAuth()
@@ -46,6 +47,8 @@ export default function SignIn() {
             Sign up
           </Link>
         </p>
+
+        <OAuthButtons />
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
