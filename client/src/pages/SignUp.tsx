@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthShell } from '@/components/auth/AuthShell'
+import { OAuthButtons } from '@/components/auth/OAuthButtons'
 import { legalUrl } from '@/utils/legalUrl'
 
 export default function SignUp() {
@@ -67,6 +68,8 @@ export default function SignUp() {
               Sign in
             </Link>
           </p>
+
+          <OAuthButtons />
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
